@@ -1,0 +1,120 @@
+version: 2
+title: A tiny venture
+description: Where we stand, what can happen, and what is true while it does. Everything this book shows is written in it — paste it anywhere.
+decisions:
+  - key: entity
+    label: What are we?
+    values:
+      - { key: none, label: Nothing yet }
+      - key: company
+        label: A company
+        activates: [banking]
+      - { key: partnership, label: A partnership }
+  - key: banking
+    label: Where does the money sit?
+    values:
+      - { key: personal, label: A personal account }
+      - { key: business, label: A business account }
+events:
+  - key: incorporate
+    label: We incorporate
+    trigger: chosen
+    domain: Setting up
+    detail: A door — taking it answers the first decision for you and records the step.
+    inputs:
+      - { input: A name, from: the register, why: it must be free }
+      - { input: A director, from: us, why: one is enough to start }
+    content:
+      - key: paperwork
+        label: The paperwork
+        kind: brief
+        doc:
+          title: Incorporation paperwork
+          description: Written in the book itself — no file beside it.
+          sections:
+            - title: Reserve the name
+              body: Check the register, then hold the name for 60 days.
+            - title: Appoint a director
+              body: One is enough to start. Add the second when there is a second.
+  - key: paid
+    label: Somebody pays us
+    trigger: imposed
+    domain: Money
+    arity: many
+    rate: 5/mo
+    content:
+      - key: where-it-lands
+        label: Where the money lands
+        kind: md
+        by: [entity]
+        docs:
+          entity=none: |
+            Into a **personal** account, for now. Keep the invoice — the accountant will ask.
+          entity=company: |
+            Into the **company** account. Raise the invoice from the company first.
+          entity=partnership: |
+            Into the **joint** account. Both partners see it.
+  - key: audit
+    label: The tax office audits us
+    trigger: imposed
+    domain: Money
+    content:
+      - key: what-they-ask
+        label: What they ask for
+        kind: playbook
+        doc:
+          version: 2
+          title: An audit, as a book of its own
+          decisions:
+            - key: records
+              label: Are the records in one place?
+              values:
+                - { key: yes, label: Yes }
+                - { key: no, label: No }
+          events:
+            - key: letter
+              label: The letter arrives
+              trigger: imposed
+              content:
+                - kind: md
+                  by: [records]
+                  docs:
+                    records=yes: Send the folder. Done in an afternoon.
+                    records=no: |
+                      Ask for 30 days. Gather the bank statements first, then the invoices.
+          rules:
+            - { event: letter, status: ready }
+      - file: audits/last-time.md
+        label: What happened last time
+topics:
+  - key: always
+    label: Keep in mind
+    content:
+      - kind: md
+        doc: |
+          **Nothing here is generated.** Every document this book shows was written when the book was —
+          the answers only choose which one you see.
+  - key: company-only
+    label: While we are a company
+    when: [entity=company]
+    content:
+      - kind: md
+        doc: File the annual return every twelve months from incorporation.
+rules:
+  - event: incorporate
+    when: [entity=none]
+    status: ready
+    process: Have the name and the director ready, then take the door.
+    sets: [entity=company]
+  - event: incorporate
+    status: n/a
+  - event: paid
+    status: ready
+  - event: audit
+    when: [entity=none]
+    status: gap
+    note: Nobody has thought about an audit before there is anything to audit.
+  - event: audit
+    status: ready
+    every: 12
+    from: incorporate

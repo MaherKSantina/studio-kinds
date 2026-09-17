@@ -1,0 +1,6 @@
+# Cloudflare Pages: the static page from dist/, the validate endpoint from functions/.
+# `npm run deploy` publishes both; connecting the repository in the Cloudflare
+# dashboard (build command `npm run build`, output `dist`) does the same on push.
+name = "studio-kinds"
+compatibility_date = "2025-12-01"
+pages_build_output_dir = "dist"
