@@ -1,6 +1,8 @@
 version: 2
 title: A tiny venture
 description: Where we stand, what can happen, and what is true while it does. Everything this book shows is written in it — paste it anywhere.
+view:
+  locks: [entity=none]
 decisions:
   - key: entity
     label: What are we?
