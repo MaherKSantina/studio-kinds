@@ -16,6 +16,12 @@ if (!window.matchMedia) {
     addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false })) as unknown as typeof window.matchMedia;
 }
 
+const button = (host: HTMLElement, selector: string, text: string): HTMLButtonElement => {
+  const found = [...host.querySelectorAll<HTMLButtonElement>(selector)].find((b) => b.textContent?.includes(text));
+  if (!found) throw new Error(`no ${selector} with "${text}"`);
+  return found;
+};
+
 const until = async (host: HTMLElement, text: string, ms = 8000) => {
   const t0 = Date.now();
   while (!host.textContent?.includes(text)) {
@@ -50,6 +56,29 @@ describe("the page", () => {
     expect(host.textContent).toContain("1 problem");
     expect(host.textContent).toContain("YAML:");
 
+    root.unmount();
+  });
+  it("opens the kind's book and its schema over the preview, and comes back to the document", async () => {
+    (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    await act(async () => { root.render(<App />); });
+
+    // The book: kinds/playbook/v2.playbook, walked by the real renderer.
+    await act(async () => { button(host, ".bar button", "How .playbook works").click(); });
+    expect(host.textContent).toContain("kinds/playbook/v2.playbook");
+    await until(host, "The file is opened");
+
+    // The schema: the engine's account, as markdown.
+    await act(async () => { button(host, ".bar button", "Schema").click(); });
+    await until(host, ".playbook — Playbook");
+    expect(host.textContent).toContain("A fresh document");
+
+    // Back: the pasted document, untouched.
+    await act(async () => { button(host, ".reference-bar button", "Back to the document").click(); });
+    expect(host.textContent).toContain("Valid");
+    expect(host.querySelector("textarea")!.value).toContain("A tiny venture");
     root.unmount();
   });
 });

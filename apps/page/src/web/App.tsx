@@ -13,6 +13,7 @@ import example from "../../../../examples/venture.playbook?raw";
 import { OFFERED, check, kindForFile } from "../check";
 import Preview from "./Preview";
 import Problems from "./Problems";
+import { book, spec } from "./reference";
 
 const REPO = "https://github.com/MaherKSantina/studio-kinds";
 
@@ -33,6 +34,10 @@ export default function App() {
   }, []);
   const input = useRef<HTMLInputElement>(null);
   const result = useMemo(() => check(kind, text), [kind, text]);
+  // The kind's reference, over the preview: its book (a playbook, walked) or its spec (markdown).
+  const [reference, setReference] = useState<"book" | "spec" | null>(null);
+  const theBook = useMemo(() => book(kind), [kind]);
+  const theSpec = useMemo(() => spec(kind), [kind]);
   // The renderer is picked by the name's extension; a kind chosen from the menu renames the document.
   const shownName = name.endsWith(`.${kind}`) ? name : `${name.replace(/\.[^.]+$/, "")}.${kind}`;
 
@@ -68,6 +73,12 @@ export default function App() {
         <input ref={input} type="file" hidden
                onChange={(e) => { const f = e.target.files?.[0]; if (f) load(f); e.target.value = ""; }} />
         <button type="button" onClick={fresh}>Start from the template</button>
+        <button type="button" className={reference === "book" ? "on" : ""} disabled={!theBook}
+                title={theBook ? `${theBook.path} — the playbook that explains how .${kind} works` : `No book yet for .${kind}`}
+                onClick={() => setReference(reference === "book" ? null : "book")}>How .{kind} works</button>
+        <button type="button" className={reference === "spec" ? "on" : ""}
+                title={`The engine's own account of .${kind} — what studio-check --spec prints`}
+                onClick={() => setReference(reference === "spec" ? null : "spec")}>Schema</button>
         <span className="name muted">{shownName}</span>
         <span className="grow" />
         <span className={`status ${result.ok ? "ok" : "bad"}`}>
@@ -94,8 +105,23 @@ export default function App() {
                     aria-label="The document, as YAML" />
         </SidePanel>
         <section className="preview">
-          <Problems result={result} />
-          <div className="doc"><Preview name={shownName} text={text} /></div>
+          {reference ? (
+            <div className="reference">
+              <div className="reference-bar">
+                <b>{reference === "book" ? `How .${kind} works` : `.${kind} — the schema`}</b>
+                <span className="muted">{reference === "book" ? `${theBook?.path} · v${theBook?.version}` : "the engine's own account, and a fresh document"}</span>
+                <span className="grow" />
+                <button type="button" onClick={() => setReference(null)}>Back to the document</button>
+              </div>
+              <div className="doc">
+                {reference === "book" && theBook && <Preview name={`${kind}-v${theBook.version}.playbook`} text={theBook.text} />}
+                {reference === "spec" && <Preview name={`${kind}-spec.md`} text={theSpec} />}
+              </div>
+            </div>
+          ) : (<>
+            <Problems result={result} />
+            <div className="doc"><Preview name={shownName} text={text} /></div>
+          </>)}
         </section>
       </main>
 
