@@ -6,7 +6,8 @@
  * renderer for the kind; nothing is fetched, sent, stored or remembered.
  * Opening a file reads it here, with FileReader.
  */
-import { useMemo, useRef, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { SidePanel } from "crosscut";
 import { fileTemplate } from "filekinds";
 import example from "../../../../examples/venture.playbook?raw";
 import { KINDS, check, kindForFile } from "../check";
@@ -21,6 +22,15 @@ export default function App() {
   const [name, setName] = useState("venture.playbook");
   // Phones show one pane at a time; wide screens show both and ignore this.
   const [pane, setPane] = useState<"source" | "preview">("preview");
+  // A phone shows one pane at a time, so there is no separator to drag there.
+  const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(max-width: 760px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia?.("(max-width: 760px)");
+    if (!mq) return;
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener?.("change", on);
+    return () => mq.removeEventListener?.("change", on);
+  }, []);
   const input = useRef<HTMLInputElement>(null);
   const result = useMemo(() => check(kind, text), [kind, text]);
   // The renderer is picked by the name's extension; a kind chosen from the menu renames the document.
@@ -75,10 +85,13 @@ export default function App() {
       </div>
 
       <main className={`split show-${pane}`}>
-        <section className="source">
+        {/* The source pane is the same resizable side panel the Studio's walk uses for its rail:
+            drag the separator, double-click it to reset, collapse it with the chevron. */}
+        <SidePanel side="left" defaultWidth={520} minWidth={280} maxWidth={1100} storageKey="page:source"
+                   disabled={narrow} className="source">
           <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}
                     aria-label="The document, as YAML" />
-        </section>
+        </SidePanel>
         <section className="preview">
           <Problems result={result} />
           <div className="doc"><Preview name={shownName} text={text} /></div>

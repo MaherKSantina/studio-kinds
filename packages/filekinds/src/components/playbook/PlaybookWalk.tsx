@@ -103,8 +103,8 @@ function ContentPanel({ agentId, file, inline, id, label, open, onToggle, depth,
                ...(fill
                  // A nested playbook scrolls its own panes, so this must NOT
                  // scroll as well.
-                 ? { flex: 1, minHeight: 0, flexDirection: "column", overflow: isBook ? "hidden" : "auto" }
-                 : { maxHeight: 380, overflow: "auto" }) }}>
+                 ? { flex: 1, minHeight: 0, minWidth: 0, flexDirection: "column", overflow: isBook ? "hidden" : "auto" }
+                 : { maxHeight: 380, minWidth: 0, overflow: "auto" }) }}>
       {err ? <Typography sx={{ fontSize: 13, color: UNSEEN, p: 1 }}>{file} — {err}</Typography>
         : text == null ? <Box sx={{ p: 2, textAlign: "center" }}><CircularProgress size={16} /></Box>
           : isBook
@@ -449,12 +449,13 @@ export default function PlaybookWalk({
           <Box sx={{ mb: topics.length ? 1.75 : 0, pb: topics.length ? 1.25 : 0,
                      ...(topics.length
                        ? { borderBottom: "1px solid", borderColor: "divider", flexShrink: 0,
-                           maxHeight: "50%", overflow: "auto" }
+                           maxHeight: "50%", minWidth: 0, overflow: "auto" }
                        : list
                          // A block that scrolls: as a flex column the cards, being overflow:hidden,
                          // could shrink to nothing to fit the pane.
-                         ? { flex: 1, minHeight: 0, overflow: "auto" }
-                         : { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }) }}>
+                         ? { flex: 1, minHeight: 0, minWidth: 0, overflow: "auto" }
+                         // Anything wider than the pane scrolls HERE, never the walk or the trail.
+                         : { flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column", overflowX: "auto" }) }}>
             {/* What the event means, then what happens. */}
             {openEvent.detail && (
               <Typography sx={{ fontSize: 13, color: "text.secondary", fontStyle: "italic", mb: 0.75, flexShrink: 0 }}>

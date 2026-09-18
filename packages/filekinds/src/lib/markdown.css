@@ -15,3 +15,9 @@
 .md-body blockquote { border-left: 3px solid var(--border, #e2e5eb); padding-left: 12px; color: var(--muted-foreground, #6b7280); margin: 0.6em 0; }
 .md-body table { border-collapse: collapse; margin: 0.6em 0; }
 .md-body th, .md-body td { border: 1px solid var(--border, #e2e5eb); padding: 4px 8px; }
+
+/* Long unbroken strings — a path, a URL, a key — wrap inside the pane rather than widen it; a
+   wide table scrolls inside its own box. Nothing in a document may push its pane wider. */
+.md-body { min-width: 0; overflow-wrap: anywhere; }
+.md-body code, .md-body a { overflow-wrap: anywhere; word-break: break-word; }
+.md-body table { display: block; max-width: 100%; overflow-x: auto; }

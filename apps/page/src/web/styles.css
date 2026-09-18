@@ -14,7 +14,8 @@
 
 html, body, #root { height: 100%; margin: 0; }
 
-.app { height: 100%; display: flex; flex-direction: column; font-size: 14px; line-height: 1.45; }
+/* The page never scrolls as a whole: the source pane and the document scroll inside themselves. */
+.app { height: 100%; display: flex; flex-direction: column; overflow: hidden; font-size: 14px; line-height: 1.45; }
 .app .muted { color: var(--pg-dim); }
 .app .grow { flex: 1; }
 .app a { color: var(--pg-accent); }
@@ -38,16 +39,19 @@ html, body, #root { height: 100%; margin: 0; }
 
 /* ---- the split ---- */
 .tabs { display: none; }
-.split { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(280px, 42%) 1fr; }
-.source { min-height: 0; border-right: 1px solid var(--pg-line); display: flex; }
+/* A flex row: the source pane is a crosscut SidePanel (its own width, a draggable separator), the
+   document takes the rest. `min-width: 0` on both is what keeps a wide document from widening the
+   page — it scrolls inside its pane instead. */
+.split { flex: 1; min-height: 0; min-width: 0; display: flex; }
+.source { min-height: 0; min-width: 0; }
 .source textarea {
-  flex: 1; width: 100%; resize: none; border: 0; outline: 0; padding: 12px 16px;
+  flex: 1; width: 100%; height: 100%; resize: none; border: 0; outline: 0; padding: 12px 16px;
   background: var(--pg-panel); color: inherit; font-family: var(--pg-mono); font-size: 12.5px; line-height: 1.5; tab-size: 2;
 }
-.preview { min-height: 0; display: flex; flex-direction: column; }
+.preview { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .preview .problems { margin: 12px 16px 0; flex-shrink: 0; }
 /* The document fills the rest and scrolls inside, as it does in the Studio's own pane. */
-.doc { flex: 1; min-height: 0; overflow: auto; margin-top: 12px; }
+.doc { flex: 1; min-height: 0; min-width: 0; overflow: auto; margin-top: 12px; }
 .raw { white-space: pre-wrap; font-family: var(--pg-mono); font-size: 12.5px; margin: 0; padding: 12px 16px; }
 
 footer { padding: 6px 16px; border-top: 1px solid var(--pg-line); font-size: 12px; flex-shrink: 0; }
@@ -59,7 +63,7 @@ footer code { font-family: var(--pg-mono); }
   .tabs button.on { border-bottom-color: var(--pg-accent); font-weight: 700; }
   .split { display: block; }
   .split .source, .split .preview { display: none; height: 100%; }
-  .split.show-source .source { display: flex; border-right: 0; }
+  .split.show-source .source { display: flex; }
   .split.show-preview .preview { display: flex; }
   .name { display: none; }
 }
