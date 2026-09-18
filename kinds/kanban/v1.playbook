@@ -1,76 +1,359 @@
 version: 2
 title: How a version-1 kanban works
-description: 'The .kanban kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: A board whose columns are status and whose rows are derived from dependency edges — what a card opens, how an edit or an Ask goes through the same mutators, what a sourced board may and may not change, and what the calendar lens takes from it.
+decisions:
+  - key: host
+    label: Where is it open?
+    detail: The same board draws everywhere; only a host that lets it author shows the controls.
+    values:
+      - key: surface
+        label: The Studio, the desktop app, VS Code
+        detail: One surface per document, the preview with `editable={false}` — the board is read here; the file is edited as text.
+      - key: authoring
+        label: A host that lets it author
+        detail: A project's file pane — an `onChange` and no `editable={false}`; columns, tasks and the Ask panel write the file.
+  - key: tasks
+    label: Where do the tasks come from?
+    values:
+      - key: own
+        label: The file's own `tasks`
+      - key: sourced
+        label: A `source:` ref
+        detail: A `.points` file or a folder of composite `.node`s; the board owns only its edges, durations, dates and provenance.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the shape of the file, why rows and dates are never authored, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: Columns and tasks are authored; rows and dates are facts about the edges.
+        sections:
+          - title: Top-level keys
+            body: |
+              | key | what it is |
+              |---|---|
+              | `title` | the board's heading |
+              | `description` | one line under it |
+              | `due` | the day everything must be done by — the anchor backward scheduling chains from |
+              | `source` | optional: where the tasks come from (a `.points` ref or a folder of `.node`s) |
+              | `columns` | the statuses in order — a string, or `{title, color}` (`label` reads as `title`) |
+              | `tasks` | the cards |
+
+              Refs resolve against the board's own folder. A bare `2026-09-09` is read as a date by
+              YAML and kept as the day written.
+          - title: A task
+            body: |
+              ```yaml
+              tasks:
+                - key: print-badges          # the stable key `needs:` edges point at; the title when absent
+                  title: Print the badge sheets
+                  status: Done               # a column TITLE, case-insensitive; unset or unknown = first column
+                  file: badges.pdf           # a document beside the board, opened in the card dialog by its kind
+                  section: Round 1           # for a .brief: only the first section whose title contains this
+                  note: one line under the title
+                  body: |                    # the task's own markdown — the dialog's main content
+                    What doing this means, in this task's words.
+                  needs: [order-badges]      # prerequisites, by key
+                  duration: 2                # working days (default 1)
+                  due: 2026-09-08            # a cap tighter than the board's
+              ```
+
+              A task with neither `title` nor `key` is dropped; a second task with a key already
+              seen is dropped, because a duplicate key would fork every edge to it; a `needs`
+              entry naming the task itself is dropped.
+          - title: Rows are derived
+            body: |
+              Row one is every task that needs nothing; each later row is what builds on the rows
+              above, by longest prerequisite chain (Kahn's order, so a diamond sits as deep as its
+              longest path). Edges to unknown keys are ignored. Tasks caught in a cycle cannot be
+              layered honestly, so they land together in one final row rather than vanishing. A
+              board with no `needs` is one row — the plain kanban it degenerates to. Authoring
+              depth separately would let it drift from the edges, so it is computed on every draw.
+          - title: Dates are derived
+            body: |
+              `scheduleTasks` chains backward from the due date: a task ends at the earliest of its
+              own `due`, the board's `due`, and the day before its earliest dependent starts, then
+              runs `duration` days back from there. A task with no anchor anywhere downstream, or in
+              a cycle, is unscheduled rather than given an invented date. The `.calendar` lens draws
+              exactly this.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/kanbanDoc.ts` — `parseKanban`, `dependencyRows`,
+              `columnIndexOf`, `dependentsOf`, `scheduleTasks`, `briefSectionSlice`,
+              `resolveBoardSource`, `tasksFromPoints`, `tasksFromNodeFolder`, `mergeSourceTasks`;
+              its header comment is what `studio-check --spec kanban` prints. The mutators are
+              `kanbanEdit.ts` (`addTask`, `updateTask`, `removeTask`, `moveTask`, `addColumn`,
+              `renameColumn`, `removeColumn`, `moveColumn`, `setBoardMeta`, `dumpKanban`) and the
+              Ask vocabulary `kanbanAsk.ts`. The view is `components/kanban/KanbanBoardView.tsx`
+              with `TaskDialog.tsx`, `KanbanEditDialogs.tsx` and `KanbanAsk.tsx`; the checker is
+              `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: parseKanban reads the YAML once and never throws; the rows are computed and the columns drawn.
+    hint: Say where the tasks come from — a sourced board reads another file before it draws.
+    content:
+      key: draw
+      label: What is drawn
+      kind: md
+      by: [tasks]
+      docs:
+        tasks=own: |
+          **The parse.** An unparseable file opens as an empty board. Columns keep a `title` and an
+          optional `color`; a column with neither `title` nor `label` is nothing to draw. Each task
+          keeps the fields the shape lists; `duration` only when a positive number, `due` only when
+          a date. A board with no columns draws one column called "Tasks".
+
+          **What is drawn.** The title and description. The column headers, each with its colour
+          dot (grey when none). Then one section per dependency row — "Row 1 · nothing blocks
+          these", "Row 2 · builds on row 1" — and inside it the columns again, each card standing
+          under its status column (`columnIndexOf`: case-insensitive; unset or unknown lands in
+          the first column). A card shows the title, the note, an icon for its file, "⇠ N" for
+          the prerequisites it needs and "N ⇢" for the tasks that depend on it. No tasks: "No
+          tasks yet."
+
+          **The controls.** Only in a host that lets the board author: "+ Column" and "Ask" in the
+          header, pencil and trash on each column header, "Add task" under every column. In the
+          Studio, the desktop app and VS Code the surface passes `editable={false}`, so none of
+          them show and the file is edited as text.
+        tasks=sourced: |
+          **The parse** is the same; the drawn document is not the file. After the parse
+          `resolveBoardSource` reads the ref, resolved against the board's folder:
+
+          - a `.points` file: every point becomes a task — its id the key, its label the title,
+            its `status` key the column, its `description` key the body, its note the note;
+          - a folder: every `<name>.node` folder that holds a schema half of type `composite` and a
+            content half becomes one task keyed by the folder name; every stream is folded to its
+            current picture (later arrivals win) and `title`, `status`, `description` and `note`
+            land on the task. A node that is not composite, or will not read, is skipped.
+
+          Then `mergeSourceTasks`: the source owns identity, title, status, body and note — a
+          stale board-side `status:` can never shadow the stream; a point that has not accreted
+          status sits in the first column — and the board owns what only a board knows: `needs`,
+          `duration`, `due`, `file`, `section`. Board tasks with no source row are kept whole,
+          after the sourced ones. A source that cannot be read degrades to the board's own tasks.
+
+          **What is drawn** is the same board, with "tasks sourced from <ref> — edit them there;
+          this board owns its columns and edges" under the title, and "No tasks arrived from the
+          source yet." when the merge is empty. "Add task" never shows; the column controls do.
+  - key: card-clicked
+    label: A card is clicked
+    trigger: chosen
+    arity: many
+    domain: Reading
+    detail: The task dialog — facts, edges as jumps, the task's own words, and its document rendered by kind.
+    content:
+      key: dialog
+      label: What the dialog shows
       kind: md
       doc: |
-        # .kanban — Kanban
+        The title, then — when the board authors — a pencil ("Edit this task") and a trash
+        ("Delete this task…"); when the task has a file, a copy-handle button and "Open in
+        Nodes". A line of facts: the note; "needs" with one chip per prerequisite and "depended
+        on by" with one per dependent, each chip a colour dot, the task's title and its column,
+        and a click JUMPS the dialog to that task; "no dependency edges" when there are none.
 
-        ## The engine's own account (packages/filekinds/src/lib/kanbanDoc.ts)
+        Then the body, rendered as markdown, leading. Then, when the task has a file, the
+        document under a "Source · <file> · § <section>" bar, rendered by its own kind through
+        `DocumentPreview` — a `.brief` sliced first to the first section whose title contains
+        `section` (case-insensitively), re-dumped as a one-section brief; no match, or any other
+        kind, shows the whole document. "Loading…" until it is read; an unreadable ref shows no
+        preview. A task with neither body nor file: "No content authored — the card is the whole
+        task." The card clicked also becomes where the Ask panel aims.
+  - key: edited
+    label: A column or a task is edited
+    trigger: chosen
+    arity: many
+    domain: Authoring
+    when: [host=authoring]
+    detail: Every dialog goes through kanbanEdit; a refusal is a strip on the board, never a throw; the file is written through the host.
+    content:
+      key: edit
+      label: What each control does
+      kind: brief
+      doc:
+        title: What each control does
+        description: The dialogs, the mutators behind them, and what reaches the file.
+        sections:
+          - title: Columns
+            body: |
+              "+ Column" opens the column dialog (title, colour) and `addColumn` appends it; refused
+              when the title is empty or already taken, case-insensitively. The pencil on a header
+              opens the same dialog on that column and `renameColumn` retitles or recolours it — the
+              tasks standing in it follow. The trash asks: "Delete the column "X"? N tasks in it
+              fall back to "First column". This cannot be undone." — `removeColumn` drops their
+              `status`. Clicking a header aims the Ask panel at that column.
+          - title: Tasks
+            body: |
+              "Add task" under a column opens the task dialog with that status; the fields are the
+              title, the description (the file's `note`), the details (the file's `body`), the
+              column, the prerequisites, the file and the section. `addTask` slugs the key from the
+              title (lower-case, dashes, at most 48 characters; `-2`, `-3` when taken), drops and
+              names any `needs` that is unknown or the task itself, refuses an empty title, an
+              unknown column, or a `due` that is not an ISO date. The dialog's pencil opens the
+              same dialog on the task and `updateTask` applies the patch — an empty field removes
+              it; a new key re-points every edge to it. The trash asks: "Delete "T"? N tasks
+              depend on it — those edges are cut. This cannot be undone." — `removeTask` unlinks them.
+          - title: A sourced board
+            body: |
+              Adding, removing and moving tasks are refused: "tasks come from <source> — only
+              needs, duration, due, file and section are this board's to change". An update may
+              touch only those five; a sourced task with no row yet gets one holding the key and
+              them. Columns are always the board's own.
+          - title: What reaches the file
+            body: |
+              Every accepted edit is made to the FILE's document (never the drawn, merged one),
+              dumped by `dumpKanban` — `title`, `description`, `due`, `source`, `columns` (a string,
+              or `{title, color}`), then each task's `key` and only the fields it has; a title equal
+              to the key is left out and the parser restores it — and handed to the host's
+              `onChange`. The host's autosave writes it (800 ms debounce, retried after an error)
+              and the new text comes back as content, so the board redraws from the file. Comments
+              in the YAML do not survive a dump. A refused edit shows in a strip with "dismiss" and
+              writes nothing.
+  - key: asked
+    label: The board is asked to change
+    trigger: chosen
+    arity: many
+    domain: Authoring
+    when: [host=authoring]
+    detail: One line of instruction, answered with ops from a closed vocabulary and applied through the same mutators.
+    content:
+      key: ask
+      label: What the Ask panel does
+      kind: md
+      doc: |
+        "Ask" shows only when the host has configured the ask worker (the panel checks its
+        health on port 9250 and says whether it answers through the API or the CLI, or is
+        offline). The panel opens beside the board; a card opened or a column header clicked
+        becomes the target it aims at. The model reads a compact listing of the board plus the
+        target and answers with `say` and `ops` from `add_task`, `update_task`, `remove_task`,
+        `move_task`, `add_column`, `rename_column`, `remove_column`, `move_column`, `set_title`.
+        It speaks the user's words for a task's parts — `description` is the file's `note`,
+        `details` its `body` — names a task by key, exact title or a handle set with `as` earlier
+        in the same reply, and places with `after` ("" for first).
 
-        The `.kanban` file kind: a task board whose COLUMNS are status and whose
-        ROWS are DERIVED dependency groups — never authored. Each task may name
-        prerequisites (`needs:`); the board layers tasks by longest prerequisite
-        chain: row one is everything that needs nothing, row two what builds on
-        row one, and so on. A board with no dependencies is one row — the plain
-        kanban it degenerates to.
+        `applyKanbanOps` runs the ops through `kanbanEdit`, so nothing a model says can produce a
+        shape the board could not read; a refusal (an unknown column, a sourced board) becomes a
+        skipped line the panel shows. The resulting text goes to the host's `onChange` like a
+        dialog edit; the last four turns stay as history, and Undo restores the snapshot taken
+        before a turn and marks that turn and the later ones undone.
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Reading
+    detail: The host re-reads; the board re-parses, re-resolves its source, and keeps the open card if its key survived.
+    content:
+      key: reread
+      label: What survives a re-read
+      kind: md
+      doc: |
+        The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
+        events or VS Code's text document deliver the new text; the Studio re-reads unless its
+        autosave is dirty, saving or in error, and the board's own saves come back the same way.
+        The board re-parses, recomputes the rows and, with a `source`, reads it again. The open
+        dialog stays on its key and closes if the key is gone; the Ask target stays. A change to
+        the SOURCE file alone is noticed only when this file's text or path changes.
+  - key: lensed
+    label: Another kind reads it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: The board is data to a calendar and a schema.
+    content:
+      key: elsewhere
+      label: Who reads a board
+      kind: md
+      doc: |
+        - A `.calendar` names it as `board:` and draws `scheduleTasks` on a month grid — the same
+          merged tasks this board shows, since it resolves the source the same way — and opens the
+          same task dialog on a chip.
+        - A `.schema` of `type: kanban` describes the pipeline a structured node's content follows;
+          a plain `.kanban` file never carries a schema.
+        - A journey's fanout stage projects its columns as a board of its own (`FanKanban`), but
+          that is not this file.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — the parser never refuses, so only YAML fails.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `parseKanban` — it never throws. No summary line: `ok <name>  Kanban`.
+          - title: Not checked
+            body: |
+              A `needs` naming a key that does not exist (ignored). A `status` that is not a column
+              (the first column). A second task with a key already used (dropped). A cycle (a final
+              row). A `due` that is not a date (dropped). A `file` that is not there (the dialog
+              shows no preview). A `source` that cannot be read (the board's own tasks). None of it
+              is a problem to the checker; all of it is visible on the board.
+  - key: authored
+    label: A board is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a kanban
+        description: From the template to a board with edges — and, with a due date, a calendar.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template kanban > new.kanban`:
 
-        Authoring shape (YAML, lenient — a half-written file still renders):
-
-          title, description?
-          due: 2026-09-09                       # the day everything must be done by —
-                                                # the anchor backward scheduling chains from
-          source: Sep 9 tasks                   # OPTIONAL: where the tasks COME FROM. A
-                                                # folder ref means composite `.node`s — one
-                                                # node per task, its STREAMS the task's
-                                                # domains (identity carries title/description,
-                                                # a status stream's latest arrival carries the
-                                                # column), folded current-picture first. A
-                                                # `.points` ref sources a points stream the
-                                                # same way. The board then authors only its
-                                                # OWN domains (needs, duration, file/section)
-                                                # and merges them onto the sourced tasks by key.
-          columns: [To do, Doing, Done]         # strings or {title, color?}
-          tasks:
-            - key: print-badges                 # stable key `needs:` edges point at
-              title: Print the badge sheets
-              status: Done                      # a column TITLE; unset/unknown = first column
-              file: Sep 9 EDMinis badges.pdf    # ref resolved against the board's folder,
-                                                # opened in the card dialog by its own kind
-              section: Round 1                  # for a `.brief` file: open just the first
-                                                # section whose title contains this (case-
-                                                # insensitive), not the whole document
-              note: one line under the title
-              body: |                           # the task's OWN authored markdown —
-                - what doing this actually means # the dialog's main content, with the
-                - in this task's own words       # file/section slice below as provenance
-              needs: [other-key, …]             # prerequisites (keys)
-              duration: 2                       # working days this task takes (default 1)
-              due: 2026-09-08                   # per-task cap, tighter than the board's
-
-        Rows are computed, not stored, because dependency depth is a FACT about
-        the edges — authoring it separately would let the two drift. Unknown and
-        self `needs` keys are ignored; tasks caught in a cycle can't be layered
-        honestly, so they land together in one final row rather than vanishing.
-
-        Scheduling follows the same principle: dates are DERIVED, not authored.
-        `scheduleTasks` chains backward from the due date — a task ends the day
-        before its earliest dependent starts (or at its own cap), and starts
-        `duration` days earlier — so the calendar is always exactly what the
-        edges and durations imply, never a copy that can drift.
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        title: untitled
-        columns: [To do, Doing, Done]
-        tasks: []
-        ```
+              ```yaml
+              title: new
+              columns: [To do, Doing, Done]
+              tasks: []
+              ```
+          - key: tasks
+            label: Write the tasks with keys
+            after: [template]
+            detail: |
+              `key` first, then `title` and `status` (a column title, spelled as the column is).
+              Keep keys stable: edges point at them, and a rename by hand does not re-point edges
+              the way the dialog does.
+          - key: edges
+            label: Say what needs what
+            after: [tasks]
+            detail: |
+              `needs: [key, …]` on the task that waits. The rows follow from this alone; do not
+              write a row anywhere.
+          - key: dates
+            label: Add the schedule's inputs
+            after: [edges]
+            detail: |
+              `due` on the board, `duration` on tasks longer than a day, `due` on a task with a
+              tighter cap. Then a `.calendar` beside it with `board: new.kanban` draws the dates.
+          - key: source
+            label: Source the tasks instead
+            after: [template]
+            detail: |
+              `source: <ref>` to a `.points` file or a folder of `.node`s, and keep only `key`
+              plus `needs`, `duration`, `due`, `file`, `section` in the board's rows.
+          - key: check
+            label: Check it
+            after: [dates, source]
+            detail: |
+              `studio-check new.kanban` — only YAML can fail. Open it: a task in the wrong column
+              has a `status` that is not a column title; a task in the last row on its own has a
+              cycle.

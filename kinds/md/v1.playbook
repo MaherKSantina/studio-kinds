@@ -1,23 +1,154 @@
 version: 2
 title: How a version-1 markdown works
-description: 'The .md kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: Plain markdown, rendered — no fields, nothing to validate; what the renderer does with links and images, and where the same pane draws every other kind's prose.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — there is no shape, and where the renderer lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: Markdown, and nothing the Studio parses.
+        sections:
+          - title: No fields
+            body: |
+              A `.md` is text. There is no version line, no key the Studio reads, no engine that
+              turns it into a document. The template is one heading: `# <stem>` and a blank line.
+              Anything else under `C:\Github` that fits no other kind is a `.md`.
+          - title: The dialect
+            body: |
+              GitHub-flavoured markdown: tables, task lists, strikethrough, autolinks, fenced code.
+              Line breaks inside a paragraph are joined unless the host asks for hard breaks.
+          - title: Where the renderer lives
+            body: |
+              `packages/filekinds/src/lib/MarkdownPane.tsx` — `react-markdown` with `remark-gfm`
+              (and `remark-breaks` when a host asks), styled by `markdown.css`. It is registered
+              under `.md` in `lib/filePreviews.tsx`. `studio-check --spec md` prints only "Plain
+              markdown; the Studio renders it, nothing to validate."
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: The text is rendered; relative targets are resolved into the store beside the file.
+    content:
+      key: render
+      label: What the renderer does
       kind: md
       doc: |
-        # .md — Markdown
+        The whole text goes through the markdown pane. Given the file's store path, a relative
+        image or link target — `diagram.png`, `../notes/plan.md` — is turned into the store's raw
+        file URL beside this document, so a handover page shows the PNGs saved next to it. A
+        target that starts with a scheme, `//`, `/` or `#` passes through untouched: web, data
+        and anchor URLs are left alone.
 
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        # untitled
-        ```
-
-        Plain markdown; the Studio renders it, nothing to validate.
+        In the Studio, the desktop app and VS Code's "Open with Studio" there is one surface per
+        document — the rendered pane inside `DocumentPreview`, with the file's name in the strip
+        and a "Notes" pill when an annotations sidecar sits beside it. Nothing is parsed, so
+        nothing can fail to open.
+  - key: link-clicked
+    label: A link or an image is followed
+    trigger: chosen
+    arity: many
+    domain: Reading
+    detail: A relative target opens the store file; a web target opens the browser.
+    content:
+      key: link
+      label: What a click does
+      kind: md
+      doc: |
+        A relative link resolves to the store's raw URL for that path, so it opens the bytes the
+        store holds — a `.md` beside this one opens as text, not as a rendered document. A web
+        link opens in the browser. An anchor jumps within the pane. An image with a relative
+        source is shown from the store; one that is not there shows as a broken image, with no
+        problem reported anywhere.
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Reading
+    detail: The host re-reads and the pane re-renders; there is no state to keep.
+    content:
+      key: reread
+      label: The re-read
+      kind: md
+      doc: |
+        The desktop watcher (250 ms debounce, then `studio:fs-changed`), the web folder entry's
+        server events, or VS Code's text document deliver the new text. The Studio re-reads unless
+        its autosave is dirty, saving or in error. The pane renders the new text; the scroll
+        position is whatever the browser keeps.
+  - key: prose-elsewhere
+    label: Another kind renders prose
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: Every markdown field in every other kind goes through the same pane.
+    content:
+      key: elsewhere
+      label: Where the same pane draws
+      kind: brief
+      doc:
+        title: Where the same pane draws
+        description: The pane is one component; the kinds hand it their prose.
+        sections:
+          - title: Fields that are markdown
+            body: |
+              A brief section's `body`. A guide step's `detail`. A kanban task's `body`. A
+              playbook's `kind: md` documents (block strings) and every `hint`. A policy's `note`.
+              A workup step's instructions. Each renders through `previewForPath("section.md")`
+              — the registry's `.md` renderer — with the host's path, so relative images resolve
+              beside the host file.
+          - title: Files the kit writes as markdown
+            body: |
+              `CLAUDE.md` beside a memory, written by "Prepare for Claude Code". `README.md` in
+              a new project's folder. `versions.md`, the changelog in a versioned file's folder.
+              `handover.md` in a frame's handover export, beside the PNGs it links.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: Nothing to validate — the checker says so and passes.
+    content:
+      key: checker
+      label: What the checker does
+      kind: md
+      doc: |
+        The command line prints `ok <name>  Markdown — nothing to validate` and never counts it
+        as a problem; a folder walk skips `.md` files altogether, since the kind has no check.
+        The page and `POST /api/check?kind=md` print `N lines — nothing to validate`. A playbook
+        with `kind: md` content is checked only for the document being a string.
+  - key: authored
+    label: A note is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a markdown note
+        description: The one kind with nothing to get right.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template md > new.md`, or Ctrl+N in the Studio — `# new` and a
+              blank line. A project's "New file" and the project Ask accept content for a `.md`
+              and put it under the heading.
+          - key: assets
+            label: Keep images beside it
+            after: [template]
+            detail: |
+              Save the image in the same folder, or under it, and write the relative path — the
+              pane resolves it into the store. An absolute web URL works too.
+          - key: pick
+            label: Ask whether it should be another kind
+            after: [template]
+            detail: |
+              A hierarchy of content is a `.brief`; content under events and answers is a
+              `.playbook`; rules are a `.policy`; rows are a `.jsonl`. A `.md` is for what fits
+              nothing else.

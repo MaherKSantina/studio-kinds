@@ -1,81 +1,295 @@
 version: 2
 title: How a version-1 memory works
-description: 'The .memory kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: A working memory over the store — a saved query whose answers narrow and group the units, split by the folder it sits in until it authors decisions; the taken answers written back under a banner, the attention trail recording itself.
+decisions:
+  - key: split
+    label: Does the memory author decisions?
+    values:
+      - key: folder
+        label: No — the folder splits it
+        detail: An empty file is enough; each sub-folder holding units is a focus and the files sitting directly here are Everything else.
+      - key: own
+        label: Yes — a `decisions:` block
+        detail: The criteria and their derive rules replace the folder split from here down.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the shape of the file, what a unit is, the structural else, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: A lens, not a container — it owns no nodes.
+        sections:
+          - title: Top-level keys
+            body: |
+              | key | what it is |
+              |---|---|
+              | `title`, `description` | the heading and one line under it |
+              | `scope` | the folder it looks at: absolute (`/` is the whole store) or relative to its own folder; absent, its own folder |
+              | `include` | clauses over the index fields — `path`, `name`, `stem`, `ext`, `area`, `parent`, `depth`, `age_days` — saying what counts as a unit; empty, everything |
+              | `options` | togglable slices: `{key, label, on, matches}` — while `on` is false the matching units drop out with the include step |
+              | `decisions` | the criteria — the ranking's decisions block, plus `activates` and `when` on answers |
+              | `locks` | the answers currently taken, `decision=answer` |
+              | `journal` | the attention trail — every state the locks passed through, oldest first, capped at 50; written, never authored |
+          - title: What a unit is
+            body: |
+              Every document under the scope — files and structured `.node` folders, never plain
+              folders or other `.memory` files. A composite node contributes its folded stream
+              slices as fields (`status.status`, `tags.platform`, `<stream>._status`), so
+              criteria can select on slice data beside intrinsic facts. A unit can sit in many
+              memories at once, and one in none is simply unmatched, by design.
+          - title: Selection
+            body: |
+              A unit is VISIBLE when its derived answer agrees with every lock. The first active
+              decision still unanswered GROUPS the visible set; answering it filters, and the next
+              question takes over the grouping. Every decision also carries the structural else —
+              `~else`, "Everything else" — the complement of its named answers, synthesised so it
+              never has to be authored: groupable, takeable as a lock, never silently dropped.
+          - title: The banner
+            body: |
+              ```yaml
+              # The answers currently taken. Written by the memory view — keep last.
+              locks: [focus=jobs]
+              journal:
+                - {at: 2026-09-19T08:00:00.000Z, locks: [focus=jobs]}
+              ```
+
+              Everything above it is the author's and is never re-serialised.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/memoryDoc.ts` — `parseMemory`, `writeLocks`,
+              `writeOption`, `writeDecisions`, `memoryScope`, `memorySelection`, `answerPath`,
+              `withElse`, `folderSpace`, `memoryOverFolder`, `takenFolderChain`; its header
+              comment is what `studio-check --spec memory` prints. The store is read by
+              `components/memory/memoryLoad.ts` (`loadMemoryStore`, `memoryOver`, `loadUnits`);
+              the view is `components/memory/MemoryView.tsx` with `pillFilter.ts`, the pills the
+              shared `DecisionPills`; the checker is `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: parseMemory reads the YAML once and never throws; the store is read live and the working set drawn.
+    hint: Say whether the memory authors decisions — the store is read two different ways.
+    content:
+      key: draw
+      label: What is read, and what is drawn
+      kind: md
+      by: [split]
+      docs:
+        split=folder: |
+          **The read is lazy.** One listing of the scope: every sub-folder holding units becomes
+          an answer of a `folder` decision, the files sitting directly in the folder are
+          "Everything else", and nothing under the folders not taken is read. Taking a focus lists
+          that folder and brings its own split onto the table — the decisions of the first
+          `.memory` found in it when there is one, its sub-folders otherwise (`folder/<path>`
+          decisions, activated by the parent answer), down to the leaves. Over `C:\Github` that is
+          a 60-entry listing instead of a 13,000-row index, and a click on a folder pill is what
+          reads that folder.
+
+          **What is drawn.** The pills at the top, hierarchy included — a folder icon on folder
+          foci, "Everything else" dimmed — with a filter box when there are many; the options as
+          checkboxes; the counts. Below, the working set in the projects idiom: groups under the
+          grouping question's answers, each unit a card with its kind icon, its stem without
+          extension, its parent folder, its age ("3d ago") and its pipeline status when it has
+          one. A side pulse — 21 days, reading minutes as the weight — shows the lowest sub-focus
+          on the table beside its siblings. A "Prepare for Claude Code" button and a Nodes link
+          sit in the header.
+        split=own: |
+          **The read is whole.** One scoped index of everything under the scope, since the rules
+          look at every unit; composite nodes are enriched with their folded slices. A folder on
+          the taken path with a memory of its own that authors decisions is read the same way
+          from there down. Then `memorySelection`: include clauses, unticked options, each unit's
+          answer per decision (a field named like the decision, else the first derive rule that
+          holds, else the structural else), the locks pruned against the decisions on the table,
+          and the visible set grouped by the first active unanswered decision.
+
+          **What is drawn.** The pills at the top — every decision on the table with its answers,
+          the else dimmed, a decision with one answer included — with a filter box when there are
+          many; the options as checkboxes; the counts. Below, the working set: groups under the
+          grouping question's answers, each unit a card with its kind icon, its stem, its parent,
+          its age and its pipeline status. A side pulse of the lowest sub-focus on the table. A
+          "Prepare for Claude Code" button and a Nodes link in the header.
+  - key: answered
+    label: An answer is taken
+    trigger: chosen
+    arity: many
+    domain: Attending
+    detail: The locks are written back under the banner and the journal records the state; attention is a fact worth keeping.
+    content:
+      key: locks
+      label: What a pill click writes
       kind: md
       doc: |
-        # .memory — Memory
-
-        ## The engine's own account (packages/filekinds/src/lib/memoryDoc.ts)
-
-        The `.memory` kind — a WORKING MEMORY over the flat node store.
-
-        The store keeps everything and may grow without limit; a memory is a LENS
-        that retrieves a working set from it on demand. It owns no nodes — it is a
-        saved query, so nothing moves when attention moves, a node can sit in many
-        memories at once, and a node in none is simply unmatched, by design.
-
-          include   — clauses over a node's index fields saying what counts as a
-                      UNIT of this memory at all (empty = every entry).
-          options   — togglable slices, checkboxes OUTSIDE the decisions: while
-                      one is off, units matching its clauses drop out with the
-                      include step. Display machinery, not attention — nothing
-                      groups by it and nothing parks in an else.
-          decisions — the criteria, each with answers and derive rules — the same
-                      decisions block a ranking carries, PLUS the decisionSpace
-                      hierarchy: an answer can `activate` further decisions that
-                      are LOCALIZED to it, and answers can be gated with `when`.
-                      Levels, not removal: each answer narrows the set and brings
-                      the next, narrower question onto the table.
-          locks     — the answers currently taken (`decision=answer` refs). Saved
-                      in the file: attention is a fact worth keeping, and an agent
-                      can set it by editing the document.
-
-        Selection: a unit is VISIBLE when its derived answer agrees with every
-        lock. The first active decision still unanswered GROUPS the visible set —
-        answering it filters, and the next question takes over the grouping.
-
-        Every decision also carries the STRUCTURAL ELSE (`~else`, "Everything
-        else"): the complement of its named answers, synthesized by the engine so
-        it never has to be authored. The named answers are the known parameters;
-        the else is the information not needed at this stage — groupable, takeable
-        as a lock, never silently dropped.
-
-        OVER A FOLDER (the desktop app, the VS Code extension, any store): a memory
-        looks at the folder it sits in (`scope:` widens or moves that — `/` is
-        the whole store). Its units are the DOCUMENTS under the scope: files and
-        structured folders, never plain folders or other `.memory` files. When it
-        authors no decisions — an EMPTY file is enough — the folder itself splits
-        it: each sub-folder holding units is a focus, the files sitting directly in
-        the folder are Everything else, and taking a focus brings that sub-folder's
-        own split onto the table: the decisions of the first `.memory` found in it
-        when there is one, its sub-folders otherwise, down to the leaves. So the
-        folder tree is the default hierarchy, and a memory dropped into a folder
-        replaces the split from there down. See `folderSpace`.
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        title: "untitled"
-        description: "Working memory over this folder. Each sub-folder is a focus and the files sitting directly here are Everything else; taking a focus brings that folder's own split onto the table — the first .memory inside it when there is one, its sub-folders otherwise."
-
-        # Where it looks: this folder. `scope: /` would be the whole store, `..` the parent.
-
-        # What counts as a UNIT: every document under the scope (plain folders and
-        # .memory files are structure, never units). Clauses over the index fields —
-        # path, name, stem, ext, area, parent, depth, age_days — narrow it.
-        include: []
-
-        # Authoring decisions here REPLACES the folder split with your own foci:
-        # values with derive rules; an answer may activate a narrower decision, or
-        # `folder` to split by the sub-folders from there. Empty = the folders decide.
-        decisions: []
-        ```
+        A pill click replaces any other answer to that decision, prunes answers to questions no
+        longer on the table, and the working set re-filters and re-groups. Then `writeLocks`:
+        the file is READ AGAIN first so the latest text wins, everything above the banner is kept
+        byte-for-byte, and `locks:` plus `journal:` are rewritten under it — one `{at, locks}`
+        entry appended whenever the locks differ from the journal's last state, the journal cut
+        to its last 50. The text is written through the configured writer. An empty memory file
+        stays empty until the first lock. An agent can steer attention by editing `locks` in the
+        same file; the view follows on the next re-read.
+  - key: option-toggled
+    label: An option is ticked or unticked
+    trigger: chosen
+    arity: many
+    domain: Attending
+    detail: One line changes; the slice drops out or comes back before any decision sees it.
+    content:
+      key: option
+      label: What a checkbox writes
+      kind: md
+      doc: |
+        `writeOption` flips the option's one-line `on:` in place — `on: false` written, `on:
+        true` restored — and nothing else in the file moves. Unticked, the units the option's
+        clauses match leave with the include step: nothing groups by it, nothing parks in an
+        else. It is display machinery, not attention, so the journal does not record it.
+  - key: unit-clicked
+    label: A unit is clicked
+    trigger: chosen
+    arity: many
+    domain: Attending
+    detail: The document opens in a dialog through the shared preview; Nodes is one click further.
+    content:
+      key: unit
+      label: What opens
+      kind: md
+      doc: |
+        A dialog with the unit's content through `DocumentPreview` — a structured `.node` folder
+        through the split view — and an "Open in Nodes" link. In an authoring host a card also
+        carries a picker of the grouping decision's answers, so a unit can be moved to another
+        answer from where it stands. Nothing is written by opening.
+  - key: focus-authored
+    label: A focus is authored on the lens
+    trigger: chosen
+    arity: many
+    domain: Authoring
+    detail: On a project's memory lens the foci are added, renamed and resolved in place; only the decisions block is rewritten.
+    content:
+      key: author
+      label: What the authoring controls write
+      kind: md
+      doc: |
+        A project in memory mode opens its lens with authoring on: "+ focus" adds an answer to
+        the root decision, "+ sub-focus" adds a decision the current answer activates, a focus
+        can be renamed, a unit can be resolved to an answer, and a picker moves a card between
+        answers. Each goes through `writeDecisions`, which replaces only the `decisions:` block
+        in the text and leaves the head and the banner alone. Authoring the first decision is
+        what replaces the folder split from here down.
+  - key: prepared
+    label: Prepare for Claude Code is clicked
+    trigger: chosen
+    domain: Authoring
+    detail: A CLAUDE.md beside the memory, written once.
+    content:
+      key: claude
+      label: What is written
+      kind: md
+      doc: |
+        The button writes `CLAUDE.md` in the memory's folder with the preamble the suite carries
+        — what every file under the folder is (a Studio document picked by its extension), where
+        the event "Maher asks for a Studio document" lives, the check-after-every-edit rule, and
+        that documents refresh from disk by themselves. Once the file exists the button stands
+        down; Claude Code loads the CLAUDE.md of every parent folder, so every folder under here
+        reads it.
+  - key: store-changed
+    label: The store changes underneath it
+    trigger: imposed
+    arity: many
+    domain: Attending
+    detail: An entry made, removed or renamed re-reads the store in place; the selection stays up until the new one lands.
+    content:
+      key: store
+      label: What is re-read
+      kind: md
+      doc: |
+        The host dispatches `studio:store-changed` when an entry is made, removed or renamed —
+        content writes are not a reason — and the view re-reads the store the same way it opened
+        it, the current selection staying on screen until the new one lands. The root memory a
+        folder opens on (the desktop app's and the web folder's start page) re-reads on
+        `studio:fs-entries-changed` after a three-second settle and at most every thirty seconds.
+        The memory file's own change re-parses it, so locks set by hand or by an agent apply.
+  - key: read-elsewhere
+    label: Another kind reads it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: The memory is the lens a pulse, a moves log and a project stand on.
+    content:
+      key: elsewhere
+      label: Who reads a memory
+      kind: md
+      doc: |
+        - A `.pulse` draws its foci as rows and its journal as the attention trail.
+        - A `.moves` log snapshots its units' answer paths and diffs them on every open.
+        - A project in memory mode shows its lens — `/memory/<name>.memory`, created empty when
+          missing — and keeps it while the project is back in directory mode.
+        - The desktop app and the web folder open a folder on its root memory: the first
+          `.memory` in the root, else an empty `/<folder>.memory` (virtual in the browser).
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — the parser never refuses.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, the summary line, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `parseMemory` — it never throws.
+          - title: The summary line
+            body: |
+              `N decisions, N include clauses, locks [focus=jobs, …]`. The page does not know the
+              memory kind.
+          - title: Not checked
+            body: |
+              That a lock names a real answer (it is pruned on open). That `scope` exists. An
+              include clause with an unknown op (dropped). Whether the folder split will find any
+              units.
+  - key: authored
+    label: A memory is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a memory
+        description: An empty file already works; decisions come when the folders stop being the right split.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template memory > desk.memory` in the folder it should look at —
+              a title, a description, and commented explanations of `scope`, `include` and
+              `decisions`, all empty. Open it: the folders are the foci.
+          - key: scope
+            label: Widen or narrow the scope
+            after: [template]
+            detail: |
+              `scope: /` for the whole store, `..` for the parent, a path for another folder;
+              `include` clauses over the index fields when only some documents count.
+          - key: decisions
+            label: Author decisions when the folders are not the split
+            after: [scope]
+            detail: |
+              A `decisions:` block as a ranking carries it — `key`, `label`, `values`, `derive`
+              rules — and `activates` on an answer for the narrower question under it, or
+              `folder` to split by the sub-folders from there.
+          - key: check
+            label: Check it, then take an answer
+            after: [decisions]
+            detail: |
+              `studio-check desk.memory` prints the counts and the locks. Open it and click a pill:
+              the banner and the journal appear at the bottom, and the head is untouched.

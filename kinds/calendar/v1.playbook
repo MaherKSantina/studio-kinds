@@ -1,39 +1,190 @@
 version: 2
 title: How a version-1 calendar works
-description: 'The .calendar kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: A lens over one kanban board — the schedule its edges, durations and due date imply, laid on a month grid on every open; nothing is stored here.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the shape of the file, what it does not hold, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: Four keys; the dates live nowhere.
+        sections:
+          - title: Top-level keys
+            body: |
+              | key | what it is |
+              |---|---|
+              | `title` | the heading |
+              | `description` | one line under it; absent, the view says "Derived schedule — dependency edges chained backward from the due date." |
+              | `board` | the `.kanban` this calendar derives from, resolved against this file's folder |
+              | `due` | optional — overrides the board's own `due` as the anchor |
+
+              A bare `2026-09-09` is read by YAML as a date and kept as the day written; a string
+              that parses as a date is cut to its first ten characters; anything else is dropped.
+          - title: What it does not hold
+            body: |
+              No dates of its own. Like a `.tablediff`, the calendar recomputes from its source on
+              every open, so it can never be a copy that drifts from the board. Everything drawn is
+              the board's `needs`, `duration` and `due`.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/calendarDoc.ts` — `parseCalendarLens`; its header comment
+              is what `studio-check --spec calendar` prints. The schedule is `kanbanDoc.ts`'s
+              `scheduleTasks` and the grid is `journeyStages.ts`'s `monthGrid`, so both calendars in
+              the suite read the same way. The view is `components/kanban/CalendarLensView.tsx`,
+              which opens the kanban's `TaskDialog.tsx`; the checker is `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: The lens is parsed, the board is read and resolved, the schedule is computed backward from the due date and laid on the grid.
+    content:
+      key: derive
+      label: What is derived, and what is drawn
+      kind: brief
+      doc:
+        title: What is derived, and what is drawn
+        description: Four steps between the file and the grid.
+        sections:
+          - title: Reading the board
+            body: |
+              `parseCalendarLens` never throws (an unparseable file has no title and no board).
+              The `board` ref is resolved against this file's folder and read; the board is parsed
+              by `parseKanban` and its `source:` resolved the same way the board view does, so the
+              calendar schedules the same merged tasks the board shows. No ref: "No `board:` ref —
+              nothing to derive from." An unreadable ref: "could not read <path>".
+          - title: The schedule
+            body: |
+              `scheduleTasks(board, lens.due)` — as late as possible. Walking the dependency layers
+              from the deepest up, each task ends at the earliest of its own `due`, the board's
+              `due` (the lens's `due` in its place when given), and the day before its earliest
+              dependent starts; it starts `duration − 1` days before that (duration at least 1,
+              rounded). A task with no anchor at all, or in a cycle, is left unscheduled. The
+              scheduled tasks come back sorted by start, then title.
+          - title: The grid
+            body: |
+              `monthGrid` picks the month: the due date; without one, the median start of the
+              scheduled tasks; without tasks, today. Weeks run Monday to Sunday from the Monday on
+              or before the 1st until the month ends, each cell carrying the tasks whose start and
+              end enclose the day. The grid's title is the month and year.
+          - title: What is drawn
+            body: |
+              The title, the description (or the default line) and "Due <date>." A weekday header
+              and the cells: days outside the month dimmed, the due day with an amber ring, today
+              with a darker border and "· today". Each task is a chip in every day it covers,
+              coloured by its status column's colour (grey when the column has none), titled
+              "<task> · <start> → <end>". Below, when any: "Unscheduled (no due anywhere downstream,
+              or a dependency cycle): a · b". The grid needs 720px and scrolls sideways under that.
+  - key: chip-clicked
+    label: A task chip is clicked
+    trigger: chosen
+    arity: many
+    domain: Reading
+    detail: The board's own task dialog opens on that task; the calendar edits nothing.
+    content:
+      key: dialog
+      label: What opens
       kind: md
       doc: |
-        # .calendar — Calendar
+        The same `TaskDialog` the board opens, on the board's document with the board's folder as
+        base: the note, the "needs" and "depended on by" chips (a click jumps to that task), the
+        body as markdown, and the task's file rendered by its kind — a `.brief` sliced to the
+        task's `section`. No pencil, no trash: the calendar never writes, and neither does the
+        dialog it borrows. A chip is found by the task's title, so two tasks with one title open
+        the first.
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Reading
+    detail: The lens re-parses; the board is read again only when its path changed.
+    content:
+      key: reread
+      label: What is re-read
+      kind: md
+      doc: |
+        The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
+        events or VS Code's text document deliver the new text, and the Studio re-reads unless its
+        autosave is dirty, saving or in error. The lens re-parses: a new `due` re-schedules at
+        once; a new `board` ref reads the new board. The board file itself is read when the
+        resolved path changes and on open — a board edited while its calendar sits open shows on
+        the calendar's next open. The open dialog stays on its key.
+  - key: grid-elsewhere
+    label: A journey draws the same grid
+    trigger: imposed
+    domain: Elsewhere
+    detail: The month grid is shared; the calendar file is one of two things that fill it.
+    content:
+      key: elsewhere
+      label: The other calendar in the suite
+      kind: md
+      doc: |
+        A staged journey's stage with `calendar:` lays its task lists' `start` and `end` fields
+        on the same `monthGrid`, coloured by group and legended by source list. That grid reads
+        lists, not a board, and lives in the `.definition` kind; this file is the lens over one
+        `.kanban`. The two look alike on purpose.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — the board is not read.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `parseCalendarLens` — it never throws. No summary line: `ok <name>  Calendar`.
+          - title: Not checked
+            body: |
+              That `board` is present, exists, or is a kanban — the view says "No `board:` ref" or
+              "could not read". That `due` was a date (a bad one is dropped, silently). Neither the
+              command line nor the page reads the board.
+  - key: authored
+    label: A calendar is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a calendar
+        description: Three lines beside a board that already has edges and a due date.
+        steps:
+          - key: board
+            label: Give the board what a schedule needs
+            detail: |
+              In the `.kanban`: `due` on the board, `needs` between tasks, `duration` where a task
+              takes more than a day. Without a due date anywhere, every task is unscheduled.
+          - key: template
+            label: Start from the template
+            after: [board]
+            detail: |
+              `studio-check --template calendar > new.calendar` in the board's folder:
 
-        ## The engine's own account (packages/filekinds/src/lib/calendarDoc.ts)
+              ```yaml
+              title: "new"
+              description: "A lens over one board: …"
+              board: board.kanban   # a ref resolved against this file's folder
+              # due: 2026-12-31     # optional — overrides the board's own due date
+              ```
 
-        The `.calendar` file kind: a LENS over one `.kanban` board — like
-        `.tablediff`, it recomputes from its source on every open and stores no
-        dates of its own. The board's dependency edges, durations and due date
-        produce the schedule (kanbanDoc's `scheduleTasks`, backward-chained from
-        the due date); this file only says WHICH board, and optionally overrides
-        the anchor.
-
-        Authoring shape (YAML, lenient):
-
-          title, description?
-          board: Sep 9 prep board.kanban   # ref resolved against this file's folder
-          due: 2026-09-09                  # optional — overrides the board's own due
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        title: "untitled"
-        description: "A lens over one board: the schedule its dependency edges, durations and due date produce. Nothing is stored here — it recomputes on every open."
-        board: board.kanban   # a ref resolved against this file's folder
-        # due: 2026-12-31     # optional — overrides the board's own due date
-        ```
+              Point `board` at the file. Uncomment `due` only to plan against another date than
+              the board's.
+          - key: check
+            label: Check it, then open it
+            after: [template]
+            detail: |
+              `studio-check new.calendar` — only YAML can fail. Open it: a task listed under
+              "Unscheduled" has no due date anywhere downstream, or sits in a cycle.

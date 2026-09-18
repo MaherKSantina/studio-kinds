@@ -1,48 +1,281 @@
 version: 2
 title: How a version-1 guide works
-description: 'The .guide kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: One procedure, narrowed by questions — what a step is, how answering removes steps without saving anything, and how the order is a graph rather than a position.
+decisions:
+  - key: host
+    label: Where is it rendering?
+    detail: The same step click expands in place or opens a pane, depending on the host.
+    values:
+      - key: preview
+        label: The kind's preview
+        detail: The Studio, the desktop app, VS Code, a file-content dialog — a step's detail expands under its row.
+      - key: trail
+        label: Inside a pane trail
+        detail: A points store, a workup, a project lens — a step's detail drills into the next pane.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the shape of the file, why the order is a graph, what is never in the file, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: Decisions as a playbook has them, and steps that carry conditions and edges.
+        sections:
+          - title: Top-level keys
+            body: |
+              | key | what it is |
+              |---|---|
+              | `title` | the heading; "Guide" when absent |
+              | `description` | one line under the title |
+              | `decisions` | the questions — the same shape as a playbook's: `key`, `label`, `detail`, `values` of `key`, `label`, `detail`, `activates`, `when` |
+              | `steps` | the procedure |
+
+              Nothing else is read. There is no version line and no place for an answer.
+          - title: A step
+            body: |
+              ```yaml
+              steps:
+                - key: lodge               # identity; slugged from the label when absent
+                  label: Lodge the transfer
+                  detail: |                # markdown; `body` reads the same
+                    What doing it involves. The label on its own is the task.
+                  when: [resident=yes]     # part of the procedure only where this holds
+                  after: [sign]            # keys this step comes after
+                  effort: 2d               # consumed by a plan's schedule
+                  negotiable: fixed        # fixed | scope | date — how a schedule may move it
+                  emphasis: true           # drawn as a warning
+              ```
+          - title: Order is a graph
+            body: |
+              A step declares what it comes `after`; it has no position. A conditional step
+              slipped into the middle renumbers nothing, and a branch that runs in a different
+              sequence says so without disturbing its neighbours. An edge to a step that did not
+              survive the answers is dropped rather than blocking, so a branch that removes a step
+              never strands what followed it. The same edges are the dependency graph a plan
+              schedules from — authored once here, not restated as tasks elsewhere.
+          - title: What is never in the file
+            body: |
+              The answers. A guide's assignment is how a reader narrowed a page, not a fact about
+              the business, and next week the facts differ. That is the whole difference between a
+              guide and a playbook, which shares every other part.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/guideDoc.ts` — `parseGuide`, `dumpGuide`, `stepsAt`,
+              `narrowing`, `slugKey`; its header comment is what `studio-check --spec guide` prints.
+              The decision algebra is the shared `crosscut/decisions/decisionSpace.ts` (`pruneLocks`,
+              `impliedLocks`, `applyRefs`, `splitRef`). The preview is
+              `components/guide/GuidePreview.tsx`, built from `DecisionPills`, `EventRow` and
+              `OneDList`; the checker is `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: parseGuide reads the YAML once and never throws; every step shows, because nothing is answered.
+    content:
+      key: parse
+      label: What the parser keeps, and what is drawn
       kind: md
       doc: |
-        # .guide — Guide
+        **The parse.** An unparseable file opens as a guide titled "Guide" with no steps. A
+        decision with no `label` takes its `key`, then "Question N"; a `key` missing is slugged
+        from the label (lower-case, runs of anything but letters and digits become `-`, at most
+        48 characters). Answers do the same with "Answer N". A step with no `label` reads "Step N";
+        `body` is read as `detail`; `negotiable` is kept only as `fixed`, `scope` or `date`;
+        `emphasis` only when exactly `true`; `when`, `after` and `activates` only when non-empty.
 
-        ## The engine's own account (packages/filekinds/src/lib/guideDoc.ts)
+        **What is drawn.** When the guide has decisions, a strip at the top: "Narrow this · N of
+        M steps apply" and one pill per answer on the table. Under it, the steps as numbered rows
+        — the number, the label, `effort` as the row's meta, a `fixed` badge ("Cannot be dropped
+        or moved — a schedule works around it"), an amber number and border for `emphasis`. Every
+        step shows on open: a step stays while its questions are unanswered, so the procedure
+        opens whole and narrowing REMOVES. The rows come in dependency order — `after` edges
+        walked Kahn-style, document order as the tie-break — so an unconstrained procedure reads
+        exactly as written.
 
-        `.guide` — one procedure, narrowed by questions.
+        **The surface.** One surface per document in every host, the kind's preview inside
+        `DocumentPreview`; a step's detail is markdown rendered by the same pane a `.md` uses.
+  - key: answered
+    label: An answer is taken
+    trigger: chosen
+    arity: many
+    domain: Narrowing
+    detail: Steps whose conditions no longer hold leave the list; the file is untouched.
+    content:
+      key: narrow
+      label: What narrowing does
+      kind: md
+      doc: |
+        A pill click adds `decision=answer` to the MANUAL answers (replacing any other answer to
+        the same decision); clicking the taken pill again removes it. The effective assignment is
+        derived every time: `pruneLocks` drops answers to questions no longer on the table, to a
+        fixed point, then `impliedLocks` takes any decision down to one available answer without
+        showing it. A "reset" chip appears once anything is answered and drops the manual answers.
 
-        The steps an event actually takes, where some only apply on some branches: a
-        resident transfers, a non-resident cannot, and the middle of the procedure
-        differs while both ends do not. Written as one list per branch you duplicate
-        every shared step, and they drift the first time one is edited.
+        `stepsAt` then keeps a step while every ref in its `when` is either taken or belongs to a
+        question still unanswered — a step goes only once one of its questions has been answered
+        differently. Steps ACCUMULATE: a procedure is not a branch you pick but every instruction
+        that applies to you. The survivors are re-ordered by `after`, edges to removed steps
+        dropped; if what is left has a cycle, the remainder is emitted in document order rather
+        than hidden. The count in the strip updates ("3 of 7 steps apply"). When nothing survives:
+        "No steps for these answers. Either a combination nobody has written a procedure for, or
+        one that cannot happen — worth knowing which."
 
-        So steps carry conditions, and answering removes the ones that do not apply.
-
-        ORDER IS A GRAPH, not a position. A step declares what it comes `after`, so a
-        conditional step slipped into the middle renumbers nothing, and a branch that
-        genuinely runs in a different sequence says so without disturbing its
-        neighbours. This is also the dependency graph a schedule needs — authored
-        once here rather than restated as tasks somewhere else, because two copies of
-        a procedure become two different procedures by the end of the month.
-
-        The assignment is NOT saved. It is not a fact about the business, it is how
-        you narrowed a page, and next week the facts are different. That is the whole
-        difference between this and a playbook, which shares every other part.
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        title: untitled
-        description: One explanation, narrowed by questions.
-        decisions: []
+        None of it is written. The host's `onChange` is never called; reload the file and every
+        question is open again.
+  - key: step-clicked
+    label: A step is clicked
+    trigger: chosen
+    arity: many
+    domain: Narrowing
+    detail: Only a step with a detail is expandable; the detail renders as markdown.
+    hint: Say where the guide is rendering — the detail expands under the row or opens as a pane.
+    content:
+      key: click
+      label: What the click does
+      kind: md
+      by: [host]
+      docs:
+        host=preview: |
+          The row toggles: its detail renders as markdown under it, inside the row's border, and
+          a second click folds it. One step is open at a time. A step with no `detail` has no
+          toggle — the label is the whole task.
+        host=trail: |
+          The row drills: a pane keyed `step:<key>` and titled with the step's label opens in the
+          trail with the detail rendered as markdown, and the row is marked open. A step with no
+          `detail` has no toggle.
+  - key: embedded
+    label: Another kind uses it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: A playbook narrows it with its own answers; a plan reads its steps as work.
+    content:
+      key: elsewhere
+      label: Where a guide turns up
+      kind: brief
+      doc:
+        title: Where a guide turns up
+        description: Two hosts read a guide for what it says, not only to draw it.
+        sections:
+          - title: Inside a playbook
+            body: |
+              A version-1 playbook shows guide files beside it and hands them the playbook's own
+              assignment as `context`; a guide conditions on it without owning it — a ref in
+              `context` counts as taken by `stepsAt`, and the pills show it as given rather than
+              chosen. A version-2 playbook writes a guide in as `content: {kind: guide, doc: {...}}`
+              and renders it under the synthetic name `inline.guide`; the playbook's checker runs
+              `parseGuide` over it, named `event <key>: <label> (guide)`.
+          - title: In a plan
+            body: |
+              A `.plan` reads the guides its playbooks show and turns their steps into tasks —
+              `effort` is the duration, `after` the dependencies, `negotiable` how far the schedule
+              may move each one. The guide is the single copy of the procedure; the plan never
+              restates it.
+          - title: Annotations
+            body: |
+              Each row is an annotation target `step:<key>`, so a sidecar of notes can ring a step
+              and explain it on click.
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Narrowing
+    detail: The host re-reads; the answers taken so far are kept and re-pruned against the new questions.
+    content:
+      key: reread
+      label: What survives a re-read
+      kind: md
+      doc: |
+        The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
+        events or VS Code's text document deliver the new text; the Studio re-reads unless its
+        autosave is dirty, saving or in error. The preview re-parses. The manual answers are state,
+        so they survive — pruned against the new decisions, so an answer to a question that was
+        removed disappears — and the open step stays open if its key still exists.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — the parser never refuses, so the verdict is about the YAML.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, the summary line, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `parseGuide` — it never throws.
+          - title: The summary line
+            body: |
+              The command line prints `N steps`. The page prints `N steps, N decisions`; there the
+              guide is not offered in the menu — it is checked because a playbook may carry one
+              written in — so a guide reaches the page only inside a playbook.
+          - title: Not checked
+            body: |
+              An `after` naming a key that does not exist (the edge is dropped, quietly). A `when`
+              naming a decision the guide does not have (the step stays forever, since that question
+              is never answered). A cycle in `after` (the order degrades to document order). Whether
+              `effort` is a duration a plan can read.
+  - key: authored
+    label: A guide is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a guide
+        description: From the template to a procedure that narrows — one file, no answers in it.
         steps:
-          - label: First step
-            detail: What to do and why.
-        ```
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template guide > new.guide`:
+
+              ```yaml
+              title: new
+              description: One explanation, narrowed by questions.
+              decisions: []
+              steps:
+                - label: First step
+                  detail: What to do and why.
+              ```
+          - key: steps
+            label: Write every step that could apply
+            after: [template]
+            detail: |
+              One row per instruction, with a `key` so edges can name it. Put the whole procedure
+              in — every branch's steps — because narrowing removes; nothing is revealed later.
+          - key: questions
+            label: Write the questions that remove steps
+            after: [steps]
+            detail: |
+              One decision per question whose answer makes some steps not apply, then `when:
+              [decision=answer]` on those steps. A step with no `when` always applies.
+          - key: edges
+            label: Say what comes after what
+            after: [steps]
+            detail: |
+              `after: [key]` where the order matters; leave it off where document order is the
+              order. An edge to a step another branch removes is fine — it is dropped with it.
+          - key: work
+            label: Add what a schedule needs
+            after: [edges]
+            detail: |
+              `effort` and `negotiable` on steps a plan will schedule; `emphasis: true` on the step
+              the guide exists for.
+          - key: check
+            label: Check it
+            after: [questions, work]
+            detail: |
+              `studio-check new.guide` prints the step count. Then open it and answer each question
+              both ways: a step that never leaves has a `when` naming a decision that is not there.

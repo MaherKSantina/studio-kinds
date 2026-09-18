@@ -1,46 +1,227 @@
 version: 2
 title: How a version-1 moves works
-description: 'The .moves kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: A working memory's movement log, harvested by looking — every open diffs the store against the snapshot kept in the file's tail, appends what moved, and writes the tail back with the head untouched.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the two halves of the file, what an event is, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: A pointer at the top, machine state under a banner at the bottom.
+        sections:
+          - title: The head
+            body: |
+              | key | what it is |
+              |---|---|
+              | `title`, `description` | the heading and one line under it |
+              | `memory` | the `.memory` this log follows — an absolute store path |
+              | `keep` | how many events the log keeps: 10 to 1000, default 200 |
+
+              Everything above the banner is the author's and is never re-serialised.
+          - title: The tail
+            body: |
+              ```yaml
+              # Movement state. Written by the moves view — keep last.
+              snapshot:
+                at: 2026-09-19T08:00:00.000Z
+                mapping:                       # every unit → its answer path at the last look
+                  - {p: /desk/notes.md, a: focus=jobs/hunt=pipeline, l: Jobs › Pipeline, s: 1200, k: prose}
+                shape:                         # each decision's named answers and what activates it
+                  - {d: hunt, v: [pipeline, closed], e: [focus=jobs]}
+              events:
+                - {at: …, kind: node-moved, node: notes, from: Jobs › Pipeline, to: Jobs › Closed, ctx: {…}, fromCtx: {…}}
+              ```
+
+              `p` is the unit's path, `a` its answer-path key, `l` the human labels joined " › "
+              (kept so departed units stay legible), `s` its size in characters, `k` its
+              structure class — `node` (a structured `.node`), `structured` (a list, a policy, a
+              board…), `prose` (`.md`, `.brief`, `.txt`, `.html`), or `other`. The store keeps no
+              history, so this snapshot is how movement is reconstructed honestly.
+          - title: The events
+            body: |
+              | kind | when |
+              |---|---|
+              | `node-moved` | a unit's answer path changed — renamed, refiled, or the criteria re-claimed it |
+              | `arrived` / `gone` | units entering or leaving a path, counted per path |
+              | `answer-moved` | a named answer changed decisions; `parked` when it moved under an "Everything else", `retrieved` when it came back out |
+              | `answer-added` / `answer-removed` | the unpaired cases |
+
+              Every node event carries the PRESSURE CONTEXT of the affected focus at that moment —
+              `files`, `kb`, `nodes`, `structured`, `prose` — the labelled observation a pressure
+              policy is fitted from.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/movesDoc.ts` — `parseMoves`, `parseMovesState`,
+              `computeSnapshot`, `diffMoves`, `pressureAt`, `unitKindOf`, `decisionContext`,
+              `writeMovesState`; its header comment is what `studio-check --spec moves` prints. It
+              reads the memory through `memoryDoc.ts` and `components/memory/memoryLoad.ts`. The
+              view is `components/moves/MovesView.tsx`; the checker is `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: The memory is read over its store, reality is snapshotted, the LIVE file's snapshot is diffed against it, and the tail is written when anything moved.
+    content:
+      key: harvest
+      label: The harvest, step by step
+      kind: brief
+      doc:
+        title: The harvest, step by step
+        description: Looking is what writes the log.
+        sections:
+          - title: The parse
+            body: |
+              `parseMoves` never throws: the title ("Moves"), `memory` (empty when absent), `keep`
+              clamped to 10–1000 or defaulted to 200. Without a memory: "The moves doc names no
+              memory: add `memory: /memory/desk.memory`." and nothing else happens.
+          - title: Reality
+            body: |
+              "Diffing against the last look…" while the memory is read and laid over its folder
+              — folder splits and nested memories included, the way the memory view sees it — and
+              every unit passing the memory's include rules is placed on its answer path. That is
+              the current snapshot: units sorted by path with size and kind, and the shape of every
+              decision with the refs that activate it.
+          - title: The last look
+            body: |
+              The prior snapshot is read from the LIVE file on disk — never this tab's copy — so
+              two windows cannot fight over it. With a prior snapshot, `diffMoves` produces the
+              fresh events; without one this open is the baseline. The log is the prior events
+              plus the fresh ones, cut to the last `keep`.
+          - title: The write
+            body: |
+              Only when something was harvested, or the baseline is being laid, and the host has a
+              writer and a path: `writeMovesState` keeps the head byte-for-byte up to the banner
+              (or up to `snapshot:` in a file with no banner yet), dumps the new snapshot and log
+              under the banner, writes the file, and hands the text to `onChange`. An unchanged
+              world writes nothing, so looking does not churn the store.
+          - title: What is drawn
+            body: |
+              The title, the memory's path with a copy-handle button, the description. "Since last
+              look · <when>" with "Baseline recorded — movement shows from the next change
+              onward.", "Nothing moved.", or one line per fresh event. "Movement log · N events
+              kept", newest first, or "Empty — it fills as things move." An event line reads
+              `<time> · notes — Jobs › Pipeline → Jobs › Closed`, `3 arrived → Jobs › Pipeline`,
+              `1 left — Jobs › Closed`, `answer jason parked under Everything else — Fatin → Fatin
+              › Everything else`, `answer x added under …`, `answer x removed from …`.
+  - key: moved
+    label: Something moved since the last look
+    trigger: imposed
+    arity: many
+    domain: Harvesting
+    detail: What the diff makes of a difference — each rule, in the order it runs.
+    content:
+      key: diff
+      label: How a difference becomes an event
       kind: md
       doc: |
-        # .moves — Moves
+        **Nodes, by store path.** A unit present now and absent before joins `arrived`, counted
+        per destination label. A unit present in both with a different answer path is
+        `node-moved`, from the old label to the new, with the pressure context of the new focus
+        (`ctx`) and of the old one (`fromCtx`). A unit absent now joins `gone`, counted per old
+        label. Arrivals and departures carry the context of their focus too.
 
-        ## The engine's own account (packages/filekinds/src/lib/movesDoc.ts)
+        **Answers, by `decision=value` pair.** The pairs of the old shape and the new are
+        compared. A pair removed whose value reappears under another decision is `answer-moved`:
+        `parked` when, in the NEW shape, the destination's activation chain passes through the
+        source's "Everything else"; `retrieved` when, in the OLD shape, the source hung under the
+        destination's. The from and to are the decisions' places in the memory's words — the
+        labels of the answers that activate them, root first. A pair removed with no new home is
+        `answer-removed`; a pair added with no old one is `answer-added`. The recorded shape
+        answers even after the live memory forgot the parked decision.
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Harvesting
+    detail: The head re-parses; the harvest runs again only when the memory or the keep changed.
+    content:
+      key: reread
+      label: What is re-read
+      kind: md
+      doc: |
+        The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
+        events or VS Code's text document deliver the new text — including the view's own write
+        coming back — and the Studio re-reads unless its autosave is dirty, saving or in error.
+        The head re-parses. The harvest runs again only when `memory` or `keep` changed; a tail
+        edited by hand is simply read on the next harvest, and the store moving is not watched at
+        all — reopen the file to look again.
+  - key: elsewhere
+    label: Another kind reads it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: The log is a record; the pulse is the other face of the same movement.
+    content:
+      key: elsewhere
+      label: The moves beside the pulse
+      kind: md
+      doc: |
+        A `.pulse` draws the same memory's movement from the store's timestamps — derived live,
+        never harvested — and departures leave no trace there; this log owns them. The pressure
+        contexts on node events are what a policy over the working memory's pressure is fitted
+        from. Nothing reads the tail but this view and that fitting.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — the parser never refuses.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `parseMoves` — it never throws. No summary line.
+          - title: Not checked
+            body: |
+              That `memory` is present or exists (the view says so). That `keep` was in range (it
+              is clamped or defaulted, quietly). That the tail is well-formed (a bad snapshot reads
+              as none, and the next open lays a new baseline).
+  - key: authored
+    label: A moves log is started
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Starting one
+      kind: guide
+      doc:
+        title: Start a moves log
+        description: Three lines, then look.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template moves > desk.moves`:
 
-        The `.moves` kind — WHAT MOVED, harvested by looking.
+              ```yaml
+              title: "desk"
+              description: "What moved in a working memory, harvested by looking: …"
+              memory: /desk.memory   # the .memory this log follows — an absolute store path
+              keep: 200
+              ```
 
-        The store keeps no history, so movement is reconstructed the honest way:
-        the moves document carries a SNAPSHOT of "unit → answer path" (and the
-        decisions' shape) from the last look, and every open diffs reality
-        against it. The differences are movement events — appended to the
-        document's log, snapshot replaced — so the file accumulates a real
-        movement history as a side effect of being read:
-
-          node-moved      a unit's answer path changed (renamed, refiled, or the
-                          criteria re-claimed it)
-          arrived / gone  units entering or leaving a path (aggregated per path)
-          answer-moved    a NAMED answer changed decisions — flagged `parked`
-                          when it moved under an else (Jason's pattern), and
-                          `retrieved` when it came back out
-          answer-added / answer-removed — the unpaired cases
-
-        The doc's head is a pointer (`memory:` + `keep:`); the tail is machine
-        state under a banner, same head-preserving contract as locks and tags.
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        title: "untitled"
-        description: "What moved in a working memory, harvested by looking: every open diffs the store against the last snapshot and appends the differences to the log kept below the banner."
-        memory: /desk.memory   # the .memory this log follows — an absolute store path
-        keep: 200
-        ```
+              Point `memory` at the memory, as an absolute store path.
+          - key: baseline
+            label: Open it once
+            after: [template]
+            detail: |
+              The first open lays the baseline: the tail is written under the banner and "Baseline
+              recorded" shows. Nothing is an event yet.
+          - key: look
+            label: Open it after things move
+            after: [baseline]
+            detail: |
+              Every later open harvests the differences and appends them. Never edit below the
+              banner; the head above it is yours and survives every write.

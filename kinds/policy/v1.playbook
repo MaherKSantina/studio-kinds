@@ -1,122 +1,535 @@
 version: 2
 title: How a version-1 policy works
-description: 'The .policy kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: One extension, six documents — the bucket machine, a run over a list, a tags policy, an order policy, a table policy, and a ranking — how the file's role is picked, what each role draws, what each click does, and where the same rules are applied from elsewhere.
+decisions:
+  - key: role
+    label: Which role does the file play?
+    detail: Picked from the text before anything is drawn — see "How the role is picked" under Always.
+    values:
+      - key: bucket
+        label: The bucket machine
+        detail: No `role`, no `policy`+`items` — params, an ordered switch of cases, buckets. The default.
+      - key: run
+        label: A run
+        detail: "`policy:` and `items:` — the policy applied to every row of a list."
+      - key: tags
+        label: A tags policy
+        detail: "`role: tags` — dimensions with derive rules; stage one of the chain."
+      - key: order
+        label: An order policy
+        detail: "`role: order` — a ranking over tag combinations; stage two of the chain."
+      - key: table
+        label: A table policy
+        detail: "`role: table` — rules over data rows, applied by a `.jsonl`."
+      - key: ranking
+        label: A ranking
+        detail: "`decisions:` and `items:` at the top level — buckets that fall out of answers, with hand tags written back."
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — how the role is picked, the shape of each, the one clause vocabulary, and where the engines live.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shapes of the file
+      kind: brief
+      doc:
+        title: The shapes of the file
+        description: Six documents share the extension; the text decides which one it is.
+        sections:
+          - title: How the role is picked
+            body: |
+              In this order, before anything is drawn:
+
+              1. A line `decisions:` AND a line `items:` at column 0 → a RANKING (`parseRanking`).
+              2. `role: tags` (or `role: decisions`) → a tags policy; `role: order` → an order policy;
+                 `role: table` → a table policy (`parsePolicyKindFile`).
+              3. `policy:` and `items:` both present → a run (`parsePolicyFile`).
+              4. Anything else → the bucket machine (`parsePolicy`).
+
+              The checker takes only the `role: table` branch apart; every other text goes through
+              `parsePolicyFile`, which never throws.
+          - title: The bucket machine
+            body: |
+              ```yaml
+              title: Triage
+              params:
+                - {key: name, label: Name, type: string}      # string (default) | number | boolean
+              buckets:
+                - {key: "yes", label: "Yes", start: "09:00", end: "10:30"}   # start/end optional — a timeslot
+                - {key: "no", label: "No"}
+              default: "no"                                   # omitted = the built-in "unmatched"
+              cases:                                          # an ordered SWITCH; first match wins and stops
+                - label: The first filter
+                  when: [{param: name, op: not_empty}]        # ALL clauses must hold; empty = always
+                  bucket: "yes"
+              ```
+
+              Deterministic: no dates, no randomness, no IO. A case without a `bucket` is dropped;
+              a clause without a `param` or with an unknown `op` is dropped from its case — the
+              switch stays strict so it never guesses.
+          - title: A run
+            body: |
+              ```yaml
+              title: This week's leads
+              policy: order.policy        # a bucket policy, or an order policy (the chain)
+              items: leads.list           # the rows
+              map: {text: [label, summary], salary: pay}   # param → list column(s); "label" is the row's label
+              date: 2026-09-19            # the day the run stands at (the calendar face)
+              ```
+          - title: A tags policy
+            body: |
+              ```yaml
+              role: tags
+              title: Lead facts
+              params: [{key: text, type: string}]
+              tags:                                   # `decisions:` reads the same
+                - key: platform
+                  label: Platform
+                  values: [ios, android, {key: other, label: Other}]
+                  derive:                             # ordered; first match tags; no `when` = the default
+                    - {value: ios, when: [{param: text, op: contains, value: [swift, ios]}]}
+                    - {value: other}
+                - key: fit
+                  label: Fit
+                  values: [good, poor]
+                  from:                               # COMPUTED from dimensions ABOVE it — refs, or a mapping
+                    - {value: good, when: {platform: ios}}
+                    - {value: poor}
+                  hidden: true                        # plumbing: tags, but Input panes skip it
+              ```
+
+              A clause in `derive` without an `op` means `contains`. A `from` mapping value may be
+              a list — `{seniority: [senior, unstated]}` — the value-OR ref `seniority=senior|unstated`.
+          - title: An order policy
+            body: |
+              ```yaml
+              role: order
+              title: What to chase first
+              tags: facts.policy          # the tags policy it consumes, relative to this file
+              order:                      # best first; position IS rank; first match wins
+                - {label: iOS, when: {platform: ios, fit: good}}
+                - {when: [platform=android]}
+                - {}                      # no refs: everything left — least priority IS excluded
+              ```
+
+              There is no veto lane. Items nothing claims are UNRANKED — parked, never discarded —
+              which only happens without a catch-all entry.
+          - title: A table policy
+            body: |
+              ```yaml
+              role: table
+              title: Within the price band, cheapest first      # a name for the RULES, never the data
+              where:
+                - {field: available_for_dates, op: is_true}
+                - {field: best_offer.price_total_aud, op: between, value: [600, 2000]}
+              sort: [{field: best_offer.price_total_aud, dir: asc}]
+              columns: [name, sleeps, best_offer.price_total_aud, "*"]
+              hide: [images]
+              limit: 100
+              ```
+
+              It knows nothing about the data: `source` and `rename` are refused, since the
+              `.jsonl` that applies it names the sources and the header labels.
+          - title: A ranking
+            body: |
+              ```yaml
+              title: Leads, ranked
+              items: leads.list
+              map: {text: [label, summary]}
+              decisions:
+                - key: platform
+                  label: Platform
+                  values: [ios, other]
+                  derive: [{value: ios, when: [{param: text, op: contains, value: swift}]}, {value: other}]
+              ranking:                    # priority order; a group is a predicate over answers
+                - {label: iOS roles, when: {platform: ios}}
+                - {label: Everything else, when: []}
+
+              # Answers taken by hand. Written by the ranking view — keep last.
+              tags:
+                "Lead title": [platform=ios]
+              ```
+
+              A row's answer to a decision comes from a hand tag first, then a list field named
+              like the decision, then the first derive rule that holds; failing all, it is
+              UNANSWERED — a real state, not a zero.
+          - title: The clause vocabulary
+            body: |
+              One vocabulary everywhere a clause is written — cases, derive rules, `where`, a
+              middleware's rules, a memory's include: `equals`, `not_equals`, `contains`,
+              `not_contains`, `starts_with`, `ends_with`, `matches` (regex, case-insensitive), `gt`,
+              `gte`, `lt`, `lte`, `between` (`[low, high]`, inclusive), `in`, `not_in`, `is_empty`,
+              `not_empty`, `is_true`, `is_false`. String matching is case-insensitive; a text op
+              takes one value or a list (any of them; none of them for the `not_` ops); an empty
+              value is unknown, so numeric clauses fail on it; a bad regex simply fails. YAML
+              booleans as values read as `yes`/`no`.
+          - title: Where the engines live
+            body: |
+              `packages/filekinds/src/lib/policyDoc.ts` — `parsePolicy`, `parsePolicyFile`,
+              `parseClauses`, `clauseHolds`, `applyPolicy`, `bucketOrder`, `inputForRow`,
+              `hasTimedBuckets`; `policyChain.ts` — `parseTagsPolicy`, `parseOrderPolicy`,
+              `parsePolicyKindFile`, `deriveTags`, `applyOrder`, `whenHolds`; `tablePolicy.ts` —
+              `parseTablePolicy`, `applyTablePolicy`, `clauseSentence`, `rulesSummary`;
+              `rankingDoc.ts` — `parseRanking`, `answerFor`, `assignmentFor`, `rankOf`,
+              `writeTags`. The headers of the first three are what `studio-check --spec policy`
+              prints. The view is `components/policy/PolicyView.tsx`, which hands the other roles
+              to `PolicyRunView`, `TagsPolicyView`, `OrderPolicyView`, `TablePolicyView`,
+              `RankingView` and `DaySchedule`; the checker is `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: The role is picked, the parse never throws, and the role's own view is drawn — a run and a ranking read other files first.
+    hint: Say which role the file plays — each is parsed and drawn differently.
+    content:
+      key: draw
+      label: What is parsed and drawn
+      kind: md
+      by: [role]
+      docs:
+        role=bucket: |
+          **The parse.** `parsePolicy`: the title ("Policy" when absent), the params (a `key` is
+          required; `type` other than `number` or `boolean` reads as `string`), the cases (a
+          `bucket` is required; each clause needs a `param` and a known `op`, else it is dropped
+          from the case), the buckets (a `key` is required; `start`/`end` kept only as `HH:MM`),
+          and `default`.
+
+          **What is drawn.** Three panes under the title. "Input parameters": one field per param
+          — a checkbox for a boolean, a number box, a multi-line text box — or "No params
+          declared.", and "Apply policy". "Switch — first match wins": every case numbered, its
+          label (or "case N"), a `→ bucket` chip, and its clauses as `when name not empty` lines
+          ("always" for none); under them a dashed "no case matches → <default>" row. "Buckets":
+          "Apply the policy to an input — it lands here, grouped by bucket." until something is
+          applied. Nothing is read from disk.
+        role=run: |
+          **The parse.** `parsePolicyFile` sees `policy` and `items`: the title ("Policy run"),
+          `map` (a string or a list per param), and `date` only as `YYYY-MM-DD`.
+
+          **The read.** "Applying the policy…" while the policy file (`parsePolicyKindFile`) and
+          the list (collated, if it has sources) are read, both resolved against this file's
+          folder. A bucket policy: every row is mapped (`label` is the row's label, anything else
+          a field, several joined with a space) and sent through the switch. An order policy: the
+          chain — the tags policy named by the order is read relative to it, each row is tagged
+          (`deriveTags`) and then ranked (`applyOrder`). Any other role: "The run's policy is a
+          <role> document — point it at a policy or an order policy." with a Reload chip; an
+          unreadable file shows its error the same way.
+
+          **What is drawn.** The header: the title, `N items · <policy title>`, `· tagged by
+          <tags title>` for a chain, `· reloaded HH:MM:SS` after a reload; a "Calendar" chip when
+          the policy's buckets carry hours; "Rules" (bucket) or "Order policy" (chain) and
+          "Reload" chips; on a phone, Items / Buckets toggles. Left: the list exactly as its own
+          view renders it. Right: the same rows grouped in the policy's order — the buckets as
+          declared, then buckets only cases name, then the default; or the ranks best first, then
+          "Unranked" when the order has no catch-all — with a pill per group carrying its count,
+          and on each row a chip: `rule N: <label>`, "no rule matched — default", or "nothing
+          claimed it — parked". The Calendar face lays the rows at their buckets' hours on the
+          run's `date`, with an "Unscheduled" strip for buckets with no times.
+        role=tags: |
+          **The parse.** `parseTagsPolicy`: `tags` (or `decisions`) → dimensions with a `key`
+          (required), label, detail, values (a bare string, or `{key, label, detail}`), `derive`
+          rules (a `value` is required; clauses lenient — no `op` means `contains`, an unknown op
+          drops the clause), `from` rules (refs, or a mapping; a list value becomes a value-OR
+          ref), and `hidden`. The params are read the bucket machine's way.
+
+          **What is drawn.** The header: the title and "tags policy — rules are tested top to
+          bottom within each dimension; the first match tags it". One card per dimension: its
+          label, one chip per value, "computed" when it has `from` rules ("Computed from the
+          answers of the dimensions above it, not from the item's params"), "hidden" when it is
+          plumbing, its detail, then the rules numbered — a clause line in monospace (or the refs
+          in the dimensions' words for a computed rule; "otherwise (default)" for a rule with
+          none) and a `→ value` chip; "No rules — this dimension is never tagged."; "no rule
+          matches → untagged" when no rule is a default. Under the cards, "What it reads": the
+          params with their types. Nothing is read from disk.
+        role=order: |
+          **The parse.** `parseOrderPolicy`: the title ("Order"), the `tags` ref, and the
+          entries — label, detail, `when` as refs or a mapping (a list value → value-OR).
+
+          **The read.** The tags policy is read relative to this file; without a `tags` ref:
+          "This order policy names no `tags:` document."; an unreadable one shows its error.
+
+          **What is drawn.** The header: the title, "order policy — tag combinations ranked,
+          position is priority", and a "Tags policy" chip. Left, "Input — tags": "from <tags
+          title> — pick values to watch where the combination ranks", then the visible
+          dimensions as playbook-style pills. Right, "Output — the order, best first": every
+          entry numbered with its label, one chip per ref (`Platform: iOS`, "or" for a value-OR
+          ref), and its detail; "anything" for an entry with no refs; "No entries — nothing is
+          ranked." when empty; and, only when no entry is a catch-all, a dashed "anything left —
+          unranked, parked" row.
+        role=table: |
+          **The parse.** `parseTablePolicy`, with problems: `where N: no field` / `no op` /
+          `unknown op "x"`, `sort N: no field` / `dir must be asc or desc, not "x"`, `rename:
+          header labels belong to the .jsonl that applies this policy ($labels), not to the
+          rules`, `source: the data is named by the .jsonl that applies this policy ($sources),
+          not by the rules`, `limit: must be a positive number`. `field` and `param` both read.
+
+          **What is drawn.** The title (else the file's name, else "Table policy") and
+          description; the problems in an amber box; then the rules in words — "Keeps the rows
+          where" (one sentence per clause: "price between 600 and 2000", "name contains any of
+          “caravan”, “truck”"; or "every row — no filters"), "In the order" (`field` ascending or
+          descending; or "as they come from the sources"), "Showing the columns" (the listed
+          columns as chips, less the hidden; "every column the rows carry, except the hidden
+          ones"; "Hidden: …"; "At most N rows."). The rows are never here: they belong to the
+          `.jsonl` that names its sources and this policy.
+        role=ranking: |
+          **The parse.** `parseRanking`: the title ("Ranking"), `items`, `map`, the decisions
+          (`key` required; values bare or `{key, label, detail, activates, when}`; `derive`
+          rules with lenient clauses), the groups (`label` required; `when` as refs or a
+          mapping), and the `tags` block (row label → refs).
+
+          **The read.** "Working out the answers…" while the list is read, collated if it has
+          sources. Every row is mapped like a run's, then answered decision by decision — a hand
+          tag, else a list field named like the decision (matched on key or label,
+          case-insensitively), else the first derive rule whose clauses hold, else unanswered —
+          and the first group whose refs the answers meet claims it; none, and it is unranked.
+
+          **What is drawn.** The header: the title, `N rows · N decisions · N groups`, `· N with
+          an open question` when any row has an unanswered decision, and a "Reload" chip. Left:
+          the list as its own view. Right: the rows grouped by rank, best group first, "Unranked"
+          last, with a pill per group and a per-row line of its answers; or the Decisions panel —
+          per decision, every value with how many rows took it, "N tagged · N from the list · N
+          by rule", the derive rules in order, and "Used by N groups: …" or "No group names this
+          decision — it labels rows but does not rank them."; "No decisions yet — add a
+          `decisions:` block and every row gains an answer." when there are none.
+  - key: applied
+    label: An input is applied
+    trigger: chosen
+    arity: many
+    domain: Using
+    when: [role=bucket]
+    detail: The form is sent through the switch; the item lands in its bucket; nothing is written.
+    content:
+      key: apply
+      label: What Apply policy does
       kind: md
       doc: |
-        # .policy — Policy
+        The form's values become one input — a boolean from its checkbox, a number from its box
+        (empty stays empty, and a numeric clause then fails), text as typed. `applyPolicy` walks
+        the cases in order; the first whose clauses all hold wins and the switch stops; none, and
+        the item takes `default` (or "unmatched"). The winning case lights up in the middle pane
+        (or the dashed "no case matches" row). The item joins the right pane under its bucket's
+        heading, labelled with the first string param's value (or "item N") and `case N` or
+        "default". Apply again and the items accumulate — the same 1-D grouping a project gets
+        for a list run through the policy. "clear" empties them. The file is untouched.
+  - key: combination-picked
+    label: A combination is picked
+    trigger: chosen
+    arity: many
+    domain: Using
+    when: [role=order]
+    detail: Tag pills build a combination; the order says where it lands.
+    content:
+      key: pick
+      label: What the pills do
+      kind: md
+      doc: |
+        Each pill click takes or drops one answer (one per dimension). With any answer taken,
+        `applyOrder` walks the entries top to bottom; the first whose refs all hold — a value-OR
+        ref holding when any alternative is taken — "claims it" and is outlined; an entry lower
+        down that would also hold reads "also matches" ("the order stops at the first match");
+        entries that accept every chosen answer but are not yet satisfied are lightly outlined
+        as candidates; with nothing claiming it, the dashed row reads "lands here". "clear" drops
+        the answers. The "Tags policy" chip opens the tags policy in a dialog — one level down,
+        where each value is derived from an item. Nothing is written.
+  - key: value-clicked
+    label: A value is clicked
+    trigger: chosen
+    arity: many
+    domain: Using
+    when: [role=tags]
+    detail: The rules that produce that value stay bright; the others dim.
+    content:
+      key: highlight
+      label: What the click does
+      kind: md
+      doc: |
+        "Where does Platform = iOS come from?" is one click: the value's chip turns solid and
+        every rule in the card that does not yield it fades, so the ordered rules that produce it
+        read on their own. A second click clears it. One value per card; nothing is written.
+  - key: run-row-clicked
+    label: A grouped row is clicked
+    trigger: chosen
+    arity: many
+    domain: Using
+    when: [role=run]
+    detail: Why it landed there — the tags it took or the case that claimed it, and what the policy saw.
+    content:
+      key: why
+      label: The why dialog, and the header chips
+      kind: md
+      doc: |
+        The dialog names the row and its group, then: for a chain, every dimension's answer with
+        how it came to be (the rule's label, its refs in the dimensions' words, "default", or
+        "untagged"); for a bucket policy, the case that claimed it with its clauses, or "no rule
+        matched"; then "what the policy saw" — the mapped input, param by param — and the row's
+        own fields with any link a click away. A row on the calendar face opens the same dialog.
 
-        ## The engine's own account (packages/filekinds/src/lib/policyDoc.ts)
-
-        The `.policy` kind — a DETERMINISTIC input → filter → bucket machine.
-
-          params  — the typed input parameters an item carries.
-          cases   — an ordered SWITCH: each case is a filter (clauses ANDed) over
-                    the params plus the bucket it assigns. First match WINS and
-                    the switch stops — buckets are mutually exclusive.
-          buckets — the declared outputs; `default:` names the bucket for items
-                    no case claims (omitted = the built-in "unmatched" bucket).
-
-        Applying the policy to ONE item answers {bucket, case}; applying it to a
-        LIST answers the 1-D grouping a OneDList renders directly. Everything in
-        here is pure — no dates, no randomness, no IO.
-
-        ## Also (packages/filekinds/src/lib/policyChain.ts)
-
-        The POLICY CHAIN — triage factored into two documents instead of one switch.
-
-          tags policy (`role: tags`) — reads an item's params and TAGS it along a
-            set of dimensions (crosscut `SpaceDecision`s — same shape, but these
-            are facts about the content, not judgements). A dimension carries
-            ordered `derive` rules (clauses over the params → a value) or, for a
-            COMPUTED dimension, ordered `from` rules (refs over the answers of
-            dimensions declared ABOVE it → a value) — how several raw answers
-            collapse into one the order can name ("undesired employer" from two
-            employers). Either way the first matching rule tags it and a rule
-            with no conditions is the default. `hidden: true` marks a dimension
-            as plumbing: it still tags, but Input panes and answer groups skip
-            it — the computed dimension is the face, the raw one the mechanism.
-
-          order policy (`role: order`) — the judgement: a RANKING over tag
-            combinations, and nothing else. An entry is just a `when` predicate
-            (`dimension=value` refs, ANDed); its POSITION IS ITS RANK, top to
-            bottom, first match wins; its label falls out of the values it names.
-            There is no veto lane: a "bad" combination is simply an entry near the
-            bottom, and the entries above it carry the refs that keep it out of
-            them (exactly how a ranking group writes `employer=open`). An entry
-            with no refs takes everything left — least priority IS excluded.
-            Items nothing claims are UNRANKED — parked, never discarded. It names
-            the tags policy it consumes via `tags:`, which is what makes the chain
-            navigable: run → order → tags.
-
-        A run whose `policy:` points at an order policy applies the whole chain
-        per row: map → params → tag values → rank. Everything here is pure — no IO.
-
-        ## Also (packages/filekinds/src/lib/tablePolicy.ts)
-
-        The TABLE role of a `.policy` (`role: table`) — a policy over ROWS: which
-        to keep, in which order, which columns. The file holds RULES only and
-        knows NOTHING about the data: no source, no title for the rows, no header
-        labels. The rows come from the `.jsonl` that applies it — its directive
-        lines name the sources, this policy, and everything said about the data
-        (see dataRows.ts) — read live on every open and never cached, so several
-        `.jsonl` files can share one policy and none can drift from its data.
-
-        Authoring shape (YAML, lenient — a half-written file still renders):
-
-          role: table
-          title, description?                # a name for the RULES ("within the price band, cheapest first"), never the data
-          where:                            # EVERY clause must hold (AND); a row failing one is out
-            - {field: available_for_dates, op: is_true}
-            - {field: best_offer.price_total_aud, op: between, value: [600, 2000]}
-          sort:                             # first key first; a later key breaks ties
-            - {field: best_offer.price_total_aud, dir: asc}
-            - {field: distance_from_narooma_km, dir: asc}
-          columns: [name, sleeps, best_offer.price_total_aud, "*"]   # shown, in THIS order; omitted = every
-                                            # column the rows carry; "*" = every other column, after these
-          hide: [images]                    # subtracted from the columns shown
-          limit: 100                        # at most this many rows
-
-        A `field` is a key of the row, or a DOT PATH into nested objects
-        (`best_offer.price_total_aud`), everywhere a field is named. The ops are
-        the suite's one clause vocabulary (policyDoc.ts): equals, not_equals,
-        contains, not_contains, starts_with, ends_with, matches (regex), gt, gte,
-        lt, lte, between ([low, high]), in / not_in (a list), is_empty, not_empty,
-        is_true, is_false — text ops case-insensitive and taking one value or a
-        LIST (any of them; none of them for the not_ ops: {field: name, op:
-        contains, value: [caravan, truck]}), numeric ops never true for an empty
-        field. An unknown op, a sort direction that is not asc/desc, a
-        column no row carries are PROBLEMS the checker and the view report, not
-        silent drops.
-
-        Apply it from a `.jsonl` beside it — the title and the header labels
-        belong THERE, with the data:
-
-          {"$sources": ["accommodation.json#properties"], "$policy": "cheapest.policy"}
-          {"$title": "Stays by price", "$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)"}}
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        title: untitled
-        description: Input in, bucket out — the switch runs in order and stops at the first match.
-        params:
-          - {key: name, label: Name, type: string}
-        buckets:
-          - {key: "yes", label: "Yes"}
-          - {key: "no", label: "No"}
-        default: "no"
-        cases:
-          - label: The first filter
-            when:
-              - {param: name, op: not_empty}
-            bucket: "yes"
-        ```
+        "Rules" opens the decision table — every case grouped under the bucket it feeds, with how
+        many rows each claimed and how many fell to the default; "Order policy" opens the order
+        policy's own view in a dialog, and from there the tags policy. "Reload" re-reads the
+        policy and the list and applies the rules again, stamping `reloaded HH:MM:SS` in the
+        header — the way an edited rule shows up without reopening. Nothing is written.
+  - key: ranking-row-clicked
+    label: A ranked row is clicked
+    trigger: chosen
+    arity: many
+    domain: Using
+    when: [role=ranking]
+    detail: The row's assignment, as pills — and clicking a pill writes a hand tag into this file.
+    content:
+      key: tag
+      label: The assignment dialog, and what it writes
+      kind: md
+      doc: |
+        The dialog shows every decision's answer as pills with a badge for where it came from —
+        "tagged", "from the list", "by rule", "unanswered" (the one worth seeing) — and the group
+        that claimed the row. Clicking an answer TAGS it: the row's label maps to the ref in the
+        `tags` block; clicking the taken pill again hands the decision back to the rules. Every
+        change goes through `writeTags`: the text above the banner "# Answers taken by hand.
+        Written by the ranking view — keep last." is kept byte-for-byte, comments included, and
+        only the block from the banner down is rewritten, then written straight through the
+        configured writer. The view re-parses its own text and re-ranks at once. A row with no
+        label cannot be tagged. "Reload" re-reads this file, the decisions and the list.
+  - key: applied-elsewhere
+    label: Another kind applies it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: A policy is rules; the data lives in the documents that name it.
+    content:
+      key: elsewhere
+      label: Who applies a policy
+      kind: brief
+      doc:
+        title: Who applies a policy
+        description: The same engines, called from other kinds.
+        sections:
+          - title: A data view
+            body: |
+              A `.jsonl` names a table policy in `$policy`; the composed view reads it live, keeps,
+              sorts, cuts and picks columns with `applyTablePolicy`, reports its problems in the
+              strip, and re-reads it on `studio:fs-changed`. `studio-check --collect` applies it
+              the same way.
+          - title: A journey
+            body: |
+              A stage's `fanout: {run: chain.policy, ranks: [1, 3]}` fans a pool into per-item
+              columns by a run's ranks; a lane's `answers:` evaluates a run's chain for one row and
+              shows every visible dimension's answer and the rank it lands. A policy step with a
+              mini journey opens that journey as its explanation.
+          - title: A memory
+            body: |
+              A `.memory`'s `decisions` block is the ranking's decisions block verbatim — the same
+              `derive` rules and clause engine decide which focus a unit falls under.
+          - title: A collection
+            body: |
+              A `.collection` is where a policy comes FROM: its decisions log the reasons a later
+              policy is written to reproduce.
+  - key: changed-on-disk
+    label: A file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Using
+    detail: This file re-parses and the role is picked again; a file it names is re-read only on Reload or reopen.
+    content:
+      key: reread
+      label: What is re-read
+      kind: md
+      doc: |
+        The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
+        events or VS Code's text document deliver the new text, and the Studio re-reads unless its
+        autosave is dirty, saving or in error. The file re-parses and its role is picked again —
+        a run or a ranking then reads its policy and list afresh, an order policy its tags
+        policy. A change to a NAMED file — the list, the tags policy, the order policy — is not
+        watched: "Reload" (run, ranking) or reopening picks it up. The bucket machine's applied
+        items, the order view's combination and the tags view's highlight are state and stay.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — only the table role has a problem list.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, the summary line, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `role: table` → `parsePolicyKindFile` and its problems; summary `table policy: N
+                 filters, N sort keys, N columns, first N`.
+              3. Anything else → `parsePolicyFile`, which never throws: `ok <name>  Policy` with no
+                 summary. The page does the same.
+          - title: Not checked
+            body: |
+              A case naming a bucket never declared (it is appended to the order). A clause with an
+              unknown op in a case (dropped — the case then matches MORE). A derive rule's unknown
+              op (the clause is dropped). A run's or a ranking's `items`, a run's `policy`, an
+              order's `tags` — none is read. A group's ref naming a decision or a value that does
+              not exist (it never holds). Whether the roles chain to each other.
+  - key: authored
+    label: A policy is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a policy
+        description: From the template to rules that run — the role decides the shape.
+        decisions:
+          - key: want
+            label: What should it do?
+            values:
+              - { key: sort, label: Sort inputs into buckets }
+              - { key: rank, label: Rank a list of rows }
+              - { key: rows, label: Filter and order data rows }
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template policy > new.policy` — the bucket machine, with one param,
+              two buckets, a default and one case. Every other role starts from it by replacing
+              the body.
+          - key: switch
+            label: Write the params, the buckets, then the cases in order
+            after: [template]
+            when: [want=sort]
+            detail: |
+              Declare every param the clauses read, every bucket a case names, and the cases from
+              most specific to least — the first match wins and stops. Give buckets `start` and
+              `end` when a run should draw a day.
+          - key: chain
+            label: Split the criteria from the judgement
+            after: [template]
+            when: [want=rank]
+            detail: |
+              A tags policy (`role: tags`) with one dimension per fact and ordered derive rules,
+              a default rule last; then an order policy (`role: order`) naming it in `tags`, its
+              entries best first, and a catch-all `{}` at the bottom so nothing is parked.
+          - key: run
+            label: Write the run
+            after: [chain, switch]
+            when: [want=rank]
+            detail: |
+              `policy:` the order (or bucket) policy, `items:` the list, `map:` param → the row's
+              columns (`label` for its label). Open it and click rows for why.
+          - key: table
+            label: Write the table rules
+            after: [template]
+            when: [want=rows]
+            detail: |
+              `role: table`, `where` with `field` and `op`, `sort` with `dir`, `columns` with `"*"`
+              for the rest, `limit`. No source, no labels — they belong to the `.jsonl` that names
+              this file in `$policy`.
+          - key: check
+            label: Check it
+            after: [switch, run, table]
+            detail: |
+              `studio-check new.policy` — a table policy prints its problems and summary; the
+              others pass whenever the YAML does, so open them and apply an input, pick a
+              combination, or click a row.

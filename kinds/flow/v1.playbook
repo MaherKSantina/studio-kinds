@@ -1,189 +1,365 @@
 version: 2
 title: How a version-1 flow works
-description: 'The .flow kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: A walkthrough whose screens and edges are parameterised — two YAML documents in one file, a closed parameter space, screens with variants and controls, a walk that keeps its trail in the session and its pins in the views half, and an Ask that edits only the model.
+decisions:
+  - key: host
+    label: Where is it open?
+    values:
+      - key: surface
+        label: The Studio's surface
+        detail: The desktop app, VS Code, the web Studio — the preview with `editable={false}`; the walk and the pins work, the model is edited as text.
+      - key: authoring
+        label: An authoring host
+        detail: A project pane, Flow Studio — an `onChange` and no `editable={false}`; the dialogs, the Raw editor, uploads and Ask write the model half.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the two documents, the model's shape, the when grammar, what it deliberately is not, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: The model, a line that is exactly `---`, then the views the preview writes back.
+        sections:
+          - title: Two documents
+            body: |
+              The file is split on the FIRST bare `---` line. Document 1 is the MODEL,
+              hand-authored. Document 2 is the VIEWS — the saved parameter set and layout; the
+              preview writes back only this half. The thing you explore with is not the thing you
+              author. A broken views document never makes the model unreadable: it reads as empty.
+          - title: The model
+            body: |
+              | key | what it is |
+              |---|---|
+              | `title` | the heading |
+              | `dimensions` | the closed parameter space — name → an ordered, finite list of scalar values |
+              | `defaults` | the starting assignment |
+              | `derived` | dimensions produced by first-match-wins rules — `{name, values, rules: [{when, value}]}`; `value: "= other"` copies a dimension |
+              | `initial` | the screen a walk starts on |
+              | `start_mode`, `entries` | start on `initial`, or from one of the `entries` start events |
+              | `sources`, `default_source` | named versions the file panels read from — `{name, path}` |
+              | `frames` | frames kept inside the flow, by name — a state shows one as `frame: <name>` |
+              | `screens` | the screens |
+
+              A screen: `id` (what edges point at), `title` (unique), `description`, `locals`
+              (its own UI state — reset on every arrival, seen by no other screen), `content`
+              (panels: `{screenshot}`, `{frame, view}`, `{file, source?}`; `screenshot` and
+              `screenshots` are shorthands), `variants` (`{when, title?, content}` — the same
+              screen under a condition), `edges` (its controls: `id`, `event`, `to` or
+              `dispatch` — a precedence-ordered list of `{when, to}`, first match wins — `sets`
+              dimension values established by walking, `when` the control is present only while
+              it holds). A screen that renders differently under different data is ONE screen
+              with variants, and unconditional versus dispatch is a type distinction, not a naming
+              convention.
+          - title: The when grammar
+            body: |
+              A mapping of dimension → condition: a bare value equals; `[a, b]` one of; `"*"`
+              any; `"!x"` not equal. Separate keys AND together; a LIST of mappings ORs
+              alternatives (the only way to say OR across dimensions); `"*"` or `{}` alone is
+              always.
+          - title: The views half
+            body: |
+              ```yaml
+              active: v1
+              views:
+                - id: v1
+                  name: default
+                  layout: {params: {type: a}, tab: screens, focus: checkout, labelVariants: false}
+              ```
+
+              One entry, never surfaced as something to manage: the global pins, the open tab and
+              the focused screen. A pin whose dimension was renamed away is dropped on read; old
+              tab names (`graph`, `navigate`, `play`) map forward. Locals are never persisted.
+          - title: Deliberately not a simulator
+            body: |
+              Derived values are first-match rules over declared literals; there is no
+              arithmetic, no strings, no functions. The point is to validate what is about to be
+              built and stay cheap to author — the moment this needs a real evaluator, the app
+              should be running instead.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/flowOps.ts` — `splitFlowFile`, `joinFlowFile`,
+              `parseFlow`, `dumpFlow`, `parseFlowViews`, `matchWhen`, `readFlow`, `applyDerived`,
+              `resolveVariant`, `resolveEdge`, `availableEdges`, `isOffered`, `traverse`,
+              `reachFlow`, `simulateFlow`, `coverFlow`, `validateFlow`, `validateFlowFile`, and
+              the mutators (`addScreen`, `updateScreen`, `deleteScreen`, `addVariant`,
+              `updateVariant`, `deleteVariant`, `addEdge`, `updateEdge`, `deleteEdge`,
+              `setDimension`, `setScreenLocal`); its header comment is what `studio-check --spec
+              flow` prints. The browser half is `flowEngine.ts` (`parseFlowFile`, `withModel`,
+              `withViews`, `diffFlow`); inline frames `flowFrames.ts`; the Ask vocabulary
+              `flowAsk.ts`. The views are `components/flow/FlowKindView.tsx` → `FlowFileView`,
+              `FlowPreview`, `FlowScreenPage`, `FlowParamBar`, `FlowContentPane`, `FlowMap`,
+              `FlowGapsList`, `FlowFramesList`, the dialogs, `FlowAsk`; the checker is
+              `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: The two halves are parsed, the saved view is read, and the Screens tab is drawn under the parameter bar.
+    hint: Say where the flow is open — the walk is the same; only the authoring controls differ.
+    content:
+      key: draw
+      label: What is drawn
+      kind: md
+      by: [host]
+      docs:
+        host=surface: |
+          **The parse.** The model half through YAML — an error is reported and the preview
+          cannot draw until it is fixed; the views half never throws. The saved view's pins are
+          kept where their dimensions still exist, the tab mapped forward, the focus kept.
+
+          **What is drawn.** A Raw / Preview toggle (Raw a read-only editor here; absent when the
+          host is chromeless) and the tabs: Screens, Map, Missing, Frames, and Changes when the
+          flow is one half of a diff. Above them the PARAMETER BAR — every global dimension with
+          its values, the derived ones read-only. Screens: the list down the side; the focused
+          screen's page shows its resolved rendering — the variant whose `when` holds first, its
+          panels stepped one at a time: a screenshot from `<stem>-assets/`, a file rendered live
+          by its kind, a frame drawn through the canvas fitted to the pane — its STATES listed (a
+          state that does not apply is only dimmed: looking is not walking), its CONTROLS (a dead
+          one dimmed with why it is not offered), and where it was reached from. The trail of
+          crumbs sits above. An empty model shows the empty-flow page; validation problems show
+          in a strip. Nothing here authors: dialogs, uploads and Ask are absent.
+        host=authoring: |
+          **The same parse and page**, plus the authoring surface: the Raw editor writes the model
+          text; on the screen page, add / edit / delete for states and controls through dialogs
+          (a state's `when` and panels; a control's event, `to` or `dispatch`, `sets`, `when`);
+          screenshot uploads that land beside the flow as `<name>-<hash>.<ext>` in
+          `<stem>-assets/`; the frame dialog for a frame beside the flow or an inline one; on the
+          Changes tab, revert and promote per change; and the Ask panel (Ctrl+K). Every mutation
+          runs through `flowOps` on the model half and is re-serialised with `withModel`, so the
+          views half survives every edit.
+  - key: pressed
+    label: A control is pressed
+    trigger: chosen
+    arity: many
+    domain: Walking
+    detail: The edge resolves under the assignment, its sets apply, the next screen's locals reset, and a crumb is appended; nothing is written.
+    content:
+      key: walk
+      label: What a press does
       kind: md
       doc: |
-        # .flow — Flow
+        Only a LIVE control can be pressed — one whose `when` holds under the current
+        assignment. `resolveEdge` takes `to`, or the first `dispatch` branch whose `when` holds;
+        `sets` moves the assignment (a parameter established by walking, like the seller
+        countering); arrival resets the destination's locals; a crumb — the screen, the whole
+        assignment, the event — is appended to the trail. Clicking a crumb rewinds to it and
+        restores the parameters you had then, locals included; restart clears the trail; picking a
+        screen from the list starts a fresh walk there. The trail is session state, kept here
+        because walking is the one thing that spans screens; the file does not change.
+  - key: param-set
+    label: A parameter is set
+    trigger: chosen
+    arity: many
+    domain: Walking
+    detail: A global pin is written to the views half; a local is session-only; everything re-resolves.
+    content:
+      key: params
+      label: What a pin does
+      kind: md
+      doc: |
+        A global dimension picked in the bar becomes a pin in the single view's `params`, written
+        back through `withViews` — the model half untouched — and persisted by the host's
+        autosave, so a reload opens on the same data. A screen's local is set on its page and
+        never saved: locals reset on arrival by definition. Either way the derived dimensions
+        recompute first-match, the screen re-resolves its variant and panels, dead controls dim,
+        the map recolours what is reachable, and "Set parameters to this" on a state applies the
+        assignment that would show it.
+  - key: tab-switched
+    label: A tab is switched
+    trigger: chosen
+    arity: many
+    domain: Walking
+    detail: Map, Missing, Frames and Changes — four other places to stand; the open tab is saved in the views half.
+    content:
+      key: tabs
+      label: What each tab shows
+      kind: brief
+      doc:
+        title: What each tab shows
+        description: Orientation, gaps, frames and the diff.
+        sections:
+          - title: Map
+            body: |
+              The whole graph at once — screens as nodes, controls as edges, a dispatch drawn
+              dashed — for orientation rather than detail; with `labelVariants` on, each node
+              shows its resolved variant's label under the pinned parameters, and reachability
+              under them colours the graph.
+          - title: Missing
+            body: |
+              Every state with no capture of its own — "no capture" or "inherits" the screen's —
+              with the minimal pins that reach it and a "take from original" that copies the
+              screen's panels when authoring.
+          - title: Frames
+            body: |
+              The frames beside the flow and the ones kept inline, with their views; each opens
+              the frame dialog in an authoring host.
+          - title: Changes
+            body: |
+              When the flow is one half of a diff: a typed diff of the model against the base —
+              screens, states, controls, dimensions — with revert and promote per change where the
+              host allows it.
+  - key: edited
+    label: The model is edited
+    trigger: chosen
+    arity: many
+    domain: Authoring
+    when: [host=authoring]
+    detail: A dialog, the Raw editor, an upload or a frame edit — each rewrites the model half only.
+    content:
+      key: edit
+      label: What reaches the file
+      kind: md
+      doc: |
+        A dialog's submit calls the matching mutator — `addScreen`, `updateScreen`,
+        `deleteScreen`, `addVariant`, `updateVariant`, `deleteVariant`, `addEdge`, `updateEdge`,
+        `deleteEdge`, `setDimension`, `setScreenLocal` — on a clone; a refusal (a duplicate title,
+        an unknown screen) shows in the dialog and writes nothing. The Raw editor replaces the
+        model text as typed. An uploaded screenshot is written beside the flow and its key put in
+        the panel. A frame edit is written back under `frames.<name>` or to the file beside. In
+        every case `withModel` re-serialises the model and keeps the views text, the result goes
+        to the host's `onChange`, and the host's autosave writes it (800 ms debounce).
+  - key: asked
+    label: The flow is asked to change
+    trigger: chosen
+    arity: many
+    domain: Authoring
+    when: [host=authoring]
+    detail: One line of instruction from where the reader stands; ops from a closed vocabulary on the model half only.
+    content:
+      key: ask
+      label: What the Ask panel does
+      kind: md
+      doc: |
+        The model reads the flow's MODEL half (the views half stays out), the target — the
+        screen the reader stands on and the state they look at — and the frames beside the flow
+        with their views, and answers with ops from `add_screen`, `update_screen`,
+        `remove_screen`, `add_state`, `update_state`, `remove_state`, `add_control`,
+        `update_control`, `remove_control`, `set_dimension`, `remove_dimension`, `set_local`,
+        `remove_local`, `set_initial`, `set_title`. Screens are named by id or title, states by
+        label or 1-based index, controls by id or event label; conditions and assignments are
+        text in the file's own grammar (`flag: true; type: a|b`; `when -> screen; * -> screen`
+        for a dispatch); a state's `frame` names a `.frame` beside the flow at one of its views.
+        `applyFlowOps` runs them through the same mutators on a clone and re-serialises only the
+        model, so the views survive every turn; refusals become skipped lines. Ctrl+K opens the
+        panel.
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Walking
+    detail: Both halves re-parse; the trail is session state and stays; the pins come from the file.
+    content:
+      key: reread
+      label: What survives a re-read
+      kind: md
+      doc: |
+        The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
+        events or VS Code's text document deliver the new text — the preview's own pin writes
+        included — and the Studio re-reads unless its autosave is dirty, saving or in error. The
+        model and the views re-parse; the trail and the focused screen stay while their ids exist;
+        the pins are whatever the views half now says. A frame or a file a panel renders is read
+        when the panel is next drawn.
+  - key: frames-and-projects
+    label: Another kind meets it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: Frames move into it; projects move them; the Studio opens its inline frames by name.
+    content:
+      key: elsewhere
+      label: Who touches a flow
+      kind: md
+      doc: |
+        - A `.frame` beside the flow is shown by a state's `{frame, view}` panel and edited from
+          the flow's frame dialog; "Move into flow" — from a project pane or a project's Ask —
+          folds the file under `frames.<stem>` and adds a screen when no state showed it.
+        - The Studio opens an inline frame as `?path=<flow>&frame=<name>`.
+        - A `.diff` of two flows renders one as the Changes tab of the other.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — the model's parse error, or the validation catalogue.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, the summary line, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. `parseFlowFile` — a model YAML error is the only problem: `model YAML parse
+                 error: …`.
+              2. `validateFlowFile` — the catalogue: a top-level `edges` (`a control belongs to the
+                 screen it sits on`); `dimensions` not a mapping, a dimension empty or non-scalar;
+                 `derived` names clashing with dimensions, rules whose `value` is not in the
+                 dimension or `"= x"` naming nothing; `initial` not a screen; `start_mode` not
+                 `screen` or `entries`; `sources` malformed, named twice, `default_source`
+                 unknown; a screen without `id` or `title`, a duplicated id or title, `locals`
+                 clashing with a dimension or non-scalar; a variant without a label; a panel with
+                 both `file` and `screenshot` or neither, a `source` not declared, `label` not a
+                 string; a `when` naming an undeclared dimension or a value not in it, a list
+                 `when` whose entries are not mappings, an empty list of alternatives; an edge with
+                 both `to` and `dispatch` or neither, a `to` or a branch's `to` naming no screen,
+                 a `dispatch` that is not a list; a duplicate `event` + `when` on one screen.
+              3. The views half's YAML — `views YAML parse error: …` when it does not parse.
 
-        ## The engine's own account (packages/filekinds/src/lib/flowOps.ts)
-
-        `.flow` — a walkthrough whose screens and edges are PARAMETERISED.
-
-        WHY this exists, and why it is not `.walkthrough` with extra fields:
-
-        A `.walkthrough` state is one screen in one condition. The moment a screen renders differently
-        depending on data — a listing's shipping type, a feature flag, whether the seller already
-        countered — the only way to say so is to author a SECOND state with a different title. That is
-        how a 20-state flow becomes a 40-state flow, and it is where the format starts lying: three
-        edges out of one screen look identical whether they are three buttons the user can choose
-        between or ONE button that dispatches on data the user never sees. The event label is free text,
-        so the distinction survives only as prose ("Continue Free" / "Continue - Free Shipping" /
-        "Shipping - SYI Shipping Free" are all the same idea, written three ways), and the derived `.dag`
-        drops event labels entirely so it cannot survive there at all.
-
-        So this format splits the two axes that `.walkthrough` conflates:
-
-          • DIMENSIONS — the closed parameter space (copied wholesale from `.analysis`: named dimensions
-            with finite ordered value sets, and the same `when` grammar — bare value equals, [a,b] one-of,
-            "*" any, "!x" not-equal). A screen declares VARIANTS over that space instead of splitting
-            into several screens.
-          • EDGES — navigation. An edge is either unconditional (`to:`) or a DISPATCH (`dispatch:` — a
-            precedence-ordered list of when/to, first match wins). Unconditional versus dispatch is a
-            TYPE distinction, so "same button, different data" is no longer a naming convention.
-
-        An edge may also `sets:` dimension values, because some parameters are established by walking
-        the flow rather than fixed before it starts (the seller countering is what makes the buyer see a
-        counter-offer). Without that, every such parameter would have to be ambient and the flow could
-        only ever model one moment.
-
-        DELIBERATELY NOT a simulator of the real app. Derived values are first-match-wins rules over
-        declared literals, not expressions; there is no arithmetic, no strings, no user-defined
-        functions. The point is to validate what is about to be built and stay cheap to author — the
-        moment this needs a real evaluator, the answer is that the app should be running instead.
-
-        FILE SHAPE: two YAML documents separated by a line that is exactly `---`. Doc 1 is the MODEL
-        (hand-authored). Doc 2 is the VIEWS (saved parameter sets and layout; the preview writes back
-        only this half). Same two-document contract as `.analysis`, for the same reason: the thing you
-        explore with is not the thing you author.
-
-        This module is a deliberate COPY of the shapes in walkthrough_ops.ts and analysisEngine.ts
-        rather than an import of either. `.flow` is work in progress and its model will move; sharing
-        code would make every change here a change to two shipped file kinds.
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        # A .flow file is TWO YAML docs separated by a line that is just '---'.
-        # Doc 1 = MODEL (dimensions + screens, each screen carrying its own controls). Doc 2 = VIEWS.
-        #
-        # A .flow is a walkthrough whose screens and navigation are PARAMETERISED. A screen that renders
-        # differently under different data is ONE screen with variants — not several screens with
-        # different titles. Its CONTROLS live on it, in its own `edges:` list; there is no top-level
-        # `edges` and no `from` field, because a button belongs to the page it sits on.
-        #
-        # TWO SCOPES, and choosing between them is the main decision you make here:
-        #   dimensions      — facts about the world that outlive a screen (a flag, what the listing is)
-        #   screen.locals   — that screen's own UI state (which radio is selected, which step you are on).
-        #                     Locals RESET every time you arrive from elsewhere, and no other screen sees
-        #                     them. If only one screen reads it, make it a local.
-        title: untitled
-
-        # Closed, ordered value sets. The whole space is finite so coverage is computable.
-        dimensions:
-          shippingType: [free_shipping, flat_rate, price_on_request]
-          featureFlag: [true, false]
-
-        # The starting assignment for a simulation. Anything omitted is simply unset.
-        defaults:
-          shippingType: flat_rate
-          featureFlag: true
-
-        # First-match-wins rules producing another dimension. `value: "= otherDim"` copies a dimension
-        # instead of writing a literal — enough for "a flag overrides a data value", and no more.
-        derived:
-          - name: effectiveShipping
-            values: [free_shipping, flat_rate, none]
-            rules:
-              - when: { featureFlag: false }
-                value: none
-              - when: { shippingType: price_on_request }
-                value: none
-              - when: "*"
-                value: "= shippingType"
-
-        initial: home
-        start_mode: screen          # or 'entries' + an `entries:` list of start events
-
-        # WHAT A STATE SHOWS. A screenshot is one kind of evidence, not the definition of the format:
-        # a state's `content` is a list of PANELS, stepped through one at a time.
-        #   - { screenshot: <storage key> }        an image in this directory
-        #   - { frame: login.frame, view: Loading } a .frame beside this flow, drawn LIVE at one of its
-        #                                          views — the states of a screen point at different views
-        #                                          of the SAME frame; its scroll is its own, one panel
-        #   - { frame: login, view: Loading }      the same, for a frame kept INSIDE this flow under
-        #                                          `frames:` (Projects: "Move into flow…"; the Studio
-        #                                          opens it from the flow's preview)
-        #   - { file: notes/plan.brief }           ANOTHER file, drawn by its own kind's preview,
-        #                                          read-only and LIVE (editing it changes this state)
-        # `screenshot:`/`screenshots:` below are the screenshot-only shorthand for the same thing —
-        # write those when a state is only images; `frame:` + `view:` is the frame-only shorthand.
-
-        # NAMED VERSIONS of the material `file` panels read from. A panel says `source: after` and the
-        # same relative path means "that document, that version" — so two states of one screen can differ
-        # only in which published version they show, without hard-coding two paths.
-        sources:
-          - { name: before, path: versions/before }
-          - { name: after,  path: versions/after }
-        default_source: before
-
-        screens:
-          - id: home
-            title: Home
-            screenshot: <storage key>          # or screenshots: [top.png, bottom.png] for a tall screen
-            edges:
-              - id: e1
-                event: Checkout       # ONE control, going one place.
-                to: checkout
-
-          - id: checkout
-            title: Checkout
-            # Variables this screen OWNS. First value listed is the default; arriving here resets them.
-            locals:
-              agreed: [false, true]
-            # First matching variant wins. Give the last one `when: "*"` so every configuration renders.
-            # A `when` here may read the dimensions, the derived values, or this screen's own locals.
-            variants:
-              - when: { effectiveShipping: free_shipping }
-                label: Free shipping
-                description: Shows the "Free shipping" chip beside $0.00.
-                screenshot: <storage key>
-              - when: "*"
-                label: Paid shipping
-                # The general form: a capture AND the document that explains it, in that order.
-                content:
-                  - { screenshot: <storage key> }
-                  - { file: terms.brief, source: after, label: Shipping terms }
-            edges:
-              # No `to` = STAYS on this screen. `sets` moves it to another of its own states — a radio,
-              # a checkbox, a step of a form. This is what a self-transition used to be.
-              - id: e2
-                event: Agree to the terms
-                when: { agreed: false }
-                sets: { agreed: true }
-              # `when` decides whether a control is OFFERED AT ALL. Do NOT write a dispatch whose
-              # branches all fail to say a button is absent — say it here.
-              - id: e3
-                event: Pay
-                when: { agreed: true }
-                # `dispatch` is for when the DESTINATION varies. First match wins.
-                dispatch:
-                  - when: { effectiveShipping: none }
-                    to: home
-                  - when: "*"
-                    to: home
-                sets: { featureFlag: true }   # applied on arrival; may seed a local of the target screen
-
-        # when matching: bare value = equals · [a, b] = one-of · "*" = any · "!x" = not-equal
-
-        # FRAMES KEPT IN THIS FILE — whole .frame bodies by name; a state shows one with `frame: <name>`.
-        # frames:
-        #   login: { title: Login, frames: [...], nodes: [...], views: [...] }
-        ---
-        active: v1
-        views:
-          - id: v1
-            name: Free shipping
-            layout:
-              params: { shippingType: free_shipping, featureFlag: true }
-              tab: screens          # screens | map | changes
-              labelVariants: true
-        ```
+              At most 40 problems are reported.
+          - title: The summary line
+            body: |
+              `N screens, N states` and `, N inline frames` when the model keeps frames — on the
+              command line and on the page alike.
+          - title: Not checked
+            body: |
+              That a screenshot key exists in `<stem>-assets/` (the Missing tab shows it). That a
+              panel's file exists. That every screen is reachable (the Map shows it). The content
+              of the views half — a pin, a tab, a focus — beyond its YAML parsing.
+  - key: authored
+    label: A flow is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a flow
+        description: From the template to a walk that validates what is about to be built.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template flow > new.flow`, or Ctrl+N in the Studio — a commented
+              model with two dimensions, a derived one, defaults, named sources and screens with
+              their controls, then the `---` and the views half.
+          - key: dimensions
+            label: Declare the parameter space
+            after: [template]
+            detail: |
+              Every dimension with its finite values and a default; a derived one where several
+              collapse into one the screens care about.
+          - key: screens
+            label: Write one screen per page
+            after: [dimensions]
+            detail: |
+              A stable `id`, a unique `title`, a screenshot or a frame; a VARIANT with a `when`
+              wherever the same page renders differently under data, never a second screen.
+          - key: controls
+            label: Put each control on its screen
+            after: [screens]
+            detail: |
+              `to` for one button one place; `dispatch` when the same button branches on data;
+              `sets` for what walking establishes; `when` for a control only sometimes present.
+          - key: check
+            label: Check it, then walk it
+            after: [controls]
+            detail: |
+              `studio-check new.flow` prints the counts and every catalogue problem. Open it, pin
+              the parameters, press the controls; the Missing tab is the capture list.

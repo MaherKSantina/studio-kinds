@@ -1,93 +1,281 @@
 version: 2
 title: How a version-1 clip works
-description: 'The .clip kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: The notes of one MIDI clip as a document — pitches, beats, velocities and drum lanes; a piano roll on open, a Standard MIDI File on export, and what a song does with it.
+decisions:
+  - key: host
+    label: Where does an export land?
+    values:
+      - key: store
+        label: A host with a binary writer
+        detail: The desktop app, VS Code, the web Studio — the file is written beside the clip.
+      - key: bare
+        label: A host without one
+        detail: The bytes are offered as a browser download.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the shape of the file, how time and pitch are written, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: Nothing in a clip is informational text; every key is what the notes are.
+        sections:
+          - title: Top-level keys
+            body: |
+              | key | what it is | default |
+              |---|---|---|
+              | `title` | the heading | none |
+              | `tempo` | beats per minute | 120 |
+              | `time` | the time signature — `4/4`, `[3, 4]` or `{beats, unit}` | 4/4 |
+              | `bars` | the clip's length | the last note's end, rounded up to a bar, at least 1 |
+              | `channel` | MIDI channel 1–16 | 1 |
+              | `velocity` | the default velocity 1–127 | 100 |
+              | `naming` | how pitch names read: `scientific` (C4 is 60) or `ableton` (C3 is 60) | scientific |
+              | `notes` | explicit notes | |
+              | `grid` | steps per bar for the lanes | 16 |
+              | `lanes` | step rows — drums | |
+          - title: Time
+            body: |
+              Time is in BEATS — quarter notes — counted from 0 at the clip's start, whatever the
+              signature: a bar of 4/4 is 4 beats, of 3/4 is 3, of 6/8 is 3, of 7/8 is 3.5. `start`
+              is where a note begins, `length` how long it holds (default 1); halves and quarters of
+              a beat are eighths and sixteenths. A note that begins at or after the clip's end is a
+              problem; one that merely rings past it is not.
+          - title: A note
+            body: |
+              ```yaml
+              notes:
+                - {pitch: C2, start: 0, length: 0.75}
+                - {pitch: [C3, Eb3, G3], start: 4, length: 4, velocity: 90}   # a list is a chord
+                - {pitch: 60, start: 8, length: 1}                             # a number is the MIDI note
+              ```
+
+              A pitch is a name — `C2`, `F#3`, `Bb1`, `♯` and `♭` accepted, octaves may be negative —
+              or a MIDI number 0–127; a list of either is a chord, one note per pitch with the same
+              start, length and velocity. Velocity is 1–127; unset, the clip's.
+          - title: A lane
+            body: |
+              ```yaml
+              lanes:
+                - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
+                - {name: Hat, pitch: F#2, steps: "..x...x...x...x. | ..x...x...x..xx.", length: 0.125}
+              ```
+
+              One character per step of the grid: `x` a hit at the clip's velocity (or the lane's
+              own `velocity`), `X` an accent (127), `o` a ghost (50), `1`–`9` that ninth of 127,
+              `.` or `-` a rest; `|` and spaces are ignored so bars can be separated by eye. A
+              string longer than a bar runs on into the next. Each hit lasts one step unless the
+              lane gives `length` in beats. A lane with no `name` is named after its pitch. Lanes
+              and notes may be mixed; both become notes.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/clipDoc.ts` — `parseClip`, `pitchNumber`, `pitchName`,
+              `parseTimeSignature`, `beatsPerBar`, `laneNotes`, `clipLengthBars`, `pitchRange`,
+              `clipSummary`; its header comment is what `studio-check --spec clip` prints, with
+              `midiFile.ts` (`writeMidiFile`, `readMidiFile`, 480 ticks per quarter) beside it. The
+              view is `components/music/ClipView.tsx` over `PianoRoll.tsx` and
+              `ExportMidiButton.tsx`; the checker is `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: parseClip reads the YAML once and never throws; what cannot be read is a problem in plain words, and the roll draws what could.
+    content:
+      key: parse
+      label: What the parser keeps, what it names, and what is drawn
+      kind: brief
+      doc:
+        title: What the parser keeps, what it names, and what is drawn
+        description: A lenient parse with a problem list, then a piano roll.
+        sections:
+          - title: The parse
+            body: |
+              A YAML error is the first problem and the clip is otherwise empty. Each field falls
+              back to its default when unreadable and names itself: `naming: "x" is neither
+              scientific nor ableton`, `tempo: x is not a bpm` (1–999), `time: x is not a time
+              signature like 4/4` (1–64 beats over 1, 2, 4, 8, 16 or 32), `bars: x is not a length
+              in bars`, `channel: x is not 1–16`, `velocity: x is not 1–127`, `grid: x is not a
+              number of steps per bar` (1–128). `notes: must be a list`, `lanes: must be a list`.
+
+              Per note: `note N: start x is not a beat` (a number, at least 0), `length x is not a
+              number of beats` (above 0), `velocity x is not 1–127` (the clip's is used), `no pitch`,
+              `pitch "x" is not a note name or a MIDI number` — a bad pitch in a chord drops that
+              pitch only. Per lane: `lane <name>: pitch … is not a note name or a MIDI number`, `no
+              steps`, `length x is not a number of beats` (one step is used), `unknown step
+              character "q" at step N`. The lanes' hits become notes; every note is sorted by start,
+              then pitch; then, once: `a note at beat N begins at or after the clip's end (B bars =
+              N beats)`.
+          - title: What is drawn
+            body: |
+              The title, then one line of facts — `N notes · N bars · N bpm · 4/4 · C2–G3 ·
+              channel N` — and the Export .mid button (disabled with no notes). The problems, in
+              red, one per line. Then the piano roll: rows are the pitches in use plus one either
+              side, highest at the top, black keys shaded, each labelled with its name in the
+              clip's naming and its MIDI number, a lane's row wearing the lane's name; columns are
+              beats, a heavier line at every bar and a faint one at every step of the grid; a note
+              is a bar as wide as it lasts and as opaque as it is loud, coloured by its lane
+              (explicit notes take the primary colour), and hovering says exactly what it is. The
+              roll is drawn long enough to show a note that begins past the clip's end, with the
+              stretch beyond the end shaded. No notes: "No notes yet — give it `notes:` or `lanes:`."
+              Nothing is edited here: the file is the notes, and the roll re-reads.
+  - key: exported
+    label: Export .mid is clicked
+    trigger: chosen
+    arity: many
+    domain: Exporting
+    detail: The notes as a Standard MIDI File, format 0, written beside the clip.
+    hint: Say what the host has — the same bytes go to the store or to a download.
+    content:
+      key: export
+      label: What is written, and where
+      kind: md
+      by: [host]
+      docs:
+        host=store: |
+          `writeMidiFile` makes a format 0 file: one track carrying the tempo, the time signature,
+          the name (the title, else the file's stem) and every note on the clip's channel, at 480
+          ticks per quarter. Note-offs are real note-offs, and at one tick every note-off precedes
+          every note-on, so a repeated pitch re-triggers; no running status on the way out.
+
+          The bytes go through the host's binary writer to `<stem>.mid` in the clip's folder,
+          overwriting the last export, so a re-export after an edit is one click. "wrote
+          <stem>.mid" shows beside the button for four seconds; an error shows its message in
+          red. Ableton Live takes the file by drag and drop, and a folder added to Live's browser
+          shows every export as it lands.
+        host=bare: |
+          The same format 0 bytes — one track, tempo, time signature, name, the notes on the clip's
+          channel, 480 ticks per quarter, note-offs before note-ons at one tick — but with no writer
+          to reach the store, the button offers them as a download named `<stem>.mid`. "wrote
+          <stem>.mid" shows for four seconds either way.
+  - key: cli-exported
+    label: studio-check --midi runs on it
+    trigger: chosen
+    domain: Exporting
+    detail: The same bytes from the command line, beside the file.
+    content:
+      key: cli
+      label: What the command does
       kind: md
       doc: |
-        # .clip — Clip
+        `studio-check --midi x.clip [name.mid]` parses the clip, prints every problem to stderr,
+        and stops with exit 1 saying `no notes — nothing to export` when there are none.
+        Otherwise it writes `x.mid` (or the name given) in the clip's folder and prints
+        `x.mid: <summary> (N bytes)`. The exit status is 1 whenever the clip had problems, even
+        though the file was written.
+  - key: placed
+    label: A song places it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: The clip is read as data by every song that names it.
+    content:
+      key: song
+      label: What a song takes from a clip
+      kind: md
+      doc: |
+        A `.song` reads the clip through the store (once per path, however many placements), takes
+        its tempo and time signature as the song's when the song gives none and this is the first
+        clip read, its channel for a track that gives none, its length in bars for the placement
+        (one bar when the clip cannot be read), its notes shifted to the placement's bar and
+        transposed (a pitch pushed out of 0–127 is dropped), and its lane names for the track's
+        roll. A clip with problems adds one line to the song: `track X: y.clip has N problems of
+        its own`. Clicking the placement's block opens the clip in the host.
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Reading
+    detail: The host re-reads; the roll redraws; nothing was stored.
+    content:
+      key: reread
+      label: The re-read
+      kind: md
+      doc: |
+        The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
+        events or VS Code's text document deliver the new text, and the Studio re-reads unless its
+        autosave is dirty, saving or in error. The clip re-parses and the roll redraws — an agent
+        or an editor changes the file, the roll follows. A song open on this clip does not
+        re-read it until the song's own text changes or it is reopened.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — the parser's own problem list is the verdict.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, the summary line, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `parseClip` — every problem it names, in the order above.
+          - title: The summary line
+            body: |
+              `N notes · N bars · N bpm · 4/4 · C2–G3 · channel N` — the same line the view shows.
+              The page and `POST /api/check?kind=clip` print the same.
+          - title: Not checked
+            body: |
+              Whether it sounds right. A pitch far outside the roll's range. A lane string shorter
+              than a bar (it simply stops). A `title` that is not a string (read as none).
+  - key: authored
+    label: A clip is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a clip
+        description: From the template to a roll and a .mid — one file, nothing beside it until the export.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template clip > new.clip`:
 
-        ## The engine's own account (packages/filekinds/src/lib/clipDoc.ts)
-
-        The `.clip` kind — the NOTES of one MIDI clip, as a document. What a
-        DAW keeps behind a clip's piano roll, written down: which pitches sound
-        when, for how long, how hard. The Studio draws it as a piano roll and
-        exports it as a Standard MIDI File (`<stem>.mid` beside it — the Export
-        button, or `studio-check --midi x.clip`), which Ableton Live, or any
-        DAW, takes as a clip. A `.song` places clips on tracks.
-
-        Authoring shape (YAML, lenient — a half-written file still renders):
-
-          title: Bass                 # optional heading
-          tempo: 128                  # beats per minute (default 120)
-          time: 4/4                   # time signature (default 4/4); `[3, 4]` works too
-          bars: 2                     # the clip's length; default = the last note rounded up to a bar
-          channel: 1                  # MIDI channel 1–16 (default 1; drum racks listen on any)
-          velocity: 100               # the default velocity 1–127 (default 100)
-          naming: scientific          # how pitch NAMES read: scientific = C4 is 60 (the default,
-                                      #   mido, the launchpad engine); ableton = C3 is 60 (what Live shows)
-          notes:                      # explicit notes — a melody, a bass line, chords
-            - {pitch: C2, start: 0, length: 0.75}
-            - {pitch: [C3, Eb3, G3], start: 4, length: 4, velocity: 90}    # a list = a chord
-            - {pitch: 60, start: 8, length: 1}                              # a number = the MIDI note
-          grid: 16                    # steps per bar for the lanes below (default 16 = sixteenths)
-          lanes:                      # step rows — drums: one character per step
-            - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
-            - {name: Clap, pitch: D2, steps: "....x.......x..."}
-            - {name: Hat,  pitch: F#2, steps: "..x...x...x...x. | ..x...x...x..xx.", length: 0.125}
-
-        TIME is in BEATS — quarter notes, counted from 0 at the clip's start,
-        whatever the time signature (a bar of 4/4 is 4 beats, of 3/4 is 3, of
-        6/8 is 3): `start` where a note begins, `length` how long it holds
-        (default 1). Halves and quarters of a beat are eighths and sixteenths.
-        A note that begins at or after the clip's end is a problem; one that
-        merely rings past it is not.
-
-        A PITCH is a name (`C2`, `F#3`, `Bb1`, octaves may be negative) or a MIDI
-        number 0–127, and a list of either is a chord — one note per pitch, same
-        start, length and velocity. VELOCITY is 1–127; unset = the clip's.
-
-        A LANE is a row of steps over the grid: `x` a hit at the clip's velocity
-        (or the lane's own `velocity:`), `X` an accent (127), `o` a ghost (50),
-        `1`–`9` that ninth of 127, `.` or `-` a rest; `|` and spaces are ignored
-        so bars can be separated by eye. A string longer than one bar runs on
-        into the next. Each hit lasts one step unless the lane gives `length:`
-        (in beats). Lanes and notes may be mixed; both become notes.
-
-        Nothing here is informational text: `title` is the heading, everything
-        else is what the notes are.
-
-        ## Also (packages/filekinds/src/lib/midiFile.ts)
-
-        Standard MIDI Files, written and read — the bytes a `.clip` or a `.song`
-        exports (`<stem>.mid`), and the same bytes read back so a test, or a
-        viewer, sees exactly what a DAW will.
-
-        One clip → format 0: a single track carrying the tempo, the time
-        signature, the name and the notes. A song → format 1: track 0 holds the
-        tempo, time signature and title, then one track per song track, named,
-        on its channel — dropped on Ableton Live's Arrangement, that is one
-        named track per MIDI track. Time is in beats (quarter notes) at 480
-        ticks per quarter; note-offs are real note-offs (0x8n), and at one tick
-        every note-off precedes every note-on, so a repeated pitch re-triggers.
-        No running status on the way out; on the way in it is honoured.
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        title: untitled
-        tempo: 120
-        time: 4/4
-        bars: 1
-        notes:
-          - {pitch: C3, start: 0, length: 1}
-        lanes:
-          - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
-        ```
+              ```yaml
+              title: new
+              tempo: 120
+              time: 4/4
+              bars: 1
+              notes:
+                - {pitch: C3, start: 0, length: 1}
+              lanes:
+                - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
+              ```
+          - key: naming
+            label: Pick the naming
+            after: [template]
+            detail: |
+              Leave `scientific` when the names come from a score or mido (C4 is 60); write
+              `naming: ableton` when they come from what Live shows (C3 is 60). The roll labels
+              rows in the naming chosen, with the MIDI number beside, so a mistake is visible.
+          - key: drums
+            label: Write the drums as lanes
+            after: [naming]
+            detail: |
+              One lane per drum, `pitch` the pad's note, `steps` one character per sixteenth (or
+              set `grid`). Separate bars with `|` and spaces; use `X` and `o` for accents and ghosts.
+          - key: melody
+            label: Write the melody as notes
+            after: [naming]
+            detail: |
+              `start` in beats from 0, `length` in beats, a list for a chord. Give `bars` when the
+              clip should be longer than its last note.
+          - key: check
+            label: Check it, then export
+            after: [drums, melody]
+            detail: |
+              `studio-check new.clip` prints the summary and every problem in plain words. Open it
+              and press Export .mid, or `studio-check --midi new.clip`, then drop `new.mid` on
+              Ableton Live.

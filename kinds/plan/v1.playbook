@@ -1,47 +1,282 @@
 version: 2
 title: How a version-1 plan works
-description: 'The .plan kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: A policy over playbooks and the schedule it produces — rules as a list of single instructions, the books and their guides read live, the frontier simulated forward on every edit, and what did not fit shown rather than dropped.
+decisions:
+  - key: host
+    label: Does the host write?
+    values:
+      - key: writes
+        label: Yes — an `onChange` is passed
+        detail: The Studio's surface, the desktop app, VS Code, a project pane — every rule edit is dumped and saved.
+      - key: reads
+        label: No — a read-only host
+        detail: Edits land locally, the plan still recomputes, and they are dropped when the host's content moves on.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the shape of the file, why rules are a list, what is deliberately not here, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: Where the plan starts, how far it reaches, and one instruction per rule.
+        sections:
+          - title: Top-level keys
+            body: |
+              | key | what it is |
+              |---|---|
+              | `title`, `description` | the heading and one line under it |
+              | `playbooks` | the books this plans over — several, because decisions and events are often in separate files (`playbook:` singular is accepted) |
+              | `locks` | where we are standing when the plan starts — `decision=answer` refs |
+              | `horizon` | working days the plan covers; also the deadline — work past it is dropped; default 120 |
+              | `rules` | the policy, as a list |
+          - title: A rule
+            body: |
+              ```yaml
+              rules:
+                - note: Rules are a list; each carries one instruction.
+                  capacity: 1                           # working days of effort available per working day
+                - order: [incorporate, open-account]    # these, in this order, relative to each other — a constraint
+                - exclude: [move-office]                # never plan these, whatever they score
+                - boost: {hire: 2, audit: -1}           # a thumb on the scale, per event key
+                - weights: {closesGaps: 1, opens: 1, cheap: 0.5}
+                - off: true                             # off without being deleted — the point of a playground
+                  order: [audit, hire]
+              ```
+
+              Exactly one instruction per rule. A rule with nothing in it is dropped, but one that
+              is merely `off` is a rule you are still holding. Adding a kind adds a case; it never
+              reshapes the file.
+          - title: How the rules fold
+            body: |
+              `compilePlan` walks the live rules in order: later rules WIN on scalars (`weights`,
+              `capacity`) because editing a policy means appending to it; `boost` entries and
+              `exclude` lists ACCUMULATE, since a second exclusion cancelling the first would
+              surprise; every `order` rule adds its consecutive pairs as before/after constraints.
+              Order rules are constraints, not the answer: pinning three events leaves everything
+              else to be ranked around them, so a half-specified policy is usable rather than a
+              stub.
+          - title: What is deliberately not here
+            body: |
+              Work — steps live in an event's guide, authored once with their own conditions and
+              dependencies; a plan schedules them and never invents them. Effort and negotiability
+              — facts about the work, authored with it; a policy reads them. Imposed events — you
+              have no say in them, so they are not ranked.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/planDoc.ts` — `parsePlan`, `dumpPlan`, `ruleKind`,
+              `compilePlan`; its header comment is what `studio-check --spec plan` prints. The
+              planner is `playbookPlan.ts` — `effortDays`, `ratePerDay`, `frontier`, `scoreEvent`,
+              `tasksFor`, `operations`, `plan`. The view is `components/plan/PlanPreview.tsx`; the
+              checker is `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: parsePlan reads the YAML once and never throws; the books and their guides are read, and the plan is computed.
+    content:
+      key: draw
+      label: What is read, and what is drawn
+      kind: brief
+      doc:
+        title: What is read, and what is drawn
+        description: The parse, the books, the guides, then the playground.
+        sections:
+          - title: The parse
+            body: |
+              The title ("Plan"), `playbooks` (or the single `playbook`), `locks`, `horizon`
+              (120 when not a number), and the rules — `weights` keeping only numeric terms,
+              `boost` only numeric values, empty rules dropped unless `off`.
+          - title: The books and the guides
+            body: |
+              Every book in `playbooks` is read relative to this file and MERGED the way the walk
+              merges them: the first book's head, every book's decisions, events and rules
+              concatenated. Then every guide a version-1 event shows — a `file` entry ending in
+              `.guide`, not a `by` set — is read; a missing guide costs its steps, not the plan.
+              A version-2 book contributes its events but no work, since its documents are written
+              in rather than files. No `playbooks`: "Set `playbooks:` to the books this plans
+              over." An unreadable book shows its error in red.
+          - title: What is drawn
+            body: |
+              Left, "Policy · N of M live" with a "+" that adds an order rule, and one card per
+              rule in file order labelled by its kind — `order`, `exclude`, `boost`, `weights`,
+              `capacity` — an off rule dimmed; an order rule shows its events as numbered chips
+              (an event the books do not have in red) and, where the host writes, dashed "+
+              <event>" chips for every move not yet in the sequence; the others read "never: a, b",
+              "hire +2 · audit -1", "closesGaps 1 · cheap 0.5", "1 days of effort per day", and the
+              note in italics. "No rules yet. Everything is ranked by the defaults — add an order
+              rule to pin the parts you already know." Right, the plan the rules produce.
+  - key: computed
+    label: The plan is computed
+    trigger: imposed
+    arity: many
+    domain: Planning
+    detail: On open and on every edit — the frontier is ranked, the winner taken, the assignment moved, and the frontier recomputed.
+    content:
+      key: plan
+      label: How the right-hand side is made
+      kind: brief
+      doc:
+        title: How the right-hand side is made
+        description: Simulated forward, never sorted once.
+        sections:
+          - title: The frontier
+            body: |
+              The MOVES available here: events that are `chosen`, once-only, not already taken, not
+              excluded, not blocked by an order rule whose predecessor has not happened, and that
+              can arise under the current assignment (a version-1 `n/a` rule or a version-2 `when`
+              that does not hold takes an event out; a `gap` stays in — the work is finding out).
+              Operations (`arity: many`) never leave the frontier, so they are not ranked; they go
+              in the capacity budget.
+          - title: The score
+            body: |
+              `closesGaps × w` (how many `gap` events stop being gaps once the event's `sets` move
+              the assignment) + `opens × w` (how many more events become available) − `effort ×
+              cheap` (the guide steps' effort in working days: `s`, `m`, `h`, `d`, `w`, `mo`;
+              unstated is half a day) + `boost`. Weights default to 1, `cheap` to 0. Ties keep
+              document order, so an unweighted policy reads as the book was written.
+          - title: The winner, and the work
+            body: |
+              The top event is taken; its guide's surviving steps become tasks — effort over
+              capacity, dependencies inside one event serialised by `after`, everything else free
+              to weave — from the anchor a version-1 rule gives (`from` an event's finish, plus
+              `offset` days) and once per recurrence (`every` months, 21 days each) inside the
+              horizon. A task starting at or past the horizon is kept and marked dropped. The
+              winner's `sets` move the assignment and the frontier is recomputed; it stops when
+              nothing can be taken.
+          - title: Ongoing load
+            body: |
+              Every operation that can arise: its rate per working day (`200/d`, `5/w`, `10/mo`)
+              times the effort of the guide steps the CURRENT answers select is its cost per day;
+              the sum over capacity is the utilisation. Over 1 means the plan is fiction.
+          - title: What is drawn
+            body: |
+              A red box "Order rules that can never be satisfied" — `b waits on a`, or `a (no
+              such event)`. "Order · N moves", each with its score (hover: closes N gaps · opens
+              N · N.Nd). "Work · N tasks · N past the deadline" with `dN.N–N.N` day ranges, a
+              dropped task in red, `fixed` in amber. "Ongoing load · N% of capacity" with each
+              operation's share and rate, and "underwater — there is no time for the plan above"
+              past 100%.
+  - key: rule-edited
+    label: A rule is edited
+    trigger: chosen
+    arity: many
+    domain: Planning
+    detail: The plan recomputes on every change; whether the file changes depends on the host.
+    hint: Say whether the host writes — the controls are the same; only where the edit goes differs.
+    content:
+      key: edit
+      label: What the controls do, and where the edit goes
+      kind: md
+      by: [host]
+      docs:
+        host=writes: |
+          "+" adds an empty order rule; the eye turns a rule off and back on; the arrows swap it
+          with its neighbour; the bin deletes it. On an order rule, the "×" on a chip drops that
+          event from the sequence and a dashed "+ <event>" chip appends it — typing keys by hand
+          is how a rule silently names nothing, so the events come from the books. The other
+          kinds are edited as YAML. Every change is `dumpPlan` of the whole document
+          (`title`, `description`, `playbooks`, `locks`, `horizon`, `rules` with only the keys
+          each rule has; comments do not survive) handed to `onChange`; the host's autosave writes
+          it and the new text comes back as content. The plan on the right recomputes at once.
+        host=reads: |
+          The same controls appear only where the host passes `onChange`; a read-only host shows
+          the rules and the plan and keeps the "+" — an added rule, and any edit reached through
+          the YAML, lands in local state, the plan on the right recomputes, and the local text is
+          dropped the moment the host's content moves on. The file is never written from here.
+  - key: changed-on-disk
+    label: A file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Planning
+    detail: This file re-parses and the plan recomputes; the books are re-read only when their list changes.
+    content:
+      key: reread
+      label: What is re-read
       kind: md
       doc: |
-        # .plan — Plan
+        The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
+        events or VS Code's text document deliver the new text, and the Studio re-reads unless its
+        autosave is dirty, saving or in error. The plan re-parses, local edits are dropped, and
+        the plan recomputes. The books and guides are read again only when the `playbooks` list
+        changes; a book edited elsewhere shows on the next open.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — the parser never refuses and the books are not read.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `parsePlan` — it never throws. No summary line. The page does not know the plan
+                 kind.
+          - title: Not checked
+            body: |
+              That the books exist. That an `order` names events the books have (the view marks a
+              stranger red and reports "no such event"). A rule dropped for carrying nothing. A
+              `horizon` that is not a number (120).
+  - key: authored
+    label: A plan is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a plan
+        description: From the template to a policy tuned against the plan it produces.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template plan > new.plan`:
 
-        ## The engine's own account (packages/filekinds/src/lib/planDoc.ts)
-
-        `.plan` — a policy over a playbook, and the schedule it produces.
-
-        The playbook says what is true and what could happen. It cannot say what to
-        do next, because that depends on what you are optimising for, which belongs
-        to you rather than to the domain. This is where that lives.
-
-        RULES ARE A LIST, not a settings object, and each rule carries exactly one
-        instruction. That is the whole design: "specify the order explicitly" is one
-        rule kind, and a weighting, an exclusion or a deadline is another, so a policy
-        can start as a hand-written sequence and grow into a ranking without ever
-        being rewritten. Adding a kind adds a case; it does not reshape the file.
-
-        Order rules are CONSTRAINTS, not the answer. Naming three events in sequence
-        pins those three and leaves everything else to be ranked around them, which is
-        what makes a half-specified policy usable instead of a stub.
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        title: untitled
-        description: A policy over a playbook, and the schedule it produces.
-        playbooks:
-          - some.playbook
-        locks: []
-        horizon: 120
-        rules:
-          - note: Rules are a list; each carries one instruction.
-            capacity: 1
-        ```
+              ```yaml
+              title: new
+              description: A policy over a playbook, and the schedule it produces.
+              playbooks:
+                - some.playbook
+              locks: []
+              horizon: 120
+              rules:
+                - note: Rules are a list; each carries one instruction.
+                  capacity: 1
+              ```
+          - key: books
+            label: Point it at the books
+            after: [template]
+            detail: |
+              Every version-1 book whose events and guides the plan should schedule, relative to
+              this file. Set `locks` to where you stand today.
+          - key: order
+            label: Pin what you already know
+            after: [books]
+            detail: |
+              One `order` rule naming the events in sequence; leave the rest to the ranking.
+              Exclude what you will not do; boost what a formula misses.
+          - key: tune
+            label: Tune against the right-hand side
+            after: [order]
+            detail: |
+              Turn a rule off and watch the order move; raise `cheap` to prefer small events
+              first; set `capacity` to the days you really have and read the utilisation.
+          - key: check
+            label: Check it
+            after: [tune]
+            detail: |
+              `studio-check new.plan` — only YAML can fail. The view is the check that matters: a
+              red chip is an event the books do not have; a red box is an order that can never
+              hold.

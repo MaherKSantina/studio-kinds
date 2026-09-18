@@ -1,59 +1,195 @@
 version: 2
 title: How a version-1 program works
-description: 'The .program kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: Code as execution — what it reads from the store, what it writes back, the code between, and a Run button that executes it on the host's runner with the outputs landing in the store.
+decisions:
+  - key: host
+    label: Does the host have a runner?
+    values:
+      - key: runner
+        label: Yes — the nodes worker is configured
+        detail: Run executes the program; the result panel shows exit, stdout, stderr and the output handles.
+      - key: none
+        label: No runner
+        detail: The same page, read-only; Run is disabled and says to open the file in Nodes.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the contract, why it is the only doorway, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: A contract and the code it bounds.
+        sections:
+          - title: Top-level keys
+            body: |
+              ```yaml
+              title: Timesheet → shift-notes CSV
+              description: one line
+              language: python                  # the interpreter family; default python
+              inputs:
+                - {handle: /Fatin/timesheet.xlsx, as: timesheet.xlsx}   # `as` defaults to the file name
+              outputs:
+                - {from: converted.csv, handle: /Fatin/converted.csv}
+              code: |
+                ...
+              ```
+
+              A handle is an absolute store path; an input or output whose handle does not start
+              with `/` is dropped. `inputs` are materialised into the run's working directory
+              under their `as` names (bytes for binary nodes, text otherwise); the code runs there;
+              each output's `from` file is read back and written to its `handle` (an upsert).
+          - title: Why the contract
+            body: |
+              The program never touches the store directly — the contract is the only doorway,
+              which is what keeps a run explainable and repeatable. It is the executable step of a
+              journey: a bounded, step-local transformer the person runs on demand, with the output
+              landing in the store as an ordinary node.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/programDoc.ts` — `parseProgram`; its header comment is
+              what `studio-check --spec program` prints. The view is
+              `components/program/ProgramView.tsx`; the runner is the host's `configuredRunner`
+              (the nodes worker); the checker is `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: parseProgram reads the YAML once and never throws; the contract and the code are drawn, with Run.
+    hint: Say whether the host has a runner — the page is the same; only Run differs.
+    content:
+      key: draw
+      label: What is drawn
+      kind: md
+      by: [host]
+      docs:
+        host=runner: |
+          **The parse.** The title ("Program"), the description, the language lower-cased
+          (`python` when absent), the inputs and outputs with relative handles dropped, the code
+          (empty when absent).
+
+          **What is drawn.** The title, a chip with the language, a copy-handle button for this
+          file's path, and Run ("Execute the program on the nodes worker — outputs land in the
+          store"). The contract in a card: one line per input, `nodes:/path → as`, and per
+          output, `from → nodes:/path`; "No contract declared — the run would read and write
+          nothing." when there are neither. The code in a monospace block ("(no code)"). No
+          result yet.
+        host=none: |
+          **The parse.** The title ("Program"), the description, the language lower-cased
+          (`python` when absent), the inputs and outputs with relative handles dropped, the code
+          (empty when absent).
+
+          **What is drawn.** The same page — title, language chip, copy handle, the contract
+          card, the code block — with Run disabled and titled "This host has no runner configured
+          — open it in Nodes to run". The Studio, the desktop app and VS Code show it this way
+          unless a runner is wired in; nothing here writes.
+  - key: run
+    label: Run is clicked
+    trigger: chosen
+    arity: many
+    domain: Running
+    when: [host=runner]
+    detail: The runner executes the program by its path; the outputs land in the store; the panel reports.
+    content:
+      key: result
+      label: What a run does, and what the panel shows
       kind: md
       doc: |
-        # .program — Program
-
-        ## The engine's own account (packages/filekinds/src/lib/programDoc.ts)
-
-        The `.program` kind — CODE AS EXECUTION, exactly the role the process-layers
-        doc allows it: a bounded, step-local transformer with an explicit contract.
-        The program declares what it reads from the store, what it writes back, and
-        the code between — and the VIEW gives it a Run button, so a journey step
-        can be executed by the person, on demand, with the output landing in the
-        store as an ordinary node.
-
-          title: Timesheet → shift-notes CSV
-          language: python
-          inputs:
-            - {handle: /Fatin/timesheet.xlsx, as: timesheet.xlsx}
-          outputs:
-            - {from: converted.csv, handle: /Fatin/converted.csv}
-          code: |
-            ...
-
-        `inputs` are materialized into the run's working directory under their `as`
-        names (bytes for binary nodes, text otherwise); the code runs there; each
-        output's `from` file is read back and written to its `handle`. The program
-        never touches the store directly — the contract is the only doorway, which
-        is what keeps a run explainable and repeatable.
-
-        ## A fresh document (what the Studio creates)
-
-        ```yaml
-        title: "untitled"
-        description: "Code as execution — a bounded transformer with an explicit contract: what it reads from the store, what it writes back, and the code between. The view gives it a Run button."
-        language: python
-        # Handles are absolute store paths; inputs land in the run's working directory under their `as` names.
-        inputs:
-          - {handle: /input.csv, as: input.csv}
-        outputs:
-          - {from: output.csv, handle: /output.csv}
-        code: |
-          import csv
-          rows = list(csv.DictReader(open("input.csv", newline="")))
-          with open("output.csv", "w", newline="") as f:
-              w = csv.DictWriter(f, fieldnames=list(rows[0].keys()) if rows else [])
-              w.writeheader()
-              w.writerows(rows)
-        ```
+        The button reads "Running…" with a spinner while the runner is handed this file's path.
+        The runner materialises the inputs, runs the code in the working directory, reads each
+        output's `from` file and writes it to its handle. The panel then shows "Run succeeded" or
+        "Run failed" with `exit N · N.Ns`, one line per output handle written with an "open" link
+        into Nodes, the standard output, and the standard error in red. A failure to reach the
+        runner shows its message in red instead. The last result stays on the page until the next
+        run; the file itself is never changed by running.
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Running
+    detail: The host re-reads; the contract and the code redraw; the last result stays.
+    content:
+      key: reread
+      label: The re-read
+      kind: md
+      doc: |
+        The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
+        events or VS Code's text document deliver the new text, and the Studio re-reads unless its
+        autosave is dirty, saving or in error. The program re-parses and the page redraws; the
+        result panel from the last run stays until Run is pressed again.
+  - key: elsewhere
+    label: A journey runs it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: The program is the step a person presses play on.
+    content:
+      key: elsewhere
+      label: Where a program sits
+      kind: md
+      doc: |
+        A journey or a workup names the program as a step's file; the step opens this view in a
+        dialog, and the outputs — ordinary nodes at their handles — are what the next step reads.
+        A project lists it as an item like any document. Nothing runs it but a person pressing
+        Run.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — the parser never refuses.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `parseProgram` — it never throws. No summary line.
+          - title: Not checked
+            body: |
+              That the input handles exist. That the runner knows the language (it refuses at run
+              time). That the code writes every `from` file. An input or output dropped for a
+              relative handle.
+  - key: authored
+    label: A program is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a program
+        description: The contract first, then the code that honours it.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template program > new.program` — Python, one input `/input.csv` as
+              `input.csv`, one output `output.csv` to `/output.csv`, and code that copies the rows.
+          - key: contract
+            label: Write the contract
+            after: [template]
+            detail: |
+              One input per store file the code needs, with the name it will open; one output per
+              file it writes, with the store path it should land on. Absolute handles only.
+          - key: code
+            label: Write the code against the `as` names
+            after: [contract]
+            detail: |
+              Open inputs by their `as` names in the working directory and write outputs by their
+              `from` names; touch nothing else.
+          - key: check
+            label: Check it, then run it in Nodes
+            after: [code]
+            detail: |
+              `studio-check new.program` — only YAML can fail. Open it where a runner is configured
+              and press Run; read the outputs where everything else lives.

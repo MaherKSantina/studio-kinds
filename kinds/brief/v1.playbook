@@ -1,14 +1,268 @@
 version: 2
 title: How a version-1 brief works
-description: 'The .brief kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+description: A titled tree of sections, each with a one-line description and a markdown body — what the parser keeps, what a click shows, where a brief turns up inside other kinds, and what the checker leaves alone.
+decisions:
+  - key: width
+    label: How wide is the surface it renders in?
+    detail: Measured on the component itself, not the window — a narrow trail pane on a big monitor is narrow.
+    values:
+      - key: wide
+        label: 480px or more
+        detail: The tree and the selected section stand side by side.
+      - key: narrow
+        label: Under 480px
+        detail: The tree fills the width; a section's content opens as the next step.
 events:
   - key: always
     label: Always
     trigger: imposed
     domain: Always
-    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    detail: What holds at every moment — the shape of the file, what a section is, and where the engine lives.
     content:
-      key: spec
-      label: The engine's account
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: Three top-level keys and one recursive node shape. A brief names no other file.
+        sections:
+          - title: Top-level keys
+            body: |
+              | key | what it is |
+              |---|---|
+              | `title` | the heading; "Untitled brief" when absent |
+              | `description` | one line under the title — read and kept on a dump, not drawn by the viewer |
+              | `sections` | the tree: a list of sections, each the same shape at any depth |
+
+              `features` and `items` are read in place of `sections`, so a features payload pasted
+              in as-is is a brief. There is no version line: every brief is version 1.
+          - title: A section
+            body: |
+              ```yaml
+              sections:
+                - title: Money                # also read as `name` or `heading`
+                  description: One line under the title.
+                  body: |                     # markdown; also read as `prose`
+                    Bootstrapped. A **business account** opens the day the company does.
+                  children:                   # the same shape, nested; written last on a dump
+                    - title: Banking
+                      body: One account, one card.
+              ```
+
+              A section has no id. Its handle is the chain of titles above it
+              (`Money › Banking`), which is why a diff over two briefs reports a renamed section
+              as a removal plus an addition rather than pretending to track it.
+          - title: Provenance keys
+            body: |
+              A brief that arrived through an applied diff carries marks the viewer colours:
+
+              | key | read as |
+              |---|---|
+              | `change` | `add`, `edit` or `remove` — the chip at the end of the tree row |
+              | `__change` | the diff engine's spelling of the same; `delete` reads as `remove` |
+              | `__op` | which change did it; kept in memory as `opId`, never written back |
+              | `__note` | why the section changed |
+              | `__was` | the previous `body` (or `prose`) and `description` |
+
+              Any other key on a section — an id, a tag — survives a round trip through the
+              viewer untouched, so a hand-added key is not eaten the first time the tree is saved.
+          - title: Not a brief
+            body: |
+              A file with no section list but `select: {epic: N}` is a LENS over Shortcut, not
+              authored prose: `briefLensOf` recognises it and the kit leaves it to a host that
+              resolves lenses. A file carrying `sections` is never a lens, whatever else it holds.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/briefDoc.ts` — `parseBrief`, `dumpBrief`, `withSections`,
+              `flattenBrief`, `briefLensOf`; its header comment is what `studio-check --spec brief`
+              prints. The node shape is `featureTree.ts`. The viewer is
+              `components/brief/BriefViewer.tsx`, registered under `.brief` in
+              `lib/filePreviews.tsx`; the checker is `apps/cli/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: parseBrief reads the YAML once and never throws; the tree is drawn with every root open and the first section selected.
+    content:
+      key: parse
+      label: What the parser keeps, and what is drawn
       kind: md
-      doc: "# .brief — Brief\n\n## The engine's own account (packages/filekinds/src/lib/briefDoc.ts)\n\nThe `.brief` file kind: a nested set of titled sections, each with a one-line\r\ndescription and a markdown body.\r\n\nIt exists because the shape kept being wanted outside the one place it grew. The foundry\r\nFEATURES stage renders exactly this — a tree on the left, and a title + description +\r\nrendered markdown for whichever node you click — and there was no way to author one as an\r\nordinary file, or to point a loom role at it.\r\n\nSo `.brief` is that UI made into a file, and it renders through the SAME component\r\n(`FeatureTreeExplorer`), not a copy of it. The only thing this module does is translate\r\nbetween the readable YAML spelling and the node shape that explorer already takes:\r\n\n    YAML          in memory\r\n    title    ↔    name\r\n    body     ↔    prose\r\n    children ↔    children\r\n\nThe YAML spelling wins on the file side because `title`/`description`/`body` is what every\r\nother authored kind here uses (`.list`, `.kanban`, `.email`), and a file people and agents\r\nwrite should not inherit a vocabulary from the one stage that happened to need it first.\r\n\nParsing is LENIENT and never throws — a half-written file still has to render. It also\r\naccepts the in-memory spelling (`name`/`prose`) and the foundry array key (`features`), so\r\na features payload pasted into a `.brief` just works.\n\n## A fresh document (what the Studio creates)\n\n```yaml\ntitle: untitled\ndescription: \"\"\nsections:\n  - title: First section\n    body: \"\"\n```\n"
+      doc: |
+        **The parse.** An empty file, a YAML error, or a root that is not a mapping reads as an
+        empty brief — no title, no sections — so a half-written file still renders. For every
+        section: the first non-empty of `title`, `name`, `heading` is the name; `description`
+        is kept when non-empty; the first non-empty of `body`, `prose` is the prose; `children`
+        is kept only when it holds at least one mapping. A list entry that is not a mapping is
+        dropped. A value that is not a string reads as empty.
+
+        **The surface.** In the Studio, the desktop app and VS Code there is one surface per
+        document — the kind's preview, inside `DocumentPreview` — so this viewer is what opens,
+        with no authoring editor beside it. The strip above it carries the file's name and a
+        "Notes" pill when an annotations sidecar sits beside the file.
+
+        **What is drawn.** A header with the title ("Untitled brief" when there is none). The
+        tree, every root open with its children shown; a row with children carries a chevron.
+        The section at path `0` is selected: its name ("Untitled" when empty), its description,
+        and its prose rendered as markdown, or "No prose on this section." A brief with no
+        sections shows "No sections yet". A `change` mark draws a chip at the row's end: green
+        `add`, amber `edit`, red `remove`.
+
+        **The width.** A `ResizeObserver` on the component decides the layout the moment it
+        mounts: 480px or more splits the tree and the content; under it the tree takes the full
+        width. It is the component's width, so half a desktop trail still splits and a phone
+        never does.
+  - key: section-clicked
+    label: A section is clicked
+    trigger: chosen
+    arity: many
+    domain: Reading
+    detail: The label selects; the chevron only folds. Nothing is written.
+    hint: Say how wide the surface is — the same click opens the section beside the tree or as the next step.
+    content:
+      key: click
+      label: What the click does
+      kind: md
+      by: [width]
+      docs:
+        width=wide: |
+          The row's label selects the section: the right pane shows its name, description and
+          prose. The chevron is its own target — it opens or closes the children and never
+          changes the selection. Which rows are open and which is selected live in the
+          viewer's state for the session; the file is untouched.
+        width=narrow: |
+          The row's label selects the section and, when the section has prose or a description,
+          opens it as the next step:
+
+          - **Inside a pane trail** — a points store, a workup, a project lens, any host that
+            passes `onDrill`: a pane keyed `section:<path>` and titled with the section's name
+            opens in the trail, holding the description and the prose.
+          - **Standalone**: the content replaces the tree in place, behind a "‹ back" chip that
+            returns to it.
+
+          A section with neither prose nor description only becomes selected. The chevron only
+          folds. Nothing is written.
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    arity: many
+    domain: Reading
+    detail: The host re-reads; the viewer re-parses and keeps its place where it can.
+    content:
+      key: reread
+      label: What survives a re-read
+      kind: md
+      doc: |
+        Every host watches the file: the desktop app's recursive watcher (250 ms debounce per
+        path, then `studio:fs-changed`), the web folder entry's server events, VS Code's own text
+        document (a "content" message unless the change was the webview's). The Studio re-reads
+        unless its autosave is dirty, saving, or in error, so an open document refreshes from
+        disk by itself.
+
+        The viewer re-parses the new text. The selected path stays — section `0.1` stays
+        selected while it exists; a path that no longer exists falls back to the first section.
+        The folded state stays too, which means a root section that arrives after the open
+        starts folded. A narrow in-place detail closes on any change to the content.
+  - key: embedded
+    label: Another kind shows it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: The brief is the prose kind other documents point at; each renders it through the same viewer.
+    content:
+      key: elsewhere
+      label: Where a brief turns up
+      kind: brief
+      doc:
+        title: Where a brief turns up
+        description: Four places a brief is opened by something other than its own file.
+        sections:
+          - title: A kanban task
+            body: |
+              `file: notes.brief` on a task opens the whole brief in the task dialog, rendered by
+              kind. `section: Banking` beside it opens only the first section whose title contains
+              that text, as a brief of one root.
+          - title: A playbook event
+            body: |
+              A version-2 playbook writes a brief in as `content: {kind: brief, doc: {title, sections}}`.
+              The walk renders it through this viewer under the synthetic name `inline.brief`, with
+              no file on disk, and the playbook's checker runs `parseBrief` over it, named
+              `event <key>: <label> (brief)`.
+          - title: A points store, a workup, a list
+            body: |
+              A row that names a `.brief` opens it whole in the file-content dialog, by kind. A
+              workup step whose output is a brief (`audit.brief`) lands one beside the source and
+              opens it the same way once the step has run.
+          - title: A definition
+            body: |
+              A slot with `kind: brief` expects its fill to be one; the instance opens the fill by
+              path, and a project shows an exported slot's fill as a child of the node.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — and for a brief the verdict is ok whenever the YAML is.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, the summary line, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported; the page adds its line.
+              2. `parseBrief` — it never throws, so a file that is valid YAML always passes.
+          - title: The summary line
+            body: |
+              The command line prints `ok <name>  Brief` and nothing more. The page, and
+              `POST /api/check?kind=brief`, count every section at every depth: `N sections`.
+          - title: Not checked
+            body: |
+              A section with no title (it renders as "Untitled"). An empty `sections` list. A
+              body that is not a string (it reads as empty). Whether `children` sit where they were
+              meant to. The checker judges the file, never the prose.
+  - key: authored
+    label: A brief is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a brief
+        description: From the template to a tree the viewer draws — one file, nothing beside it.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template brief > new.brief`, or Ctrl+N in the Studio, or a project's
+              "New file". It is three keys and one section:
+
+              ```yaml
+              title: new
+              description: ""
+              sections:
+                - title: First section
+                  body: ""
+              ```
+          - key: tree
+            label: Write the sections
+            after: [template]
+            detail: |
+              One `title` per section, `description` for the line under it, `body` for the prose
+              as a block string. Nest with `children`, to any depth. Write `title`, not `name` or
+              `heading` — all three are read, but a dump writes `title`.
+          - key: order
+            label: Put the hierarchy in the order it reads
+            after: [tree]
+            detail: |
+              The tree opens every root and selects the first section, so the first root is what a
+              reader sees first. A section that is only a heading over its children needs no body.
+          - key: check
+            label: Check it
+            after: [order]
+            detail: |
+              `studio-check new.brief`. Only the YAML can fail. Then open it: a section that shows
+              as "Untitled" was parsed but is missing its `title` key.
