@@ -10,6 +10,7 @@
  */
 import yaml from "js-yaml";
 import { parseBrief } from "filekinds/src/lib/briefDoc.ts";
+import { parseGuide } from "filekinds/src/lib/guideDoc.ts";
 import type { FeatureNode } from "filekinds/src/lib/featureTree.ts";
 import {
   PLAYBOOK_LATEST, byEntries, contentEntries, docText, inlineEntries, inlineProblems, legacyProblems,
@@ -112,6 +113,15 @@ export const KINDS: Record<string, KindDef> = {
       const doc = parseBrief(text);
       const count = (nodes: FeatureNode[]): number => nodes.reduce((n, s) => n + 1 + count(s.children ?? []), 0);
       return result("brief", [], { summary: plural(count(doc.sections), "section") });
+    },
+  },
+  guide: {
+    label: "Guide", extension: "guide",
+    check: (text) => {
+      const y = yamlProblem(text);
+      if (y) return result("guide", [y]);
+      const doc = parseGuide(text);
+      return result("guide", [], { summary: `${plural(doc.steps.length, "step")}${doc.decisions.length ? `, ${plural(doc.decisions.length, "decision")}` : ""}` });
     },
   },
   md: {
