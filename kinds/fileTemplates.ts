@@ -7,15 +7,33 @@
  */
 const playbookText = (stem: string) => `version: 2
 title: ${stem}
-description: The state space, the events, and what is true while they happen.
+description: The questions, the events, and what each event shows — every document written in this file; answers are session-only.
 decisions:
   - key: example
     label: An example decision
     values:
       - { key: not-yet, label: Not yet }
       - { key: done, label: Done }
-events: []
-topics: []
+events:
+  - key: example
+    label: An example event
+    trigger: imposed
+    content:
+      kind: md
+      by: [example]
+      docs:
+        example=not-yet: ""
+        example=done: ""
+rules:
+  - event: example
+    when: [example=done]
+    status: ready
+  - event: example
+    when: [example=not-yet]
+    status: ready
+  - event: example
+    status: gap
+    process: Ask which.
 `;
 
 const briefText = (stem: string) => `title: ${stem}

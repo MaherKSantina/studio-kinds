@@ -19,58 +19,78 @@
  * TOPICS are the content that is true while you stand here. A topic exists
  * everywhere unless `when` says otherwise, and shows its `content`.
  *
- * CONTENT is chosen by answers, never read under them. A content entry is a
- * file, or a file that VARIES `by: [decision, ...]`: `file` is then a base and
- * the one shown is `<file>.variants/<decision=answer,...>.<same extension>`,
- * segments in `by` order — `steps.brief` by `push` shows
- * `steps.brief.variants/push=yes.brief`. Every combination is a whole document
- * of its own, authored up front as a closed set (`studio-check` lists the
+ * CONTENT is chosen by answers, never read under them. A content entry is one
+ * document, or a closed set that VARIES `by: [decision, ...]`: one whole
+ * document per answer combination, authored up front (`studio-check` lists the
  * missing ones) and handed nothing from here — a child playbook is
- * self-contained. Nothing is generated while walking.
+ * self-contained. Nothing is generated while walking. Where the documents
+ * live is what the version says, below.
  *
  * The derived thing is the state itself. Nothing in the file names one.
  *
  * VERSIONS — `version: N` at the top level says which playbook this is
  * (see docVersion.ts). Absent means 1. Every version stays readable as it was.
- * A file this engine cannot carry — a newer version, or a version-1 file
- * holding version-2 content — is never written back: `versionProblems` names
+ * A file this engine cannot carry — a newer version, or a file holding what
+ * its version has not got — is never written back: `versionProblems` names
  * it, and a host holds the walk for the session instead of saving, because a
  * save re-emits what was read and would lose the rest.
  *
- * Version 1: a content entry is a file — `{file, label?, by?}` — and nothing else.
+ * Version 1 is the book above — decisions, events, topics, rules — and a
+ * content entry is a FILE beside the book: `{file, label?, by?}`, one or more
+ * per event or topic. `file` is a base when it varies `by`: the one shown is
+ * `<file>.variants/<decision=answer,...>.<same extension>`, segments in `by`
+ * order — `steps.brief` by `push` shows `steps.brief.variants/push=yes.brief`.
+ * Every path is relative to the root book's folder.
  *
- * Version 2: a content entry names ONE SOURCE; `key` and `label` are the same
- * either way:
+ * Version 2 is DECISIONS, EVENTS and RULES, each event showing ONE document
+ * WRITTEN IN THE BOOK, and the walk over it is SESSION-ONLY. Decisions, their
+ * answers, `activates`, `when` and `sets` are as at version 1: answering
+ * changes which events can arise, which rule applies, what a door does and
+ * which document shows — on screen. Nothing is written back: there is no
+ * `view`, every decision starts unanswered each time the file opens, and a
+ * host never saves a version-2 book from the walk. No topics: what is always
+ * true is the content of an always-on event. An event's `content` is ONE
+ * entry, a mapping, not a list: `kind` names the renderer (there is no
+ * extension to pick it); then either `doc`, one document as that kind's YAML
+ * parses it (a string for `md`), or `by` + `docs`, a closed set of them — one
+ * per combination of the `by` answers, keyed `decision=answer,...` in `by`
+ * order — so the document shown FOLLOWS the answer. While a `by` decision is
+ * unanswered the pane shows the rule's `process` (what to do before
+ * answering) and asks for the answer.
  *
- *   content:
- *     - key: notes                 # optional: what the view collapses by and a
- *       label: Notes               #   ref could name; the file, then the label, stand in
- *       file: notes.md             # SOURCE = a document beside the book
- *       by: [entity]               #   varies: notes.md.variants/entity=<answer>.md
- *     - key: paperwork
- *       label: The paperwork
- *       kind: brief                # SOURCE = a document written here; `kind`
- *       doc:                       #   names the renderer (no extension to pick it),
- *         title: Paperwork         #   `doc` is the document as that kind's YAML
- *         sections: [...]          #   parses it — a string for `md`
- *     - key: banking
- *       kind: md                   # SOURCE = a closed set written here: one
- *       by: [entity]               #   document per answer combination, keyed
- *       docs:                      #   `decision=answer,...` in `by` order — the
- *         entity=company: |        #   same segments a variant file name carries
- *           Open a business account.
- *         entity=partnership: |
- *           A joint account will do.
+ *   decisions:
+ *     - key: push
+ *       label: Push to origin?
+ *       values: [{key: yes, label: Yes}, {key: no, label: No}]
+ *   events:
+ *     - key: always
+ *       label: Always
+ *       content:
+ *         key: steps               # optional: what the view collapses by
+ *         label: What to do        # optional: the panel header
+ *         kind: brief              # the kind of every member
+ *         by: [push]               # the set follows this answer
+ *         docs:
+ *           push=yes: {title: Push and release, sections: [...]}
+ *           push=no: {title: Nothing leaves the machine, sections: [...]}
+ *   rules:
+ *     - {event: always, when: [push=yes], status: ready}
+ *     - {event: always, when: [push=no], status: ready}
+ *     - {event: always, status: gap, process: Ask whether to push.}   # unanswered
  *
- * Written-here content makes a book ONE FILE: paste it, validate it, render it
- * with nothing else on disk, and the checker runs each document through its
- * own kind's engine. It has no path, so it carries no annotations and is never
- * pinned; `file` is still the form for anything shared between books. Refused:
- * two sources on one entry, `doc` or `docs` without `kind`, `by` on a `doc`,
- * `docs` without `by`, a `docs` key that is not a combination of the `by`
- * answers, a combination with no document, and an `md` document that is not a
- * string. In a version-1 file a written-here entry is dropped and named: add
- * `version: 2` — a version-1 book is a valid version-2 book unchanged.
+ * A version-2 book is ONE FILE: paste it, validate it, render it with nothing
+ * else on disk, and the checker runs each document through its own kind's
+ * engine — a written `playbook` walks as a book of its own, read at the
+ * version it says. Written content has no path, so it carries no annotations
+ * and is never pinned; a document shared between books is a version-1 `file`.
+ * Refused: `doc` or `docs` without `kind`, both `doc` and `docs`, `by` on a
+ * `doc`, `docs` without `by`, a `docs` key that is not a combination of the
+ * `by` answers, a combination with no document, an `md` document that is not
+ * a string. Each version drops what only the other has and `versionProblems`
+ * names it — in a version-1 file a written entry (add `version: 2`); in a
+ * version-2 file `topics`, `view`, a `content` list, a `file` on an entry
+ * (write the document into the book, delete the view, or take `version: 2`
+ * off).
  */
 import yaml from "js-yaml";
 import { dumpDocVersion, readDocVersion } from "./docVersion";
@@ -115,25 +135,25 @@ export type PlaybookDecision = SpaceDecision;
 export type Arity = "once" | "many";
 
 /**
- * One thing to show, from ONE source: a file beside the book (`file`, which
- * may vary by our answers, see `variationOf`), a document written here
+ * One thing to show. Version 1: a file beside the book (`file`, which may vary
+ * by our answers, see `variationOf`). Version 2: one document written here
  * (`kind` + `doc`), or a closed set written here, one document per answer
- * combination (`kind` + `by` + `docs`). Version 2 adds the written forms and
- * `key`; the label is the same either way.
+ * combination (`kind` + `by` + `docs`) — never a file. `key` is version 2; the
+ * label is the same either way.
  */
 export interface PlaybookContent {
-  /** A stable name for the entry: what the view collapses by, what a ref could name. Version 2; the file, then the label, stand in. */
+  /** A stable name for the entry: what the view collapses by, what a ref could name. Version 2; the file (version 1), then the label, stand in. */
   key?: string;
   label?: string;
-  /** Source: a document beside the book, relative to the root book's folder. */
+  /** Version 1 only — a document beside the book, relative to the root book's folder. */
   file?: string;
-  /** Our decisions this content varies by: `file` is a base, `docs` is keyed by them. Never with `doc`. */
+  /** Our decisions this content varies by: a version-1 `file` is a base, a version-2 `docs` is keyed by them. Never with `doc`. */
   by?: string[];
-  /** Written here — the kind that renders `doc` or `docs`, since there is no extension to pick it. */
+  /** Version 2 only — the kind that renders `doc` or every member of `docs`, since there is no extension to pick it. */
   kind?: string;
-  /** Written here — one document, as its kind's YAML parses it; a string for `md`. */
+  /** Version 2 only — one document, as its kind's YAML parses it; a string for `md`. */
   doc?: unknown;
-  /** Written here — one document per combination of the `by` answers, keyed `decision=answer,...` in `by` order. */
+  /** Version 2 only — one document per combination of the `by` answers, keyed `decision=answer,...` in `by` order. */
   docs?: Record<string, unknown>;
 }
 
@@ -147,7 +167,7 @@ export const contentKey = (c: PlaybookContent, at = "inline"): string =>
 /** A path the registry can pick a renderer from — real, or synthetic for an inline entry. */
 export const contentPath = (c: PlaybookContent): string => c.file ?? `inline.${c.kind ?? "md"}`;
 
-/** The key a `by` combination is filed under: `decision=answer,...` in `by` order. */
+/** The key a `by` combination is filed under: `decision=answer,...` in `by` order — a variant file's name, a `docs` member's key. */
 export const variantKey = (segs: string[]): string => segs.join(",");
 
 /** The document a written entry shows: `doc`, or the `docs` member for these segments (undefined when absent). */
@@ -223,8 +243,8 @@ export interface PlaybookRule {
   offset?: number;
 }
 
+/** What the host writes — version 1 only. A version-2 walk is session-only: the file has no `view`, and the host holds these in memory. */
 export interface PlaybookView {
-  tab?: "walk" | "rules";
   /**
    * The doors walked through, in order, each with the assignment it produced.
    * Only EVENTS are recorded, not pill clicks. `from` is the assignment BEFORE
@@ -243,6 +263,7 @@ export interface PlaybookDoc {
   description?: string;
   decisions: PlaybookDecision[];
   events: PlaybookEvent[];
+  /** Empty at version 2. */
   topics: PlaybookTopic[];
   rules: PlaybookRule[];
   view: PlaybookView;
@@ -259,36 +280,46 @@ export const slugKey = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "x";
 
 const present = (x: unknown): boolean => x !== undefined && x !== null;
-/** Is this raw content entry written here (a `doc` or `docs` source)? */
+/** Is this raw content entry written here (a `doc`, or a `docs` set)? */
 const rawInline = (o: Record<string, unknown>): boolean => present(o.doc) || present(o.docs);
+/** The one raw entry a version-2 `content` holds: the mapping, or the first of a list. */
+const rawOne = (x: unknown): Record<string, unknown> => rec(Array.isArray(x) ? x[0] : x);
 
 /**
- * Version 1 reads `{file, label?, by?}` and drops anything else. Version 2 reads
- * every source. An entry with more than one is kept with all of them, so the
- * checker can say so.
+ * Version 1 reads a list of `{file, label?, by?}` and drops anything else.
+ * Version 2 reads ONE `{key?, label?, kind, by?, doc | docs}` — a mapping; a
+ * list is read as its first entry — and drops it when it names a `file` or has
+ * neither `doc` nor `docs`. `versionProblems` names what each version drops;
+ * an entry with both `doc` and `docs` is kept with both, so the checker can
+ * say so.
  */
 function parseContent(x: unknown, version: number): PlaybookContent[] {
+  if (version >= 2) {
+    const o = rawOne(x);
+    if (!rawInline(o) || str(o.file)) return [];
+    return [{
+      ...(str(o.key) ? { key: str(o.key)! } : {}),
+      ...(str(o.label) ? { label: str(o.label)! } : {}),
+      ...(str(o.kind) ? { kind: str(o.kind)!.replace(/^\./, "").toLowerCase() } : {}),
+      ...(refs(o.by).length ? { by: refs(o.by) } : {}),
+      ...(present(o.doc) ? { doc: o.doc } : {}),
+      ...(present(o.docs) ? { docs: rec(o.docs) } : {}),
+    }];
+  }
   return arr(x).map((c) => {
     const o = rec(c);
     const file = str(o.file);
-    const inline = version >= 2 && rawInline(o);
-    if (!file && !inline) return null;
+    if (!file) return null;
     return {
-      ...(version >= 2 && str(o.key) ? { key: str(o.key)! } : {}),
       ...(str(o.label) ? { label: str(o.label)! } : {}),
-      ...(file ? { file } : {}),
+      file,
       ...(refs(o.by).length ? { by: refs(o.by) } : {}),
-      ...(inline ? {
-        ...(str(o.kind) ? { kind: str(o.kind)!.replace(/^\./, "").toLowerCase() } : {}),
-        ...(present(o.doc) ? { doc: o.doc } : {}),
-        ...(present(o.docs) ? { docs: rec(o.docs) } : {}),
-      } : {}),
     };
   }).filter(Boolean) as PlaybookContent[];
 }
 
 /** Key and label first, then the source: what the spec shows, in that order. */
-const dumpContent = (c: PlaybookContent[]) => c.map((x) => ({
+const dumpEntry = (x: PlaybookContent) => ({
   ...(x.key ? { key: x.key } : {}),
   ...(x.label ? { label: x.label } : {}),
   ...(x.file ? { file: x.file } : {}),
@@ -296,7 +327,10 @@ const dumpContent = (c: PlaybookContent[]) => c.map((x) => ({
   ...(x.by?.length ? { by: x.by } : {}),
   ...(x.doc !== undefined ? { doc: x.doc } : {}),
   ...(x.docs ? { docs: x.docs } : {}),
-}));
+});
+/** A list at version 1; the one entry as a mapping at version 2. */
+const dumpContent = (c: PlaybookContent[], version: number) =>
+  version >= 2 ? dumpEntry(c[0]) : c.map(dumpEntry);
 
 export function parsePlaybook(text: string): PlaybookDoc {
   let raw: Record<string, unknown> = {};
@@ -358,7 +392,8 @@ export function parsePlaybook(text: string): PlaybookDoc {
       };
     }),
 
-    topics: arr(raw.topics).map((t, i) => {
+    // Version 2 has no topics: dropped on read and named by `versionProblems`.
+    topics: version >= 2 ? [] : arr(raw.topics).map((t, i) => {
       const o = rec(t);
       const label = str(o.label) ?? str(o.key) ?? `Topic ${i + 1}`;
       return {
@@ -386,8 +421,8 @@ export function parsePlaybook(text: string): PlaybookDoc {
       };
     }).filter((r) => r.event),
 
-    view: {
-      ...(["walk", "rules"].includes(str(rv.tab) ?? "") ? { tab: str(rv.tab) as "walk" | "rules" } : {}),
+    // A version-2 walk is session-only: the file carries no view, and one found is dropped and named.
+    view: version >= 2 ? {} : {
       ...(Array.isArray(rv.history) ? {
         history: (rv.history as unknown[]).map((h) => {
           const o = rec(h);
@@ -409,7 +444,7 @@ export function dumpPlaybook(doc: PlaybookDoc): string {
     ...dumpDocVersion(doc.version),
     title: doc.title,
     ...(doc.description ? { description: doc.description } : {}),
-    ...(Object.keys(doc.view).length ? { view: doc.view } : {}),
+    ...(doc.version < 2 && Object.keys(doc.view).length ? { view: doc.view } : {}),
     decisions: doc.decisions.map((d) => ({
       key: d.key, label: d.label,
       ...(d.detail ? { detail: d.detail } : {}),
@@ -427,14 +462,14 @@ export function dumpPlaybook(doc: PlaybookDoc): string {
       ...(e.domain ? { domain: e.domain } : {}),
       ...(e.detail ? { detail: e.detail } : {}),
       ...(e.inputs?.length ? { inputs: e.inputs } : {}),
-      ...(e.content?.length ? { content: dumpContent(e.content) } : {}),
+      ...(e.content?.length ? { content: dumpContent(e.content, doc.version) } : {}),
     })),
     ...(doc.topics.length ? {
       topics: doc.topics.map((t) => ({
         key: t.key, label: t.label,
         ...(t.detail ? { detail: t.detail } : {}),
         ...(t.when?.length ? { when: t.when } : {}),
-        content: dumpContent(t.content),
+        content: dumpContent(t.content, doc.version),
       })),
     } : {}),
     ...(doc.rules.length ? {
@@ -462,41 +497,56 @@ export function legacyProblems(text: string): string[] {
   let raw: Record<string, unknown> = {};
   try { raw = rec(yaml.load(text)); } catch { return []; }
   const out: string[] = [];
-  if (arr(raw.library).length) out.push("`library:` is gone — put each entry on its event as `content: [{file, by?, label?}]`");
+  if (arr(raw.library).length) out.push("`library:` is gone — put each entry on its event under `content:`");
   if (arr(raw.compare).length) out.push("`compare:` is gone — there is no A/B view any more");
   if (arr(raw.topics).some((t) => arr(rec(t).variants).length)) {
-    out.push("topic `variants:` are gone — a topic has `content:` directly; a file that differs by answer is `{file, by: [decision]}` with one file per answer in `<file>.variants/`");
+    out.push("topic `variants:` are gone — a topic has `content:` directly; content that differs by answer is a `by` entry with one whole document per answer");
   }
   if (str(rec(raw.view).against)) out.push("`view.against` is gone with the A/B view");
+  if (str(rec(raw.view).tab)) out.push("`view.tab` is gone — the walk is the only view");
   if (arr(raw.materials).length || arr(raw.scales).length || Object.keys(rec(rec(raw.view).thresholds)).length) {
-    out.push("`materials:`, `scales:` and `view.thresholds` are gone — nothing damps a branch any more; a document that was a material belongs on an event or topic as `content: [{file}]`");
+    out.push("`materials:`, `scales:` and `view.thresholds` are gone — nothing damps a branch any more; a document that was a material belongs on an event or topic under `content:`");
   }
   return out;
 }
 
 /**
- * What the file's version cannot carry: a version the engine does not know,
- * and — in a version-1 file — content written here, which version 1 drops.
- * Named so the author adds `version: 2` rather than losing the entry on save;
- * and while any of these holds, a host does not save at all (`PlaybookPreview`
- * keeps the walk for the session), because a save re-emits what was read.
+ * What the file's version cannot carry: a version the engine does not know;
+ * in a version-1 file, content written in the book; in a version-2 file,
+ * topics, a view, a content list, a file or a set on an entry. Named so the
+ * author moves the content rather than losing it on save; and while any of
+ * these holds, a version-1 host does not save at all (`PlaybookPreview` keeps
+ * the walk for the session), because a save re-emits what was read. A
+ * version-2 host never saves from the walk anyway.
  */
 export function versionProblems(text: string): string[] {
   let raw: Record<string, unknown> = {};
   try { raw = rec(yaml.load(text)); } catch { return []; }
   const { version, problem } = readDocVersion(raw, "playbook", PLAYBOOK_LATEST);
   const out: string[] = problem ? [problem] : [];
-  if (version >= 2) return out;
-  const dropped = (list: unknown, where: (o: Record<string, unknown>, i: number) => string) =>
-    arr(list).flatMap((x, i) => {
-      const o = rec(x);
-      return arr(o.content).map(rec).filter(rawInline)
-        .map((c) => `${where(o, i)}: ${str(c.label) ?? str(c.key) ?? "a content entry"} is written in the book — version 1 has no such thing; add \`version: 2\` at the top`);
-    });
-  out.push(
-    ...dropped(raw.events, (o, i) => `event ${str(o.key) ?? str(o.label) ?? i + 1}`),
-    ...dropped(raw.topics, (o, i) => `topic ${str(o.key) ?? str(o.label) ?? i + 1}`),
-  );
+  const at = (what: string, o: Record<string, unknown>, i: number) => `${what} ${str(o.key) ?? str(o.label) ?? i + 1}`;
+
+  if (version < 2) {
+    const dropped = (list: unknown, what: string) =>
+      arr(list).flatMap((x, i) => arr(rec(x).content).map(rec).filter(rawInline)
+        .map((c) => `${at(what, rec(x), i)}: ${str(c.label) ?? str(c.key) ?? "a content entry"} is written in the book — version 1 has no such thing; add \`version: 2\` at the top`));
+    out.push(...dropped(raw.events, "event"), ...dropped(raw.topics, "topic"));
+    return out;
+  }
+
+  const off = "or take `version: 2` off";
+  if (arr(raw.topics).length) out.push(`\`topics:\` — version 2 has no topics; what is always true is the content of an always-on event, ${off}`);
+  if (Object.keys(rec(raw.view)).length) out.push("`view:` — a version-2 walk is session-only and writes nothing; every decision opens unanswered. Delete the view");
+  arr(raw.events).forEach((x, i) => {
+    const o = rec(x);
+    const where = at("event", o, i);
+    if (!present(o.content)) return;
+    if (Array.isArray(o.content)) out.push(`${where}: \`content\` is one document at version 2 — a mapping, not a list; several sections belong in one brief`);
+    const c = rawOne(o.content);
+    const name = str(c.label) ?? str(c.key) ?? str(c.file) ?? "the content";
+    if (str(c.file)) out.push(`${where}: ${name} is a file beside the book — version 2 is written in the book; write it as \`kind\` + \`doc\`, ${off}`);
+    if (!rawInline(c) && !str(c.file) && Object.keys(c).length) out.push(`${where}: ${name} has neither \`doc\` nor \`docs\` — write the document under it`);
+  });
   return out;
 }
 
@@ -595,13 +645,6 @@ export function eventsAt(doc: PlaybookDoc, locks: string[]): PlaybookEvent[] {
   });
 }
 
-/** How much of the reachable ground anybody has covered: events with at least one rule. */
-export function coverage(doc: PlaybookDoc): { seen: number; total: number } {
-  const withRule = new Set(doc.rules.map((r) => r.event));
-  return { seen: [...withRule].filter((k) => doc.events.some((e) => e.key === k)).length,
-           total: doc.events.length };
-}
-
 /**
  * What a content entry shows under this assignment.
  *
@@ -650,7 +693,7 @@ export const contentEntries = (doc: PlaybookDoc): { where: string; entry: Playbo
   ...doc.topics.flatMap((t) => t.content.map((c) => ({ where: `topic ${t.key}`, entry: c }))),
 ];
 
-/** Every `by` entry in the book, with where it sits: a file that varies, or a written set. */
+/** Every `by` entry in the book, with where it sits: a version-1 file that varies, or a version-2 written set. */
 export const byEntries = (doc: PlaybookDoc) => contentEntries(doc).filter((x) => x.entry.by?.length);
 
 /** `by` decisions that are not decisions of this book. */
@@ -664,10 +707,11 @@ export function variationProblems(doc: PlaybookDoc): string[] {
 export const inlineEntries = (doc: PlaybookDoc) => contentEntries(doc).filter((x) => isInline(x.entry));
 
 /**
- * What a written entry cannot be: without a `kind` nothing can render it; with a
- * `file` too, nobody knows which to show; one `doc` has nothing to vary `by`;
- * `docs` without `by` has nothing to key by; a `docs` set is the closed set of
- * its `by` answers, no more and no less; an `md` document is its text.
+ * What a written entry cannot be: without a `kind` nothing can render it; one
+ * `doc` has nothing to vary `by`; `docs` without `by` has nothing to key by; a
+ * `docs` set is the closed set of its `by` answers, no more and no less; an
+ * `md` document is its text. (A `file` beside a written entry never gets this
+ * far: version 2 drops the entry, and `versionProblems` says so.)
  */
 export function inlineProblems(doc: PlaybookDoc): string[] {
   return inlineEntries(doc).flatMap(({ where, entry }) => {
@@ -675,9 +719,8 @@ export function inlineProblems(doc: PlaybookDoc): string[] {
     const form = entry.docs ? "`docs`" : "`doc`";
     const out: string[] = [];
     if (!entry.kind) out.push(`${where}: ${name} has ${form} but no \`kind\` — say which kind renders it (brief, guide, md, …)`);
-    if (entry.file) out.push(`${where}: ${name} has both \`file\` and ${form} — one source or the other`);
     if (entry.doc !== undefined && entry.docs) out.push(`${where}: ${name} has both \`doc\` and \`docs\` — one document, or one per answer combination`);
-    if (entry.doc !== undefined && entry.by?.length) out.push(`${where}: ${name} is one document, so it cannot vary \`by\` — write one per answer combination under \`docs\`, or make it a file`);
+    if (entry.doc !== undefined && entry.by?.length) out.push(`${where}: ${name} is one document, so it cannot vary \`by\` — write one per answer combination under \`docs\``);
     if (entry.docs) {
       if (!entry.by?.length) out.push(`${where}: ${name} has \`docs\` but no \`by\` — say which decisions key the documents`);
       else if (entry.by.every((d) => doc.decisions.some((x) => x.key === d))) {

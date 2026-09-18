@@ -20,33 +20,36 @@ Nothing is stored, logged, cached or remembered, on purpose: the page exists so 
 
 A kind that changes shape says so in the file: `version: N` at the top, a whole number. Absent means 1, so every file written before the kind was versioned is version 1 without being touched. A kind keeps every version it has ever had — version N's parser and renderer stay as they were when N was current — so a file never changes meaning because the kind moved on. A version the engine does not know is named by the check, and a Studio that writes files back never writes such a file (it would come back as the version it was read as, with the rest gone).
 
-`.playbook` is at **version 2**. Version 1 content entries are files beside the book: `{file, label?, by?}`. Version 2 lets an entry carry its document instead:
+`.playbook` is at **version 2**, and the two versions are two shapes. Version 1 (no `version:` line) is the book described above: decisions, events, topics, rules, and every content entry a file beside the book — `{file, label?, by?}`, varying by answer as `notes.md.variants/entity=<answer>.md`; the host writes the answers taken into `view`. Version 2 (`version: 2` at the top) keeps decisions, events and rules but is **session-only** and **one file**: there is no `view`, every decision opens unanswered and nothing clicked is ever saved; there are no topics (what is always true is the content of an always-on event); and each event has one content entry written in the book, never a `file`: one document (`kind` + `doc`), or a closed set that follows the answer (`kind` + `by` + `docs`, one document per answer combination keyed `decision=answer,…` in `by` order). While a `by` decision is unanswered the pane shows the rule's `process` and asks for the answer.
 
 ```yaml
-content:
-  - key: notes                 # optional: what the walk collapses by
-    label: Notes
-    file: notes.md             # a document beside the book …
-    by: [entity]               #   … that varies: notes.md.variants/entity=<answer>.md
-  - key: paperwork
-    label: The paperwork
-    kind: brief                # a document written HERE; `kind` names the renderer
-    doc:
-      title: Paperwork
-      sections: [{title: Reserve the name, body: Hold it for 60 days.}]
-  - key: banking
-    kind: md                   # a closed set written here: one document per
-    by: [entity]               #   answer combination, keyed decision=answer,…
-    docs:                      #   in `by` order, like a variant file is named
-      entity=company: |
-        Open a business account.
-      entity=partnership: |
-        A joint account will do.
+version: 2
+title: A tiny venture
+decisions:
+  - key: entity
+    label: What are we?
+    values: [{key: company, label: A company}, {key: partnership, label: A partnership}]
+events:
+  - key: incorporate
+    label: We incorporate
+    trigger: chosen
+    content:                   # ONE entry — a mapping, not a list
+      key: paperwork           # optional: what the walk collapses by
+      label: The paperwork
+      kind: brief              # written HERE; `kind` names the renderer
+      by: [entity]             # the set follows this answer
+      docs:
+        entity=company: {title: As a company, sections: [{title: The name, body: Hold it for 60 days.}]}
+        entity=partnership: {title: As a partnership, sections: [{title: The deed, body: Sign it.}]}
+rules:
+  - {event: incorporate, when: [entity=company], status: ready}
+  - {event: incorporate, when: [entity=partnership], status: ready}
+  - {event: incorporate, status: gap, process: Say what we are first.}
 ```
 
-A book with everything written in it is **one file**: paste it, check it, render it with nothing else on disk. The check runs each written document through its own kind's engine — a written playbook is walked and checked as a book of its own. `file` stays the form for anything shared between books; this page names such a file and does not read it, because it has no folder.
+A version-2 book is **one file**: paste it, check it, render it with nothing else on disk. The check runs each written document through its own kind's engine — a written playbook (`kind: playbook`, the book under `doc`) is walked and checked as a book of its own, at the version it says. A document shared between books is a version-1 file; this page names such a file and does not read it, because it has no folder.
 
-Refused: two sources on one entry, `doc` or `docs` without `kind`, `by` on a `doc`, `docs` without `by`, a `docs` key that is not a combination of the `by` answers, a combination with no document, an `md` document that is not a string, and a written entry in a version-1 file (add `version: 2`). A version-1 book is a valid version-2 book unchanged.
+Refused: `doc` or `docs` without `kind`, `doc` and `docs` together, `by` on a `doc`, `docs` without `by`, a `docs` key that is not a combination of the `by` answers, a combination with no document, an `md` document that is not a string, a written entry in a version-1 file (add `version: 2`), and — in a version-2 file — `topics`, `view`, a `content` list, a `file` on an entry (write the document into the book, delete the view, or take `version: 2` off).
 
 The full field reference is the header comment of `kinds/playbookDoc.ts`.
 
@@ -77,9 +80,9 @@ The kind comes from `?kind=`, an `X-Kind` header, or the JSON body. The answer:
   "ok": false,
   "kind": "playbook",
   "version": 2,
-  "summary": "v2 · 2 decisions, 3 events, 2 topics, 5 written inline",
+  "summary": "v2 · 1 decisions, 4 events, 0 topics, 4 written inline",
   "problems": [{ "message": "event e: Map: an `md` document is its text — write it as a block string" }],
-  "notes": ["1 file entry not checked — this check has no folder: audits/last-time.md"]
+  "notes": []
 }
 ```
 

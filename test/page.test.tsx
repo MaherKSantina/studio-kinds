@@ -25,26 +25,28 @@ describe("the page", () => {
     // Checked and rendered on arrival.
     expect(host.textContent).toContain("A tiny venture");
     expect(host.textContent).toContain("Valid");
-    expect(host.textContent).toContain("5 written inline");
-    expect(host.textContent).toContain("1 file entry not checked");
+    expect(host.textContent).toContain("4 written inline");
 
     // An event opens; its content, written in the book, renders by its kind (a brief).
     await act(async () => { button(host, "button.event", "We incorporate").click(); });
-    expect(host.textContent).toContain("Reserve the name");
+    expect(host.textContent).toContain("hold the name for 60 days");
     expect(host.textContent).toContain("written here");
 
-    // An answer taken: the written set shows the member the answer picks, and a topic comes live.
-    await act(async () => { button(host, "button.pill", "A company").click(); });
+    // Unanswered, a written set shows the rule's process and asks for the answer.
     await act(async () => { button(host, "button.event", "Somebody pays us").click(); });
-    expect(host.textContent).toContain("Into the company account");
-    expect(host.textContent).toContain("While we are a company");
-    expect(host.textContent).not.toContain("Into the personal account");
+    expect(host.textContent).toContain("Answer What are we? to see this.");
+    expect(host.textContent).not.toContain("Into the joint account");
+    // An answer taken picks the member, hides the event its rule makes n/a, and writes nothing.
+    await act(async () => { button(host, "button.pill", "A partnership").click(); });
+    expect(host.textContent).toContain("Into the joint account");
+    expect(host.textContent).not.toContain("Into the company account");
+    expect([...host.querySelectorAll("button.event")].map((b) => b.textContent)).not.toContain("We incorporate");
+    expect(host.querySelector("textarea")!.value).not.toContain("view:");
 
-    // A nested written book walks inside its panel; a file beside the book is named, not read.
+    // A nested written book walks inside its panel.
     await act(async () => { button(host, "button.event", "The tax office audits us").click(); });
     expect(host.textContent).toContain("An audit, as a book of its own");
-    expect(host.textContent).toContain("Are the records in one place?");
-    expect(host.textContent).toContain("audits/last-time.md");
+    expect(host.textContent).toContain("The letter arrives");
 
     // The text is the truth: a broken document changes the verdict, nothing throws.
     const area = host.querySelector("textarea")!;
