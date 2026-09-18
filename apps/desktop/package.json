@@ -1,0 +1,170 @@
+{
+  "name": "studio-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The Studio as a desktop app: the same editors over a real folder on disk.",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "rcedit": "^5.0.2"
+  },
+  "build": {
+    "appId": "com.digitalsymphony.studio",
+    "productName": "Studio",
+    "directories": {
+      "output": "out"
+    },
+    "afterPack": "scripts/after-pack.cjs",
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "renderer/**",
+      "build/icon.ico"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "include": "build/installer.nsh"
+    },
+    "fileAssociations": [
+      {
+        "ext": "frame",
+        "name": "Studio frame",
+        "role": "Editor"
+      },
+      {
+        "ext": "flow",
+        "name": "Studio flow",
+        "role": "Editor"
+      },
+      {
+        "ext": "playbook",
+        "name": "Studio playbook",
+        "role": "Editor"
+      },
+      {
+        "ext": "plan",
+        "name": "Studio plan",
+        "role": "Editor"
+      },
+      {
+        "ext": "guide",
+        "name": "Studio guide",
+        "role": "Editor"
+      },
+      {
+        "ext": "brief",
+        "name": "Studio brief",
+        "role": "Editor"
+      },
+      {
+        "ext": "points",
+        "name": "Studio points",
+        "role": "Editor"
+      },
+      {
+        "ext": "policy",
+        "name": "Studio policy",
+        "role": "Editor"
+      },
+      {
+        "ext": "project",
+        "name": "Studio project",
+        "role": "Editor"
+      },
+      {
+        "ext": "list",
+        "name": "Studio list",
+        "role": "Editor"
+      },
+      {
+        "ext": "kanban",
+        "name": "Studio kanban",
+        "role": "Editor"
+      },
+      {
+        "ext": "calendar",
+        "name": "Studio calendar",
+        "role": "Editor"
+      },
+      {
+        "ext": "definition",
+        "name": "Studio definition",
+        "role": "Editor"
+      },
+      {
+        "ext": "memory",
+        "name": "Studio memory",
+        "role": "Editor"
+      },
+      {
+        "ext": "schema",
+        "name": "Studio schema",
+        "role": "Editor"
+      },
+      {
+        "ext": "workup",
+        "name": "Studio workup",
+        "role": "Editor"
+      },
+      {
+        "ext": "program",
+        "name": "Studio program",
+        "role": "Editor"
+      },
+      {
+        "ext": "tablediff",
+        "name": "Studio table diff",
+        "role": "Editor"
+      },
+      {
+        "ext": "pulse",
+        "name": "Studio pulse",
+        "role": "Editor"
+      },
+      {
+        "ext": "moves",
+        "name": "Studio moves",
+        "role": "Editor"
+      },
+      {
+        "ext": "jsonl",
+        "name": "Studio data rows",
+        "role": "Editor"
+      },
+      {
+        "ext": "middleware",
+        "name": "Studio middleware",
+        "role": "Editor"
+      },
+      {
+        "ext": "collection",
+        "name": "Studio collection",
+        "role": "Editor"
+      },
+      {
+        "ext": "clip",
+        "name": "Studio clip",
+        "role": "Editor"
+      },
+      {
+        "ext": "song",
+        "name": "Studio song",
+        "role": "Editor"
+      }
+    ],
+    "artifactName": "Studio-Setup-${version}.exe"
+  }
+}

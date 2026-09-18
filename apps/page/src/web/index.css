@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "../../../../packages/crosscut/src/tokens.css";
+
+/* The kits' classes (crosscut, filekinds) come from the workspace packages, so Tailwind scans them too. */
+@source "../../../../packages/crosscut/src";
+@source "../../../../packages/filekinds/src";

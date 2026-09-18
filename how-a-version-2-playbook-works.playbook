@@ -1,0 +1,341 @@
+version: 2
+title: How a version-2 playbook works
+description: The playbook as one file — decisions and events, every document in it, and a walk that answers on screen and writes nothing.
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the shape of the file, how an answer picks a document, and where the engine lives.
+    content:
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: Two lists — decisions and events — and one document per event. The whole book is this one file.
+        sections:
+          - title: Top-level keys
+            body: |
+              `version: 2` on the first line, then, in the order a dump writes them:
+
+              | key | what it is |
+              |---|---|
+              | `title` | the heading |
+              | `description` | one line under the title |
+              | `decisions` | the state space: questions, each with its answers |
+              | `events` | what can happen, when it is on the table, what to do before its document shows, and the one document each shows when taken |
+
+              Nothing else is read. What is always true is the content of an always-on event.
+              The walk keeps its state in the host for the session and never writes it here.
+          - title: Decisions
+            body: |
+              ```yaml
+              decisions:
+                - key: entity                  # identity — appears in every when and docs key
+                  label: What are we?
+                  values:
+                    - key: none
+                      label: Nothing yet
+                    - key: company
+                      label: A company
+                      activates: [banking]     # an answer can bring a further question into being
+                - key: banking
+                  label: Where does the money sit?
+                  values:
+                    - key: personal
+                      label: A personal account
+                    - key: business
+                      label: A business account
+                      when: [entity=company]   # an answer offered only under another
+              ```
+
+              A state is an ASSIGNMENT — which answer is currently taken for each decision — and
+              nothing in the file names one. Every decision opens unanswered. A decision with no
+              `activates` pointing at it is always on the table; one that is activated exists only
+              while an activating answer is taken.
+          - title: Events
+            body: |
+              ```yaml
+              events:
+                - key: incorporate
+                  label: We incorporate
+                  trigger: chosen           # imposed (default) | chosen
+                  arity: once               # once (default) | many
+                  rate: 5/w                 # only meaningful with arity many
+                  domain: Company           # a grouping heading in the rail, nothing more
+                  detail: one italic line shown when the event is open
+                  when: [entity=company]    # on the table only where this holds; absent = always
+                  hint: markdown shown while an answer the document follows is open
+                  content:                  # ONE entry — see below
+                    kind: brief
+                    doc: { title: The paperwork, sections: [...] }
+              ```
+
+              `trigger`: `imposed` arrives whether or not we are ready (a bolt); `chosen` fires
+              when we say so (a hand). `arity: many` never leaves the table (a repeat icon, `rate`
+              beside the label).
+          - title: When and hint
+            body: |
+              Two optional fields on an event:
+
+              - `when` — a condition over the assignment. The event is on the table only while
+                every ref holds; absent, it is always there.
+              - `hint` — markdown. While a `by` answer the document follows is unanswered, the
+                pane shows it above "Answer … to see this": the ask. For an event with no
+                content it is the response.
+
+              The document shows once the answers it follows are taken; until then the hint
+              does.
+          - title: Content — one entry
+            body: |
+              An event's `content` is one mapping. `kind` names the engine that renders it, since
+              there is no file extension to pick it from — `md`, `brief`, `guide`, `playbook`, any
+              kind the Studio knows. Then either one document:
+
+              ```yaml
+              content:
+                key: paperwork        # optional: what the walk collapses by
+                label: The paperwork  # optional: the panel header; the key stands in
+                kind: brief
+                doc:                  # the document, exactly as a file of that kind would hold it
+                  title: The paperwork
+                  sections: [...]
+              ```
+
+              or a set that follows the answer:
+
+              ```yaml
+              content:
+                key: paperwork
+                kind: brief
+                by: [entity]          # the decisions the set follows
+                docs:                 # one document per answer combination, keyed
+                  entity=none: {title: Nothing to file}                          #   decision=answer,…
+                  entity=company: {title: As a company, sections: [...]}        #   in `by` order
+              ```
+
+              A document is that kind's YAML; for `md` it is a block string. A dump writes an
+              entry as `key`, `label`, `kind`, `by`, `doc` or `docs`, each only when present. A `docs` set is
+              CLOSED: every combination of the `by` answers is a member, written up front, and the
+              checker lists the missing ones. With two decisions in `by` the key carries both
+              segments in `by` order, `entity=company,banking=business`, and the set has one
+              member per pair. Nothing is generated while walking — the answers only choose.
+          - title: How an answer picks a document
+            body: |
+              For a `by` + `docs` entry, `variationOf(entry, locks)` takes the answer to each
+              decision in `by`, in `by` order, into `segs`; the member shown is
+              `docs[segs.join(",")]`. While any `by` decision is unanswered, `missing` names it and
+              the pane shows the event's `hint` above "Answer … to see this." — an event
+              whose document follows an answer carries the ask as its `hint`. A member is
+              handed nothing: no answers, no context. A lone `doc` is itself whatever the
+              answers.
+          - title: What a document has not got
+            body: |
+              A path. Nothing is read from disk to show it, so it carries no annotations and is
+              never pinned. What identifies it is its
+              `key`, else its label, else where it sits (`event incorporate/0`).
+          - title: One file
+            body: |
+              Everything the book shows is in the file: paste it, check it, render it with nothing
+              else on disk. A document two books share is in each.
+          - title: Refused
+            body: |
+              `doc` or `docs` without `kind` · `doc` and `docs` on one entry · `by` on a `doc` ·
+              `docs` without `by` · a `docs` key that is not a combination of the `by` answers · a
+              combination with no member · an `md` document that is not a string · a `content`
+              list · a `file` on an entry.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/playbookDoc.ts` — `parsePlaybook`, `dumpPlaybook`,
+              `versionProblems`, `inlineProblems`, `variationOf`, `variationKeys`, `writtenDoc`,
+              `contentKey`, `contentPath`, `contentText`, and the derivation: `meets`,
+              `activeDecisions`, `impliedLocks`, `pruneLocks`, `take`, `rulesOf`
+              (at version 2, each event as its own rule — its `when` and `hint`),
+              `ruleFor`, `canArise`, `eventsAt`. Its header comment is what
+              `studio-check --spec playbook` prints.
+              `docVersion.ts` beside it reads the version line. The walk is
+              `components/playbook/PlaybookWalk.tsx`, the session state is `PlaybookPreview.tsx`,
+              the checker is `apps/cli/src/check.ts`. The engine is mirrored to the public
+              `studio-kinds` repository by `pnpm kinds:sync`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: parsePlaybook reads the YAML once; the walk is drawn with every decision unanswered.
+    content:
+      key: parse
+      label: What the parser keeps
+      kind: md
+      doc: |
+        `readDocVersion` reads `version:` off the root, then `parsePlaybook` reads `title`,
+        `description`, `decisions` and `events`. On each event, `when` and `hint` are kept
+        when present. For each event's `content`:
+
+        - `key`, `label` — kept when present.
+        - `kind` — lower-cased, a leading dot dropped (`.brief` and `brief` are the same).
+        - `by` — kept when present.
+        - `doc` / `docs` — kept as parsed YAML, whatever shape; the kind's own engine judges it.
+
+        Dropped, and named by `versionProblems`: an entry that names a `file`, an entry with
+        neither `doc` nor `docs`. A `content` list is read as its first entry so the walk still
+        shows something, and the list is named.
+
+        Parsing never throws: an unreadable file opens as an empty playbook, an unknown key is
+        ignored, `trigger` defaults to `imposed`, a missing `key` is slugged from the label. The
+        walk opens with nothing answered: the rail shows every decision with no `activates`
+        pointing at it, and the events that can arise under an empty assignment, grouped by
+        `domain` in the order the domains first appear.
+  - key: answered
+    label: An answer is taken
+    trigger: chosen
+    arity: many
+    domain: Walking
+    detail: The host keeps the assignment for the session; the file is untouched.
+    content:
+      key: session
+      label: Session-only
+      kind: md
+      doc: |
+        A pill click replaces any other answer to the same decision, then `pruneLocks` drops
+        answers to questions no longer on the table, to a fixed point. `impliedLocks` takes any
+        decision down to one available answer without showing it. The rail and the events on
+        the table recompute from the new assignment — `eventsAt` keeps the events whose `when`
+        holds (`canArise`), a `by` entry picks its member.
+
+        `PlaybookPreview` holds the assignment and the folded panels in its own state
+        and never calls the host's `onChange`. The YAML does not change; reload the file and every
+        decision is unanswered again. Two consequences: a hand edit and a click can never fight
+        over the file, and a standing answer cannot be stored in the book — what the book holds is
+        the questions and what to do under each answer; the answer itself is given elsewhere, each
+        time.
+  - key: event-clicked
+    label: An event is clicked
+    trigger: chosen
+    arity: many
+    domain: Walking
+    detail: The event-detail table picks the body; the document renders by its kind.
+    content:
+      key: detail
+      label: What the pane shows
+      kind: brief
+      doc:
+        title: What the pane shows
+        description: One body per event, decided by the event-detail table, then rendered without a read.
+        sections:
+          - title: Which body
+            body: |
+              A click SELECTS the event; its content shows in the pane, never inline in the rail,
+              so there is nothing to collapse; a second click only brings the pane back into view
+              on a narrow screen. The event is its own rule (`rulesOf`): its `hint`
+              applies whenever it is on the table. The pane stacks the `detail` line, then
+              ONE body from the `event-detail` table (`eventDetailRules.ts`):
+
+              | content | body |
+              |---|---|
+              | an entry with all its `by` answers taken | that document, bare — no card, no header, filling the pane |
+              | an entry with a `by` answer open | the event's `hint`, then "Answer … to see this." |
+              | none, and the event has `hint` | the hint prose, rendered as markdown |
+              | none, and no hint | "No response recorded — this is a hole, not a nothing." |
+
+              An event has one entry, so there is never a list of cards.
+          - title: From `doc` to a renderer
+            body: |
+              `contentPath(entry)` is `inline.<kind>` — a synthetic name the file-kind registry
+              picks a renderer from exactly as it would for a real `x.<kind>` file. `contentText`
+              is the chosen document dumped back to YAML (`js-yaml`), or the string itself for
+              `md`. The panel (`ContentPanel` in `PlaybookWalk.tsx`) takes that text beside the
+              path and performs no read, so the book renders in a host that has no directory.
+              Folding a panel is remembered in the session under the entry's `key`; a set's panel
+              is keyed by the entry plus its segments, so it remounts when the answers pick
+              another member.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: One file in, one verdict out — and a verdict per document in it.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: The order it runs in, the summary line, and what it leaves alone.
+        sections:
+          - title: In order
+            body: |
+              1. Parse — a YAML error is the only problem reported.
+              2. `versionProblems` — the version line, then a `content` list, a `file` on an
+                 entry.
+              3. `legacyProblems` — keys the format no longer has: `library`, `compare`, topic
+                 `variants`, `materials`, `scales`, `view.against`, `view.tab`, `view.thresholds`.
+              4. `variationProblems` — every decision in every `by` is a decision of this book.
+              5. `inlineProblems` — `doc`/`docs` without `kind`; both on one entry; `by` on a
+                 `doc`; `docs` without `by`; a `docs` set that is not exactly the closed set of
+                 its `by` answers; an `md` document that is not a string.
+              6. Each document through its own kind's check, named
+                 `event <key>: <label> (<kind>)` and, for a set member, `[<segments>]`.
+          - title: The summary line
+            body: |
+              `v2 · N decisions, N events, N documents` — the last count is the events with
+              content; a set counts once.
+          - title: Not checked
+            body: |
+              That the prose is true. That refs in an event's `when` name real
+              decisions and answers — a stale `when` never holds, quietly, and the event never
+              appears.
+  - key: authored
+    label: A book is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a playbook
+        description: From the template to a file the checker passes — one file, start to finish.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template playbook > new.playbook`. The first line is `version: 2`;
+              leave it.
+          - key: decisions
+            label: Write the decisions
+            after: [template]
+            detail: |
+              One per question whose answer changes what is on the table. Keys are identity: they
+              appear in every `when` and `docs` key. A question that exists only under an
+              answer goes in that answer's `activates`; an answer offered only under another gets
+              its own `when`. No answer is written anywhere — the book opens unanswered every time.
+          - key: events
+            label: Write the events
+            after: [template]
+            detail: |
+              `trigger: chosen` when we decide it happens, `imposed` when the world does; `domain`
+              groups them in the rail; `arity: many` for something that recurs and never finishes.
+              Then, on the event, only what applies: `when` where it is on the table only under
+              an answer; `hint` — the ask — where
+              its document follows an answer, or the response where it shows nothing.
+          - key: content
+            label: Write each document in
+            after: [events]
+            detail: |
+              `content:` as a mapping — `kind: <kind>`, then `doc:` holding the document exactly
+              as a file of that kind would: `title` and `sections` for a brief, `steps` for a
+              guide, a block string for `md`. Indentation is the only
+              thing to get right.
+          - key: members
+            label: Write a set where the document follows an answer
+            after: [content]
+            detail: |
+              `by: [decision]` and `docs:` with one member per answer, keyed `decision=answer`
+              (two decisions in `by`: one member per pair, `a=x,b=y`, in `by` order). Write every
+              member; the checker lists the ones missing.
+          - key: check
+            label: Check it
+            after: [decisions, members]
+            detail: |
+              `studio-check new.playbook`. Exit 1 names what is refused and what each
+              document's own engine found. The file needs nothing beside it.

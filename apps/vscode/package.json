@@ -1,0 +1,147 @@
+{
+  "name": "studio-vscode",
+  "displayName": "Studio",
+  "description": "The Studio's document editors (frames, flows, playbooks, projects and every other kind) as a VS Code custom editor and side preview.",
+  "version": "0.1.0",
+  "publisher": "maher",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "main": "./extension.js",
+  "icon": "icon.png",
+  "scripts": {
+    "package": "npx --yes @vscode/vsce package --no-dependencies --allow-missing-repository"
+  },
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "studio.document",
+        "displayName": "Studio",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.frame"
+          },
+          {
+            "filenamePattern": "*.flow"
+          },
+          {
+            "filenamePattern": "*.playbook"
+          },
+          {
+            "filenamePattern": "*.plan"
+          },
+          {
+            "filenamePattern": "*.guide"
+          },
+          {
+            "filenamePattern": "*.brief"
+          },
+          {
+            "filenamePattern": "*.points"
+          },
+          {
+            "filenamePattern": "*.policy"
+          },
+          {
+            "filenamePattern": "*.project"
+          },
+          {
+            "filenamePattern": "*.list"
+          },
+          {
+            "filenamePattern": "*.kanban"
+          },
+          {
+            "filenamePattern": "*.calendar"
+          },
+          {
+            "filenamePattern": "*.definition"
+          },
+          {
+            "filenamePattern": "*.memory"
+          },
+          {
+            "filenamePattern": "*.schema"
+          },
+          {
+            "filenamePattern": "*.workup"
+          },
+          {
+            "filenamePattern": "*.program"
+          },
+          {
+            "filenamePattern": "*.tablediff"
+          },
+          {
+            "filenamePattern": "*.pulse"
+          },
+          {
+            "filenamePattern": "*.moves"
+          },
+          {
+            "filenamePattern": "*.jsonl"
+          },
+          {
+            "filenamePattern": "*.middleware"
+          },
+          {
+            "filenamePattern": "*.collection"
+          },
+          {
+            "filenamePattern": "*.clip"
+          },
+          {
+            "filenamePattern": "*.song"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "studio.openPreview",
+        "title": "Studio: Open Preview to the Side",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "studio.open",
+        "title": "Studio: Open with Studio"
+      },
+      {
+        "command": "studio.openSource",
+        "title": "Studio: Open Source (text)"
+      },
+      {
+        "command": "studio.catalog",
+        "title": "Studio: Journey Catalog"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "studio.openPreview",
+          "when": "resourceExtname =~ /^\\.(frame|flow|playbook|plan|guide|brief|points|policy|project|list|kanban|calendar|definition|memory|schema|workup|program|tablediff|pulse|moves|jsonl|middleware|collection|clip|song)$/ && activeCustomEditorId != studio.document",
+          "group": "navigation"
+        },
+        {
+          "command": "studio.openSource",
+          "when": "activeCustomEditorId == studio.document",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "studio.open",
+          "when": "resourceExtname =~ /^\\.(frame|flow|playbook|plan|guide|brief|points|policy|project|list|kanban|calendar|definition|memory|schema|workup|program|tablediff|pulse|moves|jsonl|middleware|collection|clip|song)$/",
+          "group": "navigation@10"
+        }
+      ]
+    }
+  }
+}

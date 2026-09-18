@@ -1,0 +1,15 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+  - "apps/*/frontend"
+# Dependencies allowed to run their install scripts (Electron downloads its binary; esbuild verifies its own;
+# workerd is the local runtime wrangler uses for the endpoint). pnpm 11 reads `allowBuilds`;
+# `onlyBuiltDependencies` is the pnpm 10 spelling, kept for older installs.
+allowBuilds:
+  electron: true
+  esbuild: true
+  workerd: true
+onlyBuiltDependencies:
+  - electron
+  - esbuild
+  - workerd

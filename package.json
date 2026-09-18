@@ -1,35 +1,25 @@
 {
   "name": "studio-kinds",
-  "version": "0.1.0",
   "private": true,
-  "type": "module",
-  "description": "Versioned YAML document kinds — playbook and brief — as pure engines, a paste-and-preview page, and a stateless validate endpoint.",
+  "version": "0.1.0",
+  "description": "The Studio — one editor for every document kind: the crosscut kit, the file-kind layer, the web Studio, the desktop app, the VS Code extension, the studio-check command, and the paste-and-check page.",
   "license": "MIT",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name studio-kinds"
-  },
-  "dependencies": {
-    "dompurify": "^3.2.6",
-    "js-yaml": "^4.1.0",
-    "marked": "^15.0.12",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
-  "devDependencies": {
-    "@types/js-yaml": "^4.0.9",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
-    "jsdom": "^30.1.0",
-    "typescript": "^5.6.3",
-    "vite": "^6.0.5",
-    "vitest": "^3.2.4",
-    "wrangler": "^4.0.0"
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "build": "pnpm -r --if-present build",
+    "page:dev": "pnpm --filter studio-page dev",
+    "page:build": "pnpm --filter studio-page build",
+    "page:deploy": "pnpm --filter studio-page deploy",
+    "desktop:renderer": "pnpm --filter studio-frontend build:desktop",
+    "desktop": "pnpm --filter studio-frontend build:desktop && pnpm --filter studio-desktop start",
+    "vscode:renderer": "pnpm --filter studio-frontend build:vscode",
+    "vscode:vsix": "pnpm --filter studio-frontend build:vscode && pnpm --filter studio-vscode package",
+    "cli:build": "pnpm --filter studio-cli build",
+    "check": "node apps/cli/dist/check.cjs",
+    "desktop:dist": "pnpm --filter studio-frontend build:desktop && pnpm --filter studio-desktop dist",
+    "release:build": "pnpm vscode:vsix && pnpm desktop:dist && pnpm cli:pack",
+    "cli:pack": "pnpm cli:build && node -e \"require('fs').mkdirSync('apps/cli/out',{recursive:true})\" && npm pack ./apps/cli --pack-destination apps/cli/out"
   },
   "engines": {
     "node": ">=20"

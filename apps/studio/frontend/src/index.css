@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "../../../../packages/crosscut/src/tokens.css";
+@source "../../../../packages/crosscut/src";
+@source "../../../../packages/filekinds/src";

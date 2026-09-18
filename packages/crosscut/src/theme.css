@@ -1,0 +1,4 @@
+/* Storybook / standalone entry: full Tailwind pipeline + the shared tokens. */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./tokens.css";

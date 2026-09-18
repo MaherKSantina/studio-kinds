@@ -1,0 +1,5 @@
+# Cloudflare Pages: the static page from dist/, the validate endpoint from functions/.
+# `pnpm page:deploy` at the workspace root publishes both.
+name = "studio-kinds"
+compatibility_date = "2025-12-01"
+pages_build_output_dir = "dist"
