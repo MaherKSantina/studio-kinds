@@ -7,6 +7,10 @@
  *                                         plus the legend or template that every saved file carries
  *   studio-check --template <ext>         a fresh document of that kind, as the Studio would create it
  *   studio-check --kinds                  every kind the Studio knows, with where its spec lives
+ *   studio-check --book <ext> [N]         the path of the kind's BOOK — the playbook that explains how the
+ *                                         kind works at version N (the latest when N is not given):
+ *                                         kinds/<ext>/v<N>.playbook in this repository, one per kind per version
+ *   studio-check --books                  every kind and version with its book's path, and whether it exists
  *   studio-check --json <file ...>        machine-readable results
  *   studio-check --collect <file.jsonl> [name.collection]
  *                                         copy the rows a .jsonl view shows into a .collection beside it
@@ -23,7 +27,7 @@ import { load as loadYaml } from "js-yaml";
 import { parseFlowFile } from "../../../packages/filekinds/src/lib/flowEngine";
 import { validateFlowFile } from "../../../packages/filekinds/src/lib/flowOps";
 import { FRAME_LEGEND, frameProblems, parseFrame } from "../../../packages/filekinds/src/lib/frameDoc";
-import { byEntries, docText, inlineEntries, inlineProblems, legacyProblems, parsePlaybook, variationProblems, variationsOf, versionProblems, writtenDocs } from "../../../packages/filekinds/src/lib/playbookDoc";
+import { PLAYBOOK_LATEST, byEntries, docText, inlineEntries, inlineProblems, legacyProblems, parsePlaybook, variationProblems, variationsOf, versionProblems, writtenDocs } from "../../../packages/filekinds/src/lib/playbookDoc";
 import { parsePlan } from "../../../packages/filekinds/src/lib/planDoc";
 import { parseGuide } from "../../../packages/filekinds/src/lib/guideDoc";
 import { parseBrief } from "../../../packages/filekinds/src/lib/briefDoc";
@@ -68,6 +72,14 @@ interface CheckResult { problems: string[]; summary?: string }
  *  ("/C:/Github/…" on Windows) — Node wants the drive first. */
 const diskReader = (abs: string) => Promise.resolve(readFileSync(abs.replace(/^\/([A-Za-z]:)/, "$1"), "utf8"));
 const toAbs = (folder: string, ref: string) => resolve(folder, ref);
+
+/** The newest version of each kind; a kind not listed is at version 1. Every version has a book. */
+const LATEST: Record<string, number> = { playbook: PLAYBOOK_LATEST };
+const latestOf = (ext: string): number => LATEST[ext] ?? 1;
+/** The repository root — this file runs from apps/cli/dist (or apps/cli/src under a bundler). */
+const REPO_ROOT = resolve(__dirname, "..", "..", "..");
+/** The kind's book: `kinds/<ext>/v<N>.playbook` — a playbook, in the version-2 form, about the kind at that version. */
+const bookPath = (ext: string, version: number): string => resolve(REPO_ROOT, "kinds", ext, `v${version}.playbook`);
 
 const yamlError = (text: string): string | null => {
   try { loadYaml(text); return null; } catch (e) { return `YAML: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`; }
@@ -318,11 +330,30 @@ async function main(argv: string[]): Promise<number> {
   const json = argv.includes("--json");
   const args = argv.filter((a) => a !== "--json");
   if (!args.length || args[0] === "--help" || args[0] === "-h") {
-    console.log("studio-check <file|folder|glob ...> | --spec <ext> | --template <ext> | --kinds | --json <file ...> | --collect <file.jsonl> [name] | --midi <file.clip|file.song> [name.mid]");
+    console.log("studio-check <file|folder|glob ...> | --spec <ext> | --template <ext> | --kinds | --book <ext> [N] | --books | --json <file ...> | --collect <file.jsonl> [name] | --midi <file.clip|file.song> [name.mid]");
     return 0;
   }
   if (args[0] === "--kinds") {
     for (const [ext, k] of Object.entries(KINDS)) console.log(`.${ext.padEnd(11)} ${k.label.padEnd(11)} ${k.spec ? `spec: packages/filekinds/src/lib/${[k.spec, ...(k.also ?? [])].join(" + ")}` : ""}${k.check ? "" : "  (no checks)"}${TEMPLATE_KINDS.some((t) => t.ext === ext) ? "  template" : ""}`);
+    return 0;
+  }
+  if (args[0] === "--books") {
+    const rows = Object.keys(KINDS).flatMap((ext) => Array.from({ length: latestOf(ext) }, (_, i) => ({ ext, version: i + 1, path: bookPath(ext, i + 1) })))
+      .map((r) => ({ ...r, exists: existsSync(r.path) }));
+    if (json) { console.log(JSON.stringify(rows, null, 2)); return rows.every((r) => r.exists) ? 0 : 1; }
+    for (const r of rows) console.log(`${r.exists ? "ok     " : "missing"}  .${r.ext.padEnd(11)} v${r.version}  ${r.path}`);
+    const missing = rows.filter((r) => !r.exists).length;
+    console.log(`${rows.length} books, ${missing} missing`);
+    return missing ? 1 : 0;
+  }
+  if (args[0] === "--book") {
+    const ext = (args[1] ?? "").replace(/^\./, "").toLowerCase();
+    if (!KINDS[ext]) { console.error(`Not a kind the Studio knows: .${ext} — \`--kinds\` lists them`); return 2; }
+    const version = args[2] ? Number(args[2].replace(/^v/i, "")) : latestOf(ext);
+    if (!Number.isInteger(version) || version < 1 || version > latestOf(ext)) { console.error(`.${ext} has versions 1 to ${latestOf(ext)}`); return 2; }
+    const p = bookPath(ext, version);
+    if (!existsSync(p)) { console.error(`No book yet for .${ext} v${version} — expected at ${p}`); return 1; }
+    console.log(p);
     return 0;
   }
   if (args[0] === "--spec") { console.log(spec((args[1] ?? "").replace(/^\./, "").toLowerCase())); return 0; }

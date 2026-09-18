@@ -1,0 +1,14 @@
+version: 2
+title: How a version-1 list works
+description: 'The .list kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: "# .list — List\n\n## The engine's own account (packages/filekinds/src/lib/listDoc.ts)\n\nA `.list` node — a LIST OF DOCUMENTS that is an entity by itself.\r\n\nBorn from the multiple-producers rule: when several streams target one\r\nthing, that thing graduates to its own node. The legal documents are the\r\nfirst: streams save documents into this node one by one (each output point\r\ntargets `item:0` … `item:last`), other streams take the whole node as an\r\ninput stage, and opening it shows the list with each document a click away.\n\nAuthoring shape (YAML, lenient):\n\n  title: Legal documents\n  description?: ...\n  items:\n    - {label: Incorporation, file: incorporation.brief}   # a document, by ref (relative to this file's folder)\n    - {label: A row without a file, status: done}        # any other key is a field of the row\n\n## A fresh document (what the Studio creates)\n\n```yaml\ntitle: untitled\nitems: []\n```\n"

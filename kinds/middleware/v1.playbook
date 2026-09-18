@@ -1,0 +1,72 @@
+version: 2
+title: How a version-1 middleware works
+description: 'The .middleware kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .middleware — Middleware
+
+        ## The engine's own account (packages/filekinds/src/lib/middlewareDoc.ts)
+
+        The `.middleware` kind — rows AMENDED on their way to a view. A source,
+        and rules that each pick a few rows (or one) by clauses and SET fields on
+        them. "I opened this listing and the page said it is not available for
+        those dates": a rule matching the listing's link sets its availability
+        to false. The scrape stays as it was, the correction lives here — dated,
+        explained — and every `.jsonl` that names this middleware among its
+        `$sources` (instead of the raw file) sees the corrected rows, read live,
+        never cached. A field a rule sets that no row had is a NEW column: the
+        policy the `.jsonl` applies decides whether it shows.
+
+        Authoring shape (YAML, lenient — a half-written file still renders):
+
+          title, description?
+          source: accommodation.json#properties      # a .json (#key naming its list), a .jsonl, a .csv,
+                                                     # or another .middleware (chains; no cycles)
+          rules:
+            - where:                                 # EVERY clause must hold — the one clause vocabulary
+                - {field: best_offer.url, op: equals, value: "https://www.airbnb.com.au/rooms/1770093089894538093?…"}
+              set: {available_for_dates: false, availability_note: "Airbnb page, 15 Sep: not available for these dates"}
+              note: what you saw, for the reader     # optional
+            - {where: [{field: name, op: equals, value: Family Room}], key: sleeps, value: 4}   # one key: key/value
+
+        A `field` is a key of the row or a dot path into nested objects; a `set`
+        key may be a dot path too (best_offer.price_total_aud: 900) — the nested
+        object is copied, never mutated in place. Ops: equals, not_equals,
+        contains, not_contains, starts_with, ends_with, matches, gt, gte, lt, lte,
+        between, in, not_in, is_empty, not_empty, is_true, is_false (policyDoc.ts);
+        a text op takes one value or a list — any of them:
+            - {where: [{field: name, op: contains, value: [caravan, truck]}], set: {type: Camper}}
+        A rule that matches NO row is a PROBLEM (the link changed, the row is
+        gone) — the checker and the view report every rule's match count. A rule
+        with no clauses matches every row.
+
+        ## Also (packages/filekinds/src/lib/dataSources.ts)
+
+        Reading the rows a source ref names — the one resolver the `.jsonl` view,
+        the `.middleware` view and the checker share. A ref is a data file (a
+        .json with `#key`, a .jsonl, a .csv → dataRows.ts `rowsOfSource`) or a
+        `.middleware`, which names its own source in turn: the chain is followed
+        (a middleware over a middleware over the raw file), each step's rules
+        applied on the way back, cycles refused. The host supplies the reader —
+        the kit's file adapter in a view, the disk in the checker — and gets back
+        the rows, every file read (to watch for changes), the chain in words, and
+        how many rows the middlewares amended.
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        source: rows.jsonl
+        rules:
+          - where:
+              - {field: url, op: equals, value: "https://example.test/item/1"}
+            set: {available: false}
+        ```

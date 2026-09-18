@@ -1,0 +1,690 @@
+version: 2
+title: How a version-1 playbook works
+description: The playbook feature as a playbook — each event is a moment the engine handles, its content the logic that runs then; what holds at every moment is under Always.
+decisions:
+  - key: host
+    label: Does the host write back?
+    values:
+      - key: writes
+        label: Yes — the desktop app, VS Code, the nodes preview
+      - key: reads
+        label: No — a read-only host
+  - key: nesting
+    label: Does any content entry name a .playbook?
+    values:
+      - key: 'no'
+        label: 'No'
+      - key: 'yes'
+        label: 'Yes'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the shape of the file, how content is chosen, the state everything is computed from, and where the engine lives.
+    content:
+      key: always
+      kind: brief
+      doc:
+        title: What is always true
+        description: The shape of the file, how content is chosen, the state everything is computed from, and where the engine lives.
+        sections:
+          - title: The file
+            body: |
+              A `.playbook` is a YAML document. The extension picks the engine
+              (`packages/filekinds/src/lib/playbookDoc.ts`); the same engine renders it in the web
+              Studio, the desktop app and the VS Code extension.
+
+              Top-level keys, in the order a save writes them:
+
+              | key | what it is |
+              |---|---|
+              | `version` | which playbook this is — absent means 1, the book this brief describes; `2` is events alone, one document each written in the book (see below) |
+              | `title` | the heading; `Playbook` if missing |
+              | `description` | one line under the title |
+              | `view` | where the walk is — written by the host, see below |
+              | `decisions` | the state space: questions with answers |
+              | `events` | what can happen, and what each shows when taken |
+              | `topics` | what is true while the assignment holds |
+              | `rules` | how each event plays out under a condition |
+
+              Parsing is lenient: a file the parser cannot read opens as an empty playbook, an unknown
+              key is ignored, a missing `key` is slugged from the label. Nothing is generated while
+              walking: everything drawn is in the book or, at version 1, in a file it names.
+          - title: A ref — decision=answer
+            body: |
+              Every condition is a list of refs, each `decision=answer`. A list holds when EVERY ref in
+              it is among the answers currently taken; an empty or absent list always holds.
+              `when: [a=x, b=y]` means both, never either.
+          - title: decisions
+            body: |
+              ```yaml
+              decisions:
+                - key: entity               # identity — never renumbered, never renamed in place
+                  label: What are we?
+                  detail: optional hover text
+                  values:
+                    - key: none
+                      label: Nothing yet
+                    - key: company
+                      label: A company
+                      activates: [banking]  # decisions that only exist once this answer is taken
+                      when: [other=answer]  # this ANSWER is only on offer while the refs hold
+              ```
+
+              - A decision with no `activates` pointing at it is always on the table. One that some
+                answer activates is on the table only while at least one of those answers is taken.
+              - `when` on an answer gates the answer, not the question: the pill is not offered while
+                the refs do not hold, and a taken answer that stops being offered is dropped.
+              - A decision left with exactly one available answer is taken automatically and not shown.
+                That answer drives every rule, topic and content choice but is NOT written to the file:
+                `view.locks` stays the set somebody chose.
+          - title: events
+            body: |
+              ```yaml
+              events:
+                - key: incorporate
+                  label: We incorporate
+                  trigger: chosen           # imposed (default) | chosen
+                  arity: once               # once (default) | many
+                  rate: 5/w                 # only meaningful with arity many
+                  domain: Company           # a grouping heading in the rail, nothing more
+                  detail: one italic line shown when the event is open
+                  content:                  # what the event SHOWS when clicked (the version-1 form;
+                    - file: incorporate.brief   #   version 2 writes the document here — see below)
+                      label: optional panel header
+                      by: [entity]          # optional — the file varies by these decisions
+              ```
+
+              - `trigger`: `imposed` arrives whether or not we are ready (a bolt); `chosen` fires when
+                we say so (a hand). Imposed is the default.
+              - `arity: many` never leaves the table (a repeat icon, `rate` beside the label); `once`
+                is a move that belongs in an order.
+              - `content` is what the event shows: any file kind the Studio renders — markdown, a brief,
+                a guide, another playbook.
+          - title: topics
+            body: |
+              ```yaml
+              topics:
+                - key: standing
+                  label: Standing orders
+                  when: [entity=company]    # optional — present only where this holds
+                  content:
+                    - file: standing.brief
+              ```
+
+              A topic is content that is live while its `when` holds; with no `when` it is live
+              everywhere and the pane marks it `always`. Topics render in the right pane under whichever
+              event is open; a lone topic with no open event takes the whole pane with no heading.
+          - title: rules
+            body: |
+              ```yaml
+              rules:
+                - event: incorporate
+                  when: [entity=company]    # optional condition over the assignment
+                  status: n/a               # ready | gap | n/a
+                  process: what we do — markdown
+                  sets: [entity=company]    # answers this event changes — makes it a DOOR
+                  note: free text
+                  every: 12                 # months between recurrences, once it applies
+                  from: incorporate         # the event whose completion anchors the clock
+                  offset: 30                # days after the anchor before the first one is due
+              ```
+
+              - For one event, the FIRST rule in file order whose `when` holds wins.
+              - `status`: `ready` (green) — the response is known · `gap` (red) — it can happen and
+                there is no response · `n/a` — it cannot arise here; the event is hidden from the rail.
+                An event with no matching rule is amber: "nobody has looked at this here."
+              - `process` is the RESPONSE when there is no `sets`, and the PREREQUISITE when there is.
+              - `sets` makes the event a door: taking it applies those answers and records the step in
+                `view.history`.
+              - `every` / `from` / `offset` describe recurrence for a plan to read; the walk ignores
+                them.
+          - title: content, and how an answer picks a document
+            body: |
+              Content is chosen by answers and never reads them. A plain entry is shown as is. An entry
+              with `by: [d1, d2]` is a closed set: `variationOf(entry, locks)` takes the answer to each
+              decision in `by`, in `by` order, and the segments `<d1=answer>,<d2=answer>` pick the
+              member. Where the members live is what the version says.
+
+              **Version 1 — files beside the book.** The entry is `{file, label?, by?}`; `file` is a
+              base, and the member shown is
+
+              ```
+              <file>.variants/<d1=answer>,<d2=answer><same extension as file>
+              ```
+
+              `funding.playbook` by `entity` shows `funding.playbook.variants/entity=company.playbook`.
+              The base file need not exist. Every `file` is relative to the folder of the ROOT playbook
+              — the one the host opened — even when the entry sits in a nested book.
+
+              Either way:
+
+              - Every combination of the `by` decisions' answers is one whole document, authored up
+                front; nothing is generated on open. While a `by` decision is unanswered the pane says
+                "Answer <decision> to see this."
+              - A member is handed nothing — no answers, no context. A playbook chosen this way walks
+                on its own inside its panel.
+              - Every decision in `by` must be a decision of the book that holds the entry.
+          - title: Version 2 — written in the book, session-only
+            body: |
+              With `version: 2` at the top the book is decisions and events. On the event: `when` (on
+              the table only where it holds; absent means always), `hint` (what to do before its
+              document shows). The walk is
+              SESSION-ONLY: every decision opens unanswered, and nothing clicked is ever written back.
+              What is always true is the content of an always-on event.
+              Each event shows ONE document in the book: `content` is one mapping, not a list;
+              `kind` names the renderer, because there is no extension to pick it from; `doc` is the
+              document as that kind's YAML parses it, a block string for `md`:
+
+              ```yaml
+              decisions:
+                - key: entity
+                  label: What are we?
+                  values: [{key: company, label: A company}, {key: partnership, label: A partnership}]
+              events:
+                - key: incorporate
+                  label: We incorporate
+                  trigger: chosen
+                  hint: Say what we are first.      # shown while entity is unanswered
+                  content:
+                    key: paperwork        # optional: what the walk collapses by
+                    label: The paperwork  # optional: the panel header
+                    kind: brief           # the kind of every member
+                    by: [entity]          # the set follows this answer
+                    docs:
+                      entity=company: {title: As a company, sections: [{title: Reserve the name, body: Hold it for 60 days.}]}
+                      entity=partnership: {title: As a partnership, sections: [{title: The deed, body: Sign it.}]}
+                - key: open-bank
+                  label: We open the account
+                  trigger: chosen
+                  when: [entity=company]            # on the table only as a company
+                  content: {kind: md, doc: Take the certificate to the bank.}
+              ```
+
+              A `doc` is one document whatever the answers; a `by` + `docs` set is one document per
+              combination of the `by` answers, keyed `decision=answer,...` in `by` order — the same
+              segments a version-1 variant file name carries — so the document shown follows the
+              answer. While a `by` decision is unanswered the pane shows the event's `hint` and asks
+              for the answer; once it is taken the member for that answer shows. A nested book is
+              `kind: playbook` with the whole book under `doc`, read at the version it says.
+              Content has no path: it carries no annotations and is never pinned. A version-2
+              book is ONE FILE — paste it, check it, render it with nothing else on disk; a document
+              shared between books is a version-1 file.
+
+              Refused: `doc` or `docs` without `kind`, `doc` and `docs` together, `by` on a `doc`, `docs`
+              without `by`, a `docs` key that is not a combination of the `by` answers, a combination with
+              no document, an `md` document that is not a string. Each version drops what only the other
+              has and the checker names it: a version-1 file drops a written entry, and `when` or
+              `hint` on an event (add `version: 2`, or move them to a rule); a version-2 file drops
+              every entry of a `content` list but the first and a `file` on an entry (write the document
+              into the book, or take `version: 2` off). A book that says `version: 2` writes that line
+              back.
+
+              `how-a-version-2-playbook-works.playbook`, beside this book, is the version-2 account,
+              at version 2: one file, every document in it.
+          - title: view — what the host writes
+            body: |
+              ```yaml
+              view:
+                locks: [entity=company, banking=open]   # the assignment — THE state
+                history:                    # doors walked through, in order
+                  - { event: incorporate, from: [entity=none], locks: [entity=company] }
+                collapsed: [paperwork.brief]   # content panels folded shut
+              ```
+
+              Nothing else changes when the book is walked. A host that writes back (the nodes preview,
+              the desktop app, VS Code) persists this block; a read-only host keeps it for the session.
+              A version-2 book has no `view` at all: every host keeps its walk for the session.
+          - title: The state
+            body: |
+              The state is the assignment — which answer is taken for each decision. It is never listed
+              in the file. Which decisions are on the table, which events can arise, which rule
+              applies, which topics are live and which file a `by` entry opens are computed from the
+              assignment on every render.
+          - title: The document engine
+            body: |
+              `packages/filekinds/src/lib/playbookDoc.ts` — types, `parsePlaybook`, `dumpPlaybook`,
+              `legacyProblems`, `versionProblems`, `inlineProblems`, and the derivation: `meets`,
+              `activeDecisions`, `impliedLocks`, `pruneLocks`, `take`, `applyRefs`, `ruleFor`,
+              `topicsAt`, `eventsAt`, `variationOf`, `variationKeys`, `variationsOf`,
+              `variationProblems`, `contentText`. Its header comment is
+              what `studio-check --spec playbook` prints. `docVersion.ts` beside it is the versioning
+              convention: `version: N` at the top, absent means 1, every version stays readable, a
+              version the engine does not know is named.
+          - title: The decision space
+            body: |
+              `packages/crosscut/src/decisions/decisionSpace.ts` — the hierarchy and predicates shared
+              with `.guide` and `.memory`: `activates`, answer `when`, `toggleRef`, `pruneLocks`,
+              `impliedLocks`, `decisionRows`. A playbook saves its assignment; a guide throws it away.
+          - title: The views
+            body: |
+              - `packages/filekinds/src/components/playbook/PlaybookPreview.tsx` — the walk's host:
+                persistence through the host's `onChange`, the trail's write and jump.
+              - `PlaybookWalk.tsx` — the rail and the content pane, `ContentPanel`, `NestedPlaybook`,
+                the lineage check, panes pushed into the enclosing `PaneTrail`.
+              - `eventDetailRules.ts` — the decision table for what an open event's detail is.
+              - `ElementView.tsx` — one decision or event alone, as a policy element.
+              - `packages/crosscut/src/components/DecisionPills.tsx` and `EventRow.tsx` — the pills
+                and the event row, presentation only.
+          - title: The checker
+            body: |
+              `apps/cli/src/check.ts` — the `playbook` entry: parse, version, legacy keys, `by`
+              decisions, the closed set of variations, written content (each document through its own
+              kind's entry, with the root file's path). Built to `apps/cli/dist/check.cjs`; the
+              `studio-check` command.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: The extension picks the engine; parsePlaybook reads the YAML; the walk is drawn.
+    content:
+      key: opening
+      kind: brief
+      doc:
+        title: The file is opened
+        description: The extension picks the engine, parsePlaybook reads the YAML, and the walk is drawn.
+        sections:
+          - title: Parse
+            body: |
+              `parsePlaybook(text)` reads the YAML once and never throws: an unreadable file opens as
+              an empty playbook, an unknown key is ignored, `trigger` defaults to `imposed`, a missing
+              `key` is slugged from its label. `version` absent means 1: a version-1 file drops any
+              written-here entry; a version-2 file drops topics, the view, and any content entry that
+              is not one written document. `view.locks` is pruned on the way in (`pruneLocks`): an answer to a
+              decision that is not on the table is dropped before anything is drawn.
+          - title: One view
+            body: |
+              The walk is the only view over the file. A book with no decisions, events or topics
+              renders "An empty playbook — no decisions, events or topics yet." instead of a blank page.
+              A host that writes back and hands over a version-1 file the engine cannot carry (a newer
+              version, or version 1 holding written content) draws one line at the top: "Not saved — ….
+              The walk is kept for this session only." A version-2 book is session-only by design and
+              draws no line: every decision opens unanswered, and nothing clicked is written.
+          - title: The walk
+            body: |
+              Two panes, a rail and a content pane, as one flat trail of panes.
+
+              **The rail — "Where we are":**
+              1. *How we got here*: the doors taken (`view.history`), each a pill; the last is where
+                 the walk stands; `start` is before the first door. Drawn only once a door has been
+                 taken.
+              2. The decisions as pills (`decisionRows`), indented under the answer that opened them,
+                 headed "Where we are · N of M answered". A decision down to one available answer is
+                 hidden.
+              3. The events that can arise (`eventsAt`), grouped under `domain` headings in the order
+                 the domains first appear, imposed before chosen inside each group, with a search box.
+
+              **The content pane:** the open event's `detail` line, then its content;
+              a divider; then the live topics (`topicsAt`) headed "What is true here · N topics". One
+              topic and no open event fills the pane alone. Before any event is clicked the pane says
+              "Take an event to see what it shows."
+  - key: changed-on-disk
+    label: The file changes on disk
+    trigger: imposed
+    domain: Opening
+    content:
+      key: disk
+      kind: brief
+      doc:
+        title: The file changes on disk
+        description: Open documents re-read themselves; the host's copy always wins over the preview's own.
+        sections:
+          - title: Who notices
+            body: |
+              - **VS Code**: reloads the document from disk when it changes and the Studio tab
+                re-renders; its usual conflict handling applies if the tab has unsaved edits of its own.
+              - **Desktop app**: watches the open folder; the open document re-reads itself when the
+                file changes and no edit of its own is pending.
+              - **Web Studio / Nodes**: work over the shared drive, not disk; a change on the drive is
+                the signal.
+          - title: Whose copy wins
+            body: |
+              When the host hands the preview new content, that content wins: the preview drops any
+              session-only walk it was holding and parses the new text.
+  - key: answered
+    label: An answer is taken
+    trigger: chosen
+    arity: many
+    domain: Walking
+    detail: toggleRef, then pruneLocks — the whole assignment is recomputed, not one answer.
+    content:
+      key: answers
+      kind: brief
+      doc:
+        title: An answer is taken
+        description: A pill click emits the COMPLETE next assignment — the answer applied or cleared, then every answer to a question that left the table pruned.
+        sections:
+          - title: One click, as a function
+            body: |
+              `toggleRef(decisions, locks, "entity=company")`:
+
+              1. If the ref is already taken, clear it. Otherwise take it, replacing any other answer to
+                 the same decision — a decision holds at most one answer.
+              2. `pruneLocks` to a fixed point: drop every answer whose decision is no longer on the
+                 table, and every answer that is no longer on offer (its `when` stopped holding) while
+                 its question stayed. Repeat until nothing changes, because dropping one can strand
+                 another.
+
+              What comes out is the whole next `locks` list, never a delta.
+          - title: What makes a decision appear
+            body: |
+              - **No enabler** — no answer anywhere names it in `activates` — always on the table.
+              - **Enablers** — on the table while ANY of them is taken.
+              - **Answer-level `when`** — an answer is offered only while its refs hold; while they do
+                not, it is not an answer at all.
+          - title: Implied answers
+            body: |
+              `impliedLocks`: a decision down to ONE available answer is taken automatically, iterated
+              to a fixed point (taking one can activate another that is itself down to one), and never
+              drawn. Implied answers drive rules, topics and `by` content, but are kept apart from
+              `locks`, so what gets WRITTEN stays the set somebody chose.
+          - title: How the rail lays them out
+            body: |
+              `decisionRows` walks the decisions in file order, depth-first through `activates`, and
+              returns a flat list with a depth per row, so a child shows indented under the answer that
+              opened it. A collapsed parent (one answer, hidden) adds no indent. A decision active
+              through an answer that is not on screen is shown flat rather than dropped.
+          - title: What is written
+            body: |
+              The new assignment goes into `view.locks` through the host's `onChange`; a host without
+              one keeps it for the session. A pill click is not a door: the trail does not grow, and if
+              the answers drift from the last door's the rail says "answers changed by hand since the
+              last event."
+  - key: event-clicked
+    label: An event is clicked
+    trigger: chosen
+    arity: many
+    domain: Walking
+    detail: ruleFor picks the rule; the event-detail table picks the body.
+    content:
+      key: events
+      kind: brief
+      doc:
+        title: An event is clicked
+        description: The rail lists what can arise; a click selects one and its content fills the pane. Which rule applies, what the row marks mean, what the pane shows, and what a door does.
+        sections:
+          - title: Which events are on the table
+            body: |
+              Events are global and unowned. `eventsAt` keeps every event whose current rule is not
+              `n/a`, then sorts: by `domain` in the order the domains first appear in the file, and
+              inside a domain `imposed` before `chosen`. A book with no domains is a flat list.
+          - title: Which rule applies
+            body: |
+              `ruleFor(event)`: the first rule in file order whose `event` matches and whose `when` holds
+              under the current answers, implied ones included. No matching rule is a legitimate
+              outcome and is drawn as one.
+          - title: The row
+            body: |
+              | mark | meaning |
+              |---|---|
+              | bolt | `trigger: imposed` — fires whether or not we are ready |
+              | hand | `trigger: chosen` — fires when we say so |
+              | repeat icon + rate | `arity: many` — never finished; capacity, not a step |
+              | green dot | `status: ready` — the response is known |
+              | red dot | `status: gap` — it can happen and there is no response |
+              | amber dot, italic "nobody has looked at this here" | no rule matches |
+              | not listed | `status: n/a` — it cannot arise here |
+          - title: The detail pane
+            body: |
+              A click SELECTS the event: its content shows in the pane, never inline, so there is
+              nothing to collapse; a second click only brings the pane back into view on a narrow
+              screen. The pane stacks, top to bottom:
+
+              1. The event's `detail` line, in italics.
+              2. ONE kind of body, decided by the `event-detail` table (`eventDetailRules.ts`):
+
+              | content entries | body |
+              |---|---|
+              | exactly one | that document, bare — no card, no header, filling the pane |
+              | more than one | a card per entry with a header (its `label`, else "The sequence"), each collapsible |
+              | none, and the rule has `process` | the process prose, rendered as markdown |
+              | none, and no process | "No response recorded — this is a hole, not a nothing." |
+
+              For a door with no prose the last line reads "No prerequisite recorded for this door."
+              Collapsing a card is remembered in `view.collapsed` by the entry's `key`, else its file
+              path (version 1), else its label.
+          - title: Doors
+            body: |
+              A rule with `sets` makes the event a door. Under the open row a chip offers "Take it —"
+              followed by the refs in `sets`. Clicking it applies every ref (each replacing any other
+              answer to its decision), prunes, and — in the ROOT book — writes `locks` and appends
+              `{event, from, locks}` to `view.history` in one save. A nested book just moves; its
+              answers are never written. `process` on a door is what must be in hand BEFORE taking it.
+          - title: The trail
+            body: |
+              "How we got here" lists the doors taken. Clicking an earlier pill jumps back to the
+              assignment just after that door and TRUNCATES the trail there; `start` restores the
+              assignment from before the first door and empties it. Only doors are recorded — a pill
+              click is a hand edit, not a step.
+  - key: nested-opened
+    label: A nested book opens
+    trigger: imposed
+    domain: Walking
+    when:
+      - nesting=yes
+    content:
+      key: nesting
+      kind: brief
+      doc:
+        title: A nested book opens
+        description: A .playbook as content walks on its own inside its panel. It is handed nothing, holds its own answers for the session, and refuses to contain itself.
+        sections:
+          - title: How it gets there
+            body: |
+              A content entry that is a playbook — at version 1 a file ending in `.playbook`, plain or
+              picked by `by`; at version 2 an entry with `kind: playbook` and the book under `doc` —
+              renders as a full walk instead of a document: its own rail, its own events, its own
+              topics, inside the parent's content pane. Nesting has no depth limit.
+          - title: Its answers
+            body: |
+              The nested book starts from ITS OWN `view.locks` (pruned) and holds them locally. They are
+              never written back: the outer file owns the outer answers, and writing inner ones would mean
+              two files disagreeing about who holds what. A door in a nested book just moves it — no
+              trail entry, no save.
+          - title: What crosses
+            body: |
+              Nothing. The parent's answers chose the book; the child does not read them, does not see a
+              library, does not receive context. A child that should differ by a parent answer is a
+              different FILE, picked by `by` — or, at version 2, a different `docs` member.
+          - title: Paths
+            body: |
+              Every `file` inside a version-1 child is still resolved against the ROOT book's folder —
+              the folder the Studio opened. A child in a sub-folder refers to its neighbours by the path
+              from the root, not from itself. A written child has no path of its own; a version-1 book
+              written inside a version-2 one still names files beside the root.
+          - title: Cycles
+            body: |
+              The chain of books open above is carried down. A file already on that chain is refused
+              with "`<file>` is already open above — a book cannot contain itself", because expanding it
+              again would never end. That is the one thing refused; any other nesting is allowed.
+          - title: Panes
+            body: |
+              The child's detail and drill panes join the enclosing trail as further panes to the right,
+              so however deep the nesting, the screen is one flat chain with one scroll. Pane keys carry
+              the book they belong to, so an inner event with the same key as an outer one does not
+              collide.
+  - key: saved
+    label: The Studio saves it
+    trigger: imposed
+    domain: Walking
+    detail: Parse, then dump — the file is re-emitted from the parsed document.
+    when:
+      - host=writes
+    content:
+      key: saving
+      kind: brief
+      doc:
+        title: The Studio saves it
+        description: A save is parse then dump. The file is re-emitted from the parsed document, so what the parser did not keep is gone.
+        sections:
+          - title: What triggers one
+            body: |
+              Any change to the view in a host that writes back: a pill click, a door taken, a content
+              panel collapsed. The desktop app, VS Code's Studio editor and the nodes preview write; a
+              read-only host holds the change for the session and drops it.
+          - title: What comes out
+            body: |
+              `dumpPlaybook` writes, in this order: `version` (from 2 up; a version-1 file gets no
+              line), `title`, `description` (if any), `view` (if non-empty), `decisions`, `events`,
+              `topics` (omitted when empty), `rules` (omitted when empty). Inside each item, keys come
+              out in the engine's order with defaults dropped: `trigger` is always written, `arity` only
+              when `many`, `by` only when non-empty, and so on. Long lines are not wrapped.
+          - title: What is lost
+            body: |
+              - **Comments** — a save is a parse and a dump; YAML comments do not survive.
+              - **Unknown keys** — anything the parser did not recognise.
+              - **Formatting** — quoting style, blank lines, flow-vs-block sequences.
+          - title: What stays put
+            body: |
+              Keys are identity. A save never renames or reorders a decision, answer or event, and
+              never renumbers anything. A key renamed by hand leaves every `when`, `sets`, `by`,
+              `view.locks`, `view.history` and variant file name that used the old key pointing at
+              nothing, and nothing warns.
+          - title: What is held, and never written
+            body: |
+              A version-1 file this engine cannot carry is not saved at all: a `version` newer than the
+              engine knows, or a version-1 file holding content written in the book. A save re-emits
+              what was read — the newer file would come back as version 2 with its newer keys gone, the
+              version-1 file without its written entry. So the walk is kept for the session, as a
+              read-only host keeps it, and a line at the top says `Not saved — …`.
+
+              A version-2 book is never saved from the walk: it has no `view`, and answers, doors and
+              folded panels live in the host's memory for the session. The file changes only when its
+              author edits it.
+          - title: What only the walk changes
+            body: |
+              `view.locks`, `view.history`, `view.collapsed`. Nothing under `decisions`, `events`,
+              `topics` or `rules` changes from walking — the Studio has no authoring surface for a
+              playbook. A nested book's answers are never written anywhere.
+  - key: authored
+    label: A book is written
+    trigger: chosen
+    domain: Authoring
+    content:
+      key: authoring
+      kind: guide
+      doc:
+        title: Write a playbook
+        description: From the template to a file the checker passes.
+        decisions:
+          - key: varies
+            label: Does any content differ by an answer?
+            values:
+              - key: same
+                label: No, every entry is one file
+              - key: varies
+                label: Yes, some entries vary by answer
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template playbook > new.playbook`; `studio-check --spec playbook` prints
+              the engine's account of every field. A field the engine does not know is dropped on the
+              next save.
+          - key: decisions
+            label: Write the decisions
+            after:
+              - template
+            detail: |
+              One decision per question whose answer changes what is on the table. Keys are identity:
+              they appear in every `when`, `sets`, `by` and variant file name. A question that exists
+              only under an answer goes in that answer's `activates`; an answer offered only under
+              another gets its own `when`.
+          - key: events
+            label: Write the events
+            after:
+              - template
+            detail: |
+              `trigger: chosen` when we decide it happens, `imposed` when the world does. `domain`
+              groups them in the rail. `arity: many` for something that recurs and never finishes.
+          - key: rules
+            label: Write the rules
+            after:
+              - events
+              - decisions
+            detail: |
+              For each event, the conditions that change how it plays out, specific first and the plain
+              `status: ready` last. `n/a` where it cannot arise. `sets` where taking it changes an
+              answer. `process` for the response when there is no file to attach.
+          - key: content
+            label: Attach content
+            after:
+              - events
+            detail: |
+              `content:` on an event is what it shows; on a topic (`when?`) what is true while the
+              assignment holds. Any Studio kind renders. The version line picks the form, and a book has
+              one form only: no `version:` line, and every entry is a file beside the book —
+              `{file, label?, by?}`, paths relative to the root book's folder; `version: 2`, and every
+              event has ONE document written in — `content: {kind, doc}` — no topics, no `file`, no
+              `view`: the walk is session-only.
+          - key: variants
+            label: Author the variant files
+            when:
+              - varies=varies
+            after:
+              - content
+            detail: |
+              `{file: x.brief, by: [d]}` and a folder `x.brief.variants/` holding `d=<answer>.brief` for
+              EVERY answer of `d`. Each is a whole document that reads nothing from the parent. (At
+              version 2: `{kind: brief, by: [d], docs: {d=<answer>: …}}`, a member per answer, and
+              `hint` on the event saying what to do before answering.)
+          - key: check
+            label: Check it
+            after:
+              - rules
+              - content
+            detail: |
+              `studio-check new.playbook` — exit 1 lists legacy keys, `by` decisions that do not exist,
+              missing variant files, refused written entries, and an entry on the wrong side of the
+              version line.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Authoring
+    content:
+      key: checker
+      kind: brief
+      doc:
+        title: studio-check runs on it
+        description: What the checker verifies for a .playbook, what it prints, and what it does not catch.
+        sections:
+          - title: What it checks
+            body: |
+              `studio-check <file>` (or a folder) picks the engine by extension and runs, in order:
+
+              1. **Parse** — a YAML error is the only problem reported; nothing else is tried.
+              2. **Legacy keys** — `library:`, `compare:`, topic `variants:`, `view.against`,
+                 `view.tab`, `materials:`, `scales:`, `view.thresholds`. Each names what replaced it.
+              3. **`by` names a decision** — every decision in every `by` must be one of the book's.
+              4. **The closed set** — in a version-1 book, for every `by` entry, every combination of
+                 its decisions' answers must be a file beside the book: `<file>.variants/<d=a,...>.<ext>`.
+                 Each missing one is a problem.
+              5. **The version** — `version:` must be a whole number the engine knows (up to 2). Each
+                 version drops what only the other has, and the checker names it: a version-1 file
+                 holding content written in the book is told to add `version: 2`; a version-2 file is
+                 told about `topics`, a `view`, a `content` list, a `file`, `by` or `docs` on an entry
+                 — write the document into the book, fold the cases into one brief, delete the view, or
+                 take `version: 2` off.
+              6. **Content written in the book** — `kind` must be a kind the Studio knows; an `md`
+                 document is a string. Then each written document is checked by its own kind's engine,
+                 handed the root file's path, so a written version-1 book's own files resolve beside the
+                 root — where the walk reads them.
+
+              The summary line reads `vN · N decisions, N events, N topics` and, when any `by` file
+              entry exists, `k of m child variations present`, and `n written inline` when content is
+              written in the book. Any problem is exit 1 — the same judgement the Studio makes.
+          - title: What it does not check
+            body: |
+              - That a plain version-1 `file` entry exists. A missing file shows in the pane as
+                `<file> — <error>` when opened; the checker does not read it.
+              - That refs in `when`, `sets` or `view.locks` name real decisions and answers. A stale ref
+                never holds (or is pruned on open) — it fails quietly, not loudly.
+              - That a rule's `event` names an existing event. Such a rule is inert.
+              - The content files themselves; the checker run on the folder covers them.
+              - Whether a host may save the file: that is the host's own hold, judged from the same
+                version problems this checker prints.
+          - title: Running it
+            body: |
+              `studio-check --kinds` lists the kinds; `--spec playbook` prints the engine's header and
+              template; `--template playbook` prints a fresh file.

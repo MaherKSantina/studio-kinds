@@ -1,0 +1,48 @@
+version: 2
+title: How a version-1 table diff works
+description: 'The .tablediff kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .tablediff — Table diff
+
+        ## The engine's own account (packages/filekinds/src/lib/tableDiff.ts)
+
+        The `.tablediff` kind — TWO TABLES COMPARED, live. The document declares
+        the left (proposed) and right (base) table handles, which columns form the
+        row KEY, and which columns' differences matter; the viewer recomputes the
+        diff on every open, so it can never go stale against its sources.
+
+          title: Timesheet vs shift notes
+          left:  {handle: /Fatin/jason-timesheet-as-shift-notes.csv, label: Timesheet}
+          right: {handle: /Fatin/jason-shift-notes-2026-08-27.csv, label: Shift notes}
+          key: [Client, Service Date]
+          compare: [Duration, Charge]       # omitted = all shared columns minus key
+          ignore: [Staff, Staff Account]    # subtracted from the default compare set
+
+        Verdicts per row: in left only = ADDED (green), in right only = DELETED
+        (red), key-matched with a differing compare column = CHANGED (amber cells,
+        old → new), otherwise UNCHANGED. Keys may repeat (three Sohail sessions on
+        one day): rows group by key and pair off in order; the surplus on either
+        side becomes added/deleted. Rows whose key cells are all empty (a totals
+        tail) are not rows.
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        title: "untitled"
+        description: "Two tables compared live: rows pair off by the key columns; added, deleted and changed rows are the verdicts. Recomputed on every open."
+        left:  {handle: /proposed.csv, label: Proposed}
+        right: {handle: /base.csv, label: Base}
+        key: [Id]
+        # compare: [Amount]   # omitted = every shared column except the key
+        # ignore: [Notes]     # subtracted from the default compare set
+        ```

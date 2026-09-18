@@ -1,0 +1,47 @@
+version: 2
+title: How a version-1 plan works
+description: 'The .plan kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .plan — Plan
+
+        ## The engine's own account (packages/filekinds/src/lib/planDoc.ts)
+
+        `.plan` — a policy over a playbook, and the schedule it produces.
+
+        The playbook says what is true and what could happen. It cannot say what to
+        do next, because that depends on what you are optimising for, which belongs
+        to you rather than to the domain. This is where that lives.
+
+        RULES ARE A LIST, not a settings object, and each rule carries exactly one
+        instruction. That is the whole design: "specify the order explicitly" is one
+        rule kind, and a weighting, an exclusion or a deadline is another, so a policy
+        can start as a hand-written sequence and grow into a ranking without ever
+        being rewritten. Adding a kind adds a case; it does not reshape the file.
+
+        Order rules are CONSTRAINTS, not the answer. Naming three events in sequence
+        pins those three and leaves everything else to be ranked around them, which is
+        what makes a half-specified policy usable instead of a stub.
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        title: untitled
+        description: A policy over a playbook, and the schedule it produces.
+        playbooks:
+          - some.playbook
+        locks: []
+        horizon: 120
+        rules:
+          - note: Rules are a list; each carries one instruction.
+            capacity: 1
+        ```

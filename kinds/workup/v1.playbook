@@ -1,0 +1,61 @@
+version: 2
+title: How a version-1 workup works
+description: 'The .workup kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .workup — Workup
+
+        ## The engine's own account (packages/filekinds/src/lib/workupDoc.ts)
+
+        THE WORKUP — the systematic examination one document goes through.
+
+        A `.workup` file binds ONE source document (an act, a regulation, any file
+        in the shared nodes FS) to the ordered STEPS of its processing: extract the
+        obligations, build the cross-reference graph, audit the extraction — each
+        step carrying its instructions and producing ONE output file of an ordinary
+        kind (.list, .brief, .md, …). The outputs are the document's ANALYSES:
+        every tool renders them read-only through the kind registry, and agents
+        reading the source (a points stream stage, a distillation run) pull them
+        alongside it.
+
+        ROLES, not separate entities (the points-doc move): a workup WITHOUT a
+        `source:` is a TEMPLATE — the regimen. Instantiating it onto a document
+        copies the steps with statuses reset; the instance keeps `template:`
+        pointing home, so the regimen can evolve and instances know where they
+        came from.
+
+        WHERE THINGS LAND — companions, by convention:
+          - the workup of /a/b/act.md sits NEXT TO IT as /a/b/act.workup
+            (`workupPathFor`), so resolving "the analyses of this file" needs no
+            registry — the path IS the link;
+          - relative step outputs land in the workup's OUTDIR, default
+            "/a/b/act workup/" (`outdirOf`) — a sibling folder, spelled with a
+            space so it can never collide with the versioned-entry convention
+            (a folder named exactly like a file).
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        title: "untitled"
+        description: "The systematic examination one document goes through — ordered steps, each with its instructions, each producing ONE output file of an ordinary kind."
+        # source: the-document.md   # the file this workup examines; without it this is a TEMPLATE (the regimen)
+        # outdir:                   # where relative outputs land — default "<source stem> workup/" beside the source
+        steps:
+          - key: extract
+            label: Extract the obligations
+            instructions: "List every obligation the document imposes, one row each, with the clause it comes from."
+            output: obligations.list
+          - key: audit
+            label: Audit the extraction
+            instructions: "Check every obligation against the source; note what was missed or overstated."
+            output: audit.brief
+        ```

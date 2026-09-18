@@ -51,7 +51,15 @@ are `.md`.
 
 ## 1 · The protocol
 
-1. **Read the spec first**, once per kind, from the engine itself:
+1. **Read the kind's book first**, once per kind. Every kind has a playbook that explains how it
+   works, one per version, at a predictable path in studio-kinds:
+   ```bash
+   studio-check --book playbook        # prints C:\Github\orchestration\suite\studio-kinds\kinds\playbook\v2.playbook
+   studio-check --book playbook 1      # an earlier version's book
+   studio-check --books                # every kind and version, with its book
+   ```
+   The path is always `kinds/<ext>/v<N>.playbook` in studio-kinds; open it and walk it. Then the
+   spec, from the engine itself:
    ```bash
    studio-check --spec playbook
    ```

@@ -1,0 +1,59 @@
+version: 2
+title: How a version-1 program works
+description: 'The .program kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .program — Program
+
+        ## The engine's own account (packages/filekinds/src/lib/programDoc.ts)
+
+        The `.program` kind — CODE AS EXECUTION, exactly the role the process-layers
+        doc allows it: a bounded, step-local transformer with an explicit contract.
+        The program declares what it reads from the store, what it writes back, and
+        the code between — and the VIEW gives it a Run button, so a journey step
+        can be executed by the person, on demand, with the output landing in the
+        store as an ordinary node.
+
+          title: Timesheet → shift-notes CSV
+          language: python
+          inputs:
+            - {handle: /Fatin/timesheet.xlsx, as: timesheet.xlsx}
+          outputs:
+            - {from: converted.csv, handle: /Fatin/converted.csv}
+          code: |
+            ...
+
+        `inputs` are materialized into the run's working directory under their `as`
+        names (bytes for binary nodes, text otherwise); the code runs there; each
+        output's `from` file is read back and written to its `handle`. The program
+        never touches the store directly — the contract is the only doorway, which
+        is what keeps a run explainable and repeatable.
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        title: "untitled"
+        description: "Code as execution — a bounded transformer with an explicit contract: what it reads from the store, what it writes back, and the code between. The view gives it a Run button."
+        language: python
+        # Handles are absolute store paths; inputs land in the run's working directory under their `as` names.
+        inputs:
+          - {handle: /input.csv, as: input.csv}
+        outputs:
+          - {from: output.csv, handle: /output.csv}
+        code: |
+          import csv
+          rows = list(csv.DictReader(open("input.csv", newline="")))
+          with open("output.csv", "w", newline="") as f:
+              w = csv.DictWriter(f, fieldnames=list(rows[0].keys()) if rows else [])
+              w.writeheader()
+              w.writerows(rows)
+        ```

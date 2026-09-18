@@ -1,0 +1,14 @@
+version: 2
+title: How a version-1 brief works
+description: 'The .brief kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: "# .brief — Brief\n\n## The engine's own account (packages/filekinds/src/lib/briefDoc.ts)\n\nThe `.brief` file kind: a nested set of titled sections, each with a one-line\r\ndescription and a markdown body.\r\n\nIt exists because the shape kept being wanted outside the one place it grew. The foundry\r\nFEATURES stage renders exactly this — a tree on the left, and a title + description +\r\nrendered markdown for whichever node you click — and there was no way to author one as an\r\nordinary file, or to point a loom role at it.\r\n\nSo `.brief` is that UI made into a file, and it renders through the SAME component\r\n(`FeatureTreeExplorer`), not a copy of it. The only thing this module does is translate\r\nbetween the readable YAML spelling and the node shape that explorer already takes:\r\n\n    YAML          in memory\r\n    title    ↔    name\r\n    body     ↔    prose\r\n    children ↔    children\r\n\nThe YAML spelling wins on the file side because `title`/`description`/`body` is what every\r\nother authored kind here uses (`.list`, `.kanban`, `.email`), and a file people and agents\r\nwrite should not inherit a vocabulary from the one stage that happened to need it first.\r\n\nParsing is LENIENT and never throws — a half-written file still has to render. It also\r\naccepts the in-memory spelling (`name`/`prose`) and the foundry array key (`features`), so\r\na features payload pasted into a `.brief` just works.\n\n## A fresh document (what the Studio creates)\n\n```yaml\ntitle: untitled\ndescription: \"\"\nsections:\n  - title: First section\n    body: \"\"\n```\n"

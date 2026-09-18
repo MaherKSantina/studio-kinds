@@ -1,0 +1,48 @@
+version: 2
+title: How a version-1 guide works
+description: 'The .guide kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .guide — Guide
+
+        ## The engine's own account (packages/filekinds/src/lib/guideDoc.ts)
+
+        `.guide` — one procedure, narrowed by questions.
+
+        The steps an event actually takes, where some only apply on some branches: a
+        resident transfers, a non-resident cannot, and the middle of the procedure
+        differs while both ends do not. Written as one list per branch you duplicate
+        every shared step, and they drift the first time one is edited.
+
+        So steps carry conditions, and answering removes the ones that do not apply.
+
+        ORDER IS A GRAPH, not a position. A step declares what it comes `after`, so a
+        conditional step slipped into the middle renumbers nothing, and a branch that
+        genuinely runs in a different sequence says so without disturbing its
+        neighbours. This is also the dependency graph a schedule needs — authored
+        once here rather than restated as tasks somewhere else, because two copies of
+        a procedure become two different procedures by the end of the month.
+
+        The assignment is NOT saved. It is not a fact about the business, it is how
+        you narrowed a page, and next week the facts are different. That is the whole
+        difference between this and a playbook, which shares every other part.
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        title: untitled
+        description: One explanation, narrowed by questions.
+        decisions: []
+        steps:
+          - label: First step
+            detail: What to do and why.
+        ```

@@ -1,0 +1,39 @@
+version: 2
+title: How a version-1 calendar works
+description: 'The .calendar kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .calendar — Calendar
+
+        ## The engine's own account (packages/filekinds/src/lib/calendarDoc.ts)
+
+        The `.calendar` file kind: a LENS over one `.kanban` board — like
+        `.tablediff`, it recomputes from its source on every open and stores no
+        dates of its own. The board's dependency edges, durations and due date
+        produce the schedule (kanbanDoc's `scheduleTasks`, backward-chained from
+        the due date); this file only says WHICH board, and optionally overrides
+        the anchor.
+
+        Authoring shape (YAML, lenient):
+
+          title, description?
+          board: Sep 9 prep board.kanban   # ref resolved against this file's folder
+          due: 2026-09-09                  # optional — overrides the board's own due
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        title: "untitled"
+        description: "A lens over one board: the schedule its dependency edges, durations and due date produce. Nothing is stored here — it recomputes on every open."
+        board: board.kanban   # a ref resolved against this file's folder
+        # due: 2026-12-31     # optional — overrides the board's own due date
+        ```

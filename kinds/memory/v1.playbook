@@ -1,0 +1,81 @@
+version: 2
+title: How a version-1 memory works
+description: 'The .memory kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .memory — Memory
+
+        ## The engine's own account (packages/filekinds/src/lib/memoryDoc.ts)
+
+        The `.memory` kind — a WORKING MEMORY over the flat node store.
+
+        The store keeps everything and may grow without limit; a memory is a LENS
+        that retrieves a working set from it on demand. It owns no nodes — it is a
+        saved query, so nothing moves when attention moves, a node can sit in many
+        memories at once, and a node in none is simply unmatched, by design.
+
+          include   — clauses over a node's index fields saying what counts as a
+                      UNIT of this memory at all (empty = every entry).
+          options   — togglable slices, checkboxes OUTSIDE the decisions: while
+                      one is off, units matching its clauses drop out with the
+                      include step. Display machinery, not attention — nothing
+                      groups by it and nothing parks in an else.
+          decisions — the criteria, each with answers and derive rules — the same
+                      decisions block a ranking carries, PLUS the decisionSpace
+                      hierarchy: an answer can `activate` further decisions that
+                      are LOCALIZED to it, and answers can be gated with `when`.
+                      Levels, not removal: each answer narrows the set and brings
+                      the next, narrower question onto the table.
+          locks     — the answers currently taken (`decision=answer` refs). Saved
+                      in the file: attention is a fact worth keeping, and an agent
+                      can set it by editing the document.
+
+        Selection: a unit is VISIBLE when its derived answer agrees with every
+        lock. The first active decision still unanswered GROUPS the visible set —
+        answering it filters, and the next question takes over the grouping.
+
+        Every decision also carries the STRUCTURAL ELSE (`~else`, "Everything
+        else"): the complement of its named answers, synthesized by the engine so
+        it never has to be authored. The named answers are the known parameters;
+        the else is the information not needed at this stage — groupable, takeable
+        as a lock, never silently dropped.
+
+        OVER A FOLDER (the desktop app, the VS Code extension, any store): a memory
+        looks at the folder it sits in (`scope:` widens or moves that — `/` is
+        the whole store). Its units are the DOCUMENTS under the scope: files and
+        structured folders, never plain folders or other `.memory` files. When it
+        authors no decisions — an EMPTY file is enough — the folder itself splits
+        it: each sub-folder holding units is a focus, the files sitting directly in
+        the folder are Everything else, and taking a focus brings that sub-folder's
+        own split onto the table: the decisions of the first `.memory` found in it
+        when there is one, its sub-folders otherwise, down to the leaves. So the
+        folder tree is the default hierarchy, and a memory dropped into a folder
+        replaces the split from there down. See `folderSpace`.
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        title: "untitled"
+        description: "Working memory over this folder. Each sub-folder is a focus and the files sitting directly here are Everything else; taking a focus brings that folder's own split onto the table — the first .memory inside it when there is one, its sub-folders otherwise."
+
+        # Where it looks: this folder. `scope: /` would be the whole store, `..` the parent.
+
+        # What counts as a UNIT: every document under the scope (plain folders and
+        # .memory files are structure, never units). Clauses over the index fields —
+        # path, name, stem, ext, area, parent, depth, age_days — narrow it.
+        include: []
+
+        # Authoring decisions here REPLACES the folder split with your own foci:
+        # values with derive rules; an answer may activate a narrower decision, or
+        # `folder` to split by the sub-folders from there. Empty = the folders decide.
+        decisions: []
+        ```

@@ -21,8 +21,20 @@ Studio, the desktop app and the VS Code extension show.
 
 `studio-check --kinds` lists them. Each kind is a YAML file whose extension picks its engine; the engine
 file's header comment is the specification (`studio-check --spec <ext>`) and every kind has a template
-(`studio-check --template <ext>`). `how-a-version-2-playbook-works.playbook` at the root is a playbook
-about the playbook kind, itself one version-2 file.
+(`studio-check --template <ext>`).
+
+**Every kind, at every version, has a book**: `kinds/<ext>/v<N>.playbook`, a playbook in the version-2
+form that explains how the kind works at that version — `kinds/playbook/v2.playbook` for the current
+playbook, `kinds/playbook/v1.playbook` for the one before it, `kinds/brief/v1.playbook`, and so on.
+`studio-check --book <ext> [N]` prints the path (the latest version when N is not given);
+`studio-check --books` lists them all. `node scripts/kind-books.mjs` writes the book of any kind or
+version that has none — the engine's own account under an always-on event — and never overwrites one;
+`--check` (run by CI) fails when a book is missing or does not pass the checker. A kind that gains a
+version gains a book.
+
+The page offers the kinds "Which kind for what" names — brief, playbook, kanban, calendar, policy, flow,
+data (`.jsonl`), middleware, collection, clip, song and markdown — and checks a guide written inside a
+playbook.
 
 ## Run it
 

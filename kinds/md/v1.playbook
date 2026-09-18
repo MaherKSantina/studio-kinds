@@ -1,0 +1,23 @@
+version: 2
+title: How a version-1 markdown works
+description: 'The .md kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .md — Markdown
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        # untitled
+        ```
+
+        Plain markdown; the Studio renders it, nothing to validate.

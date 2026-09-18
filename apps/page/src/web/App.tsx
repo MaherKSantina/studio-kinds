@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { SidePanel } from "crosscut";
 import { fileTemplate } from "filekinds";
 import example from "../../../../examples/venture.playbook?raw";
-import { KINDS, check, kindForFile } from "../check";
+import { OFFERED, check, kindForFile } from "../check";
 import Preview from "./Preview";
 import Problems from "./Problems";
 
@@ -61,7 +61,7 @@ export default function App() {
         <label className="field">
           kind{" "}
           <select value={kind} onChange={(e) => setKind(e.target.value)}>
-            {Object.entries(KINDS).map(([k, d]) => <option key={k} value={k}>{d.label} (.{d.extension})</option>)}
+            {Object.entries(OFFERED).map(([k, d]) => <option key={k} value={k}>{d.label} (.{d.extension})</option>)}
           </select>
         </label>
         <button type="button" onClick={() => input.current?.click()}>Open a file…</button>

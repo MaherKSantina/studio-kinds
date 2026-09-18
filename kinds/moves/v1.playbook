@@ -1,0 +1,46 @@
+version: 2
+title: How a version-1 moves works
+description: 'The .moves kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .moves — Moves
+
+        ## The engine's own account (packages/filekinds/src/lib/movesDoc.ts)
+
+        The `.moves` kind — WHAT MOVED, harvested by looking.
+
+        The store keeps no history, so movement is reconstructed the honest way:
+        the moves document carries a SNAPSHOT of "unit → answer path" (and the
+        decisions' shape) from the last look, and every open diffs reality
+        against it. The differences are movement events — appended to the
+        document's log, snapshot replaced — so the file accumulates a real
+        movement history as a side effect of being read:
+
+          node-moved      a unit's answer path changed (renamed, refiled, or the
+                          criteria re-claimed it)
+          arrived / gone  units entering or leaving a path (aggregated per path)
+          answer-moved    a NAMED answer changed decisions — flagged `parked`
+                          when it moved under an else (Jason's pattern), and
+                          `retrieved` when it came back out
+          answer-added / answer-removed — the unpaired cases
+
+        The doc's head is a pointer (`memory:` + `keep:`); the tail is machine
+        state under a banner, same head-preserving contract as locks and tags.
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        title: "untitled"
+        description: "What moved in a working memory, harvested by looking: every open diffs the store against the last snapshot and appends the differences to the log kept below the banner."
+        memory: /desk.memory   # the .memory this log follows — an absolute store path
+        keep: 200
+        ```

@@ -1,0 +1,14 @@
+version: 2
+title: How a version-1 project works
+description: 'The .project kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: "# .project — Project\n\n## The engine's own account (packages/filekinds/src/lib/projectDoc.ts)\n\nA `.project` file — the ENTRY POINT of a project. Nodes folders store\r\nfiles; a project is the container that gathers every tool's artifacts\r\ninto one place, whatever nodes folders they live in.\r\n\nIts body is a tree of items:\r\n  file   — one document, shown WITHOUT its extension, iconed by its KIND\r\n           (a points item, a policy item, ...); opens as its preview\r\n  node   — a REFERENCE to a whole nodes folder, shown as ONE item; opens\r\n           as a raw folder browser (extensions visible there)\r\n  folder — grouping inside the project itself\r\n\nA project also has a MODE — how its surface is drawn:\r\n  (none)     — the item tree above; the classic container\r\n  directory  — the project IS a folder (`root`): a file browser over it,\r\n               files of any kind added as you go, no groups; items, if\r\n               any, only show in the item-tree mode\r\n  memory     — the same material as WORKING MEMORY: a `.memory` lens\r\n               (`memory`) over the root (or the items), everything\r\n               landing in Everything else until foci are authored\r\nThe mode flips both ways; the lens keeps its foci while the project is\r\nback in directory mode.\n\n## A fresh document (what the Studio creates)\n\n```yaml\nname: \"untitled\"\ndescription: \"\"\nmode: directory\nroot: \"/untitled\"\nitems: []\n```\n"

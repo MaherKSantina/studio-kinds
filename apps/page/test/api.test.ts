@@ -48,7 +48,7 @@ describe("POST /api/check", () => {
     expect(o.status).toBe(204);
     expect(o.headers.get("access-control-allow-methods")).toContain("POST");
     const g = await handle(new Request("http://x/api/check"));
-    expect((await g.json()).kinds).toEqual(["playbook", "brief", "guide", "md"]);
+    expect((await g.json()).kinds).toEqual(["brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "middleware", "collection", "clip", "song", "md", "guide"]);
     const p = await handle(new Request("http://x/api/check", { method: "PUT", body: "x" }));
     expect(p.status).toBe(405);
   });

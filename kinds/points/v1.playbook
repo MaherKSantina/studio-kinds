@@ -1,0 +1,14 @@
+version: 2
+title: How a version-1 points works
+description: 'The .points kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: "# .points — Points\n\n## The engine's own account (packages/filekinds/src/lib/pointsDoc.ts)\n\nTHE POINTS STORE — the stream that runs UNDER every document.\r\n\nA `.points` file captures the pipeline the finished artifacts hide:\r\nLITERATURE (the collated inputs — laws, regulations, source documents,\r\nall ordinary files) is distilled — through however many intermediate files\r\nit takes, each an ordinary kind (.brief, .md, .list) — into POINTS.\r\n\nA point is a piece of information that EXISTS BY ITSELF. It starts as\r\nidentity only: a stable id, minted before its shape is known. It then\r\naccretes KEYS, and every key=value is a claim with citations back into the\r\nliterature (`from`), optionally through the distillation files that carried\r\nit (`via`). Setting a `type` is a lens applied later — it makes the point\r\nstart appearing AS something; untyped points are legitimate.\r\n\nDEFINITION vs INSTANCE — roles, not separate entities:\r\n  - a point with `defines: [slot, ...]` declares EMPTY keys for instances\r\n    to fill. Its own `keys` are facts about the general concept and are\r\n    NEVER inherited — nothing is overridable, there are no defaults.\r\n  - a point with `of: <id>` is an instance: its keys fill the definition's\r\n    declared slots. What a document shows (a playbook event) is a\r\n    PROJECTION of such a point, not the definition.\r\n  - the demotion move costs nothing: a point later discovered to be one\r\n    manifestation of something more general gains `of:` pointing at a\r\n    newly minted definition (the shape shifts up a level) and keeps its id,\r\n    so every reference to it survives.\n\n## A fresh document (what the Studio creates)\n\n```yaml\ntitle: untitled\ndescription: Literature in, points out — every key a claim with a citation.\nliterature: []\ndistillation: []\npoints:\n  - id: p-first-thing\n    label: Something that exists\n    keys: []\n    note: Identity before shape — type it and key it once the literature says what it is.\n```\n"

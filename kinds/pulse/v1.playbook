@@ -1,0 +1,50 @@
+version: 2
+title: How a version-1 pulse works
+description: 'The .pulse kind at version 1: the engine''s own account, and the document a fresh file starts from.'
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the engine's account of the kind, the same text studio-check --spec prints.
+    content:
+      key: spec
+      label: The engine's account
+      kind: md
+      doc: |
+        # .pulse — Pulse
+
+        ## The engine's own account (packages/filekinds/src/lib/pulseDoc.ts)
+
+        The `.pulse` kind — THE MOVEMENT of a working memory, drawn from two
+        honest sources and never cached:
+
+          content movement   — DERIVED live from the store's own timestamps: for
+                               each focus of the referenced `.memory`, how many
+                               units arrived (created) and moved (updated) on each
+                               of the last N days. A heat grid.
+          attention movement — AUTHORED events: the memory's `journal:` trail,
+                               appended by every pill click that changed the
+                               taken answers. A timeline.
+
+        The doc itself is only a POINTER plus a window:
+
+          title: Desk pulse
+          memory: /memory/desk.memory
+          days: 21
+
+        Rows are the memory's WHOLE foci hierarchy — every decision's answers
+        with the structural else, children indented under the answer that
+        activates them — so the pulse reads as "the desk, over time". Heat is a
+        saturation WARNING, not celebration: many arrivals into one focus means
+        a working set getting harder to reason about. Else rows are grey — the
+        unclaimed doesn't compete for attention.
+
+        ## A fresh document (what the Studio creates)
+
+        ```yaml
+        title: "untitled"
+        description: "The movement of a working memory: arrivals per focus per day (a heat grid from the store's timestamps) and the attention trail (the memory's journal). Derived live, never cached."
+        memory: /desk.memory   # the .memory this pulse reads — an absolute store path
+        days: 21
+        ```
