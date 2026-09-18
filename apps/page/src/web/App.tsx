@@ -87,7 +87,8 @@ export default function App() {
       <main className={`split show-${pane}`}>
         {/* The source pane is the same resizable side panel the Studio's walk uses for its rail:
             drag the separator, double-click it to reset, collapse it with the chevron. */}
-        <SidePanel side="left" defaultWidth={520} minWidth={280} maxWidth={1100} storageKey="page:source"
+        {/* No storageKey: the width lives for the session only — the page keeps nothing, localStorage included. */}
+        <SidePanel side="left" defaultWidth={520} minWidth={280} maxWidth={1100}
                    disabled={narrow} className="source">
           <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}
                     aria-label="The document, as YAML" />
