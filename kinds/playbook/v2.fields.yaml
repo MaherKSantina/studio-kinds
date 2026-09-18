@@ -1,0 +1,117 @@
+kind: playbook
+version: 2
+fields:
+  - field: version
+    type: number
+    required: true
+    description: "2 — every document written in the file, the walk session-only."
+  - field: title
+    type: string
+    required: true
+    description: The heading.
+  - field: description
+    type: string
+    description: One line under the title.
+  - field: decisions
+    type: list of decision
+    description: The state space — questions, each with its answers. A state is the set of answers taken; none is ever written.
+  - field: decisions[].key
+    type: string
+    required: true
+    description: Identity — appears in every `when` and `docs` key.
+  - field: decisions[].label
+    type: string
+    required: true
+    description: The question as shown.
+  - field: decisions[].detail
+    type: string
+    description: One line under the question.
+  - field: decisions[].values
+    type: list of answer
+    required: true
+    description: The answers on offer.
+  - field: decisions[].values[].key
+    type: string
+    required: true
+    description: Identity of the answer; a ref is `decision=answer`.
+  - field: decisions[].values[].label
+    type: string
+    required: true
+    description: The answer as shown.
+  - field: decisions[].values[].detail
+    type: string
+    description: One line under the answer.
+  - field: decisions[].values[].activates
+    type: list of decision key
+    description: Decisions that exist only while this answer is taken.
+  - field: decisions[].values[].when
+    type: list of ref
+    description: The answer is on offer only while every ref holds.
+  - field: events
+    type: list of event
+    required: true
+    description: What can happen, and the one document each shows when taken.
+  - field: events[].key
+    type: string
+    required: true
+    description: Identity of the event.
+  - field: events[].label
+    type: string
+    required: true
+    description: The event as shown in the rail.
+  - field: events[].trigger
+    type: imposed | chosen
+    description: "`imposed` arrives whether or not we are ready (default); `chosen` fires when we say so."
+  - field: events[].arity
+    type: once | many
+    description: "`once` (default) is a move; `many` never leaves the table."
+  - field: events[].rate
+    type: string
+    description: How often a `many` event fires, such as `5/w`.
+  - field: events[].domain
+    type: string
+    description: A grouping heading in the rail.
+  - field: events[].detail
+    type: string
+    description: One italic line shown when the event is open.
+  - field: events[].when
+    type: list of ref
+    description: The event is on the table only while every ref holds; absent, always.
+  - field: events[].hint
+    type: markdown
+    description: Shown while an answer the document follows is still open, or as the whole detail when the event has no document.
+  - field: events[].inputs
+    type: list of input
+    description: What the event needs (chosen) or captures (imposed) — prose, not wiring.
+  - field: events[].inputs[].input
+    type: string
+    required: true
+    description: The input's name.
+  - field: events[].inputs[].from
+    type: string
+    description: Where it comes from.
+  - field: events[].inputs[].why
+    type: string
+    description: Why it is needed.
+  - field: events[].content
+    type: entry
+    description: The one document the event shows — a mapping, not a list.
+  - field: events[].content.key
+    type: string
+    description: What the walk collapses by.
+  - field: events[].content.label
+    type: string
+    description: The panel header; the key stands in.
+  - field: events[].content.kind
+    type: kind
+    required: true
+    description: Which engine renders the document — `md`, `brief`, `guide`, `playbook`, any kind the Studio knows.
+  - field: events[].content.doc
+    type: document
+    description: One document, as that kind's YAML parses it; a string for `md`. Either `doc` or `by` + `docs`.
+  - field: events[].content.by
+    type: list of decision key
+    description: The decisions a set of documents follows.
+  - field: events[].content.docs
+    type: map of ref combination → document
+    description: One document per combination of the `by` answers, keyed `decision=answer,...` in `by` order; the set is closed.

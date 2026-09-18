@@ -1,0 +1,17 @@
+kind: calendar
+version: 1
+fields:
+  - field: title
+    type: string
+    required: true
+    description: The heading.
+  - field: description
+    type: string
+    description: One line under the title.
+  - field: board
+    type: path
+    required: true
+    description: The `.kanban` this lens reads, resolved against this file's folder; its edges, durations and due date produce the schedule.
+  - field: due
+    type: date
+    description: Overrides the board's own due date as the anchor.

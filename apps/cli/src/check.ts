@@ -11,6 +11,8 @@
  *                                         kind works at version N (the latest when N is not given):
  *                                         kinds/<ext>/v<N>.playbook in this repository, one per kind per version
  *   studio-check --books                  every kind and version with its book's path, and whether it exists
+ *   studio-check --fields <ext> [N]       the path of the kind's FIELD TABLE at version N — kinds/<ext>/v<N>.fields.yaml:
+ *                                         every field, its type, whether it is required, what it is
  *   studio-check --json <file ...>        machine-readable results
  *   studio-check --collect <file.jsonl> [name.collection]
  *                                         copy the rows a .jsonl view shows into a .collection beside it
@@ -80,6 +82,8 @@ const latestOf = (ext: string): number => LATEST[ext] ?? 1;
 const REPO_ROOT = resolve(__dirname, "..", "..", "..");
 /** The kind's book: `kinds/<ext>/v<N>.playbook` — a playbook, in the version-2 form, about the kind at that version. */
 const bookPath = (ext: string, version: number): string => resolve(REPO_ROOT, "kinds", ext, `v${version}.playbook`);
+/** The kind's field table: `kinds/<ext>/v<N>.fields.yaml` — the schema as a table, field by field. */
+const fieldsPath = (ext: string, version: number): string => resolve(REPO_ROOT, "kinds", ext, `v${version}.fields.yaml`);
 
 const yamlError = (text: string): string | null => {
   try { loadYaml(text); return null; } catch (e) { return `YAML: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`; }
@@ -330,7 +334,7 @@ async function main(argv: string[]): Promise<number> {
   const json = argv.includes("--json");
   const args = argv.filter((a) => a !== "--json");
   if (!args.length || args[0] === "--help" || args[0] === "-h") {
-    console.log("studio-check <file|folder|glob ...> | --spec <ext> | --template <ext> | --kinds | --book <ext> [N] | --books | --json <file ...> | --collect <file.jsonl> [name] | --midi <file.clip|file.song> [name.mid]");
+    console.log("studio-check <file|folder|glob ...> | --spec <ext> | --template <ext> | --kinds | --book <ext> [N] | --books | --fields <ext> [N] | --json <file ...> | --collect <file.jsonl> [name] | --midi <file.clip|file.song> [name.mid]");
     return 0;
   }
   if (args[0] === "--kinds") {
@@ -338,21 +342,22 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
   if (args[0] === "--books") {
-    const rows = Object.keys(KINDS).flatMap((ext) => Array.from({ length: latestOf(ext) }, (_, i) => ({ ext, version: i + 1, path: bookPath(ext, i + 1) })))
-      .map((r) => ({ ...r, exists: existsSync(r.path) }));
+    const rows = Object.keys(KINDS).flatMap((ext) => Array.from({ length: latestOf(ext) }, (_, i) => ({ ext, version: i + 1, path: bookPath(ext, i + 1), fields: fieldsPath(ext, i + 1) })))
+      .map((r) => ({ ...r, exists: existsSync(r.path), fieldsExist: existsSync(r.fields) }));
     if (json) { console.log(JSON.stringify(rows, null, 2)); return rows.every((r) => r.exists) ? 0 : 1; }
     for (const r of rows) console.log(`${r.exists ? "ok     " : "missing"}  .${r.ext.padEnd(11)} v${r.version}  ${r.path}`);
     const missing = rows.filter((r) => !r.exists).length;
     console.log(`${rows.length} books, ${missing} missing`);
     return missing ? 1 : 0;
   }
-  if (args[0] === "--book") {
+  if (args[0] === "--book" || args[0] === "--fields") {
+    const what = args[0] === "--book" ? "book" : "field table";
     const ext = (args[1] ?? "").replace(/^\./, "").toLowerCase();
     if (!KINDS[ext]) { console.error(`Not a kind the Studio knows: .${ext} — \`--kinds\` lists them`); return 2; }
     const version = args[2] ? Number(args[2].replace(/^v/i, "")) : latestOf(ext);
     if (!Number.isInteger(version) || version < 1 || version > latestOf(ext)) { console.error(`.${ext} has versions 1 to ${latestOf(ext)}`); return 2; }
-    const p = bookPath(ext, version);
-    if (!existsSync(p)) { console.error(`No book yet for .${ext} v${version} — expected at ${p}`); return 1; }
+    const p = args[0] === "--book" ? bookPath(ext, version) : fieldsPath(ext, version);
+    if (!existsSync(p)) { console.error(`No ${what} yet for .${ext} v${version} — expected at ${p}`); return 1; }
     console.log(p);
     return 0;
   }

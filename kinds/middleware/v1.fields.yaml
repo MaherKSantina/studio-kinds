@@ -1,0 +1,32 @@
+kind: middleware
+version: 1
+fields:
+  - field: title
+    type: string
+    description: The heading.
+  - field: description
+    type: string
+    description: One line under the title.
+  - field: source
+    type: ref
+    required: true
+    description: The rows amended — a `.json` (`#key` naming its list), a `.jsonl`, a `.csv`, or another `.middleware`; chains follow, cycles are refused.
+  - field: rules
+    type: list of rule
+    required: true
+    description: Each picks rows by clauses and sets fields on them; a rule matching no row is a problem.
+  - field: rules[].where
+    type: list of clause
+    description: "Every clause must hold — `{field, op, value?}`; no clauses matches every row."
+  - field: rules[].set
+    type: map of field → value
+    description: The fields set on the matched rows; a key may be a dot path.
+  - field: rules[].key
+    type: field
+    description: With `value`, the one-field form of `set`.
+  - field: rules[].value
+    type: value
+    description: The value for `key`.
+  - field: rules[].note
+    type: string
+    description: What was seen, for the reader.

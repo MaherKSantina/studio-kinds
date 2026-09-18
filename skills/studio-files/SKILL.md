@@ -58,8 +58,12 @@ are `.md`.
    studio-check --book playbook 1      # an earlier version's book
    studio-check --books                # every kind and version, with its book
    ```
-   The path is always `kinds/<ext>/v<N>.playbook` in studio-kinds; open it and walk it. Then the
-   spec, from the engine itself:
+   The path is always `kinds/<ext>/v<N>.playbook` in studio-kinds; open it and walk it. Beside it,
+   the kind's SCHEMA — every field, its type, whether it is required, what it is — as a table:
+   ```bash
+   studio-check --fields playbook      # prints kinds/playbook/v2.fields.yaml
+   ```
+   Then the spec, from the engine itself:
    ```bash
    studio-check --spec playbook
    ```

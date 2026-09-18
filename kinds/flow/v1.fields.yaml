@@ -1,0 +1,89 @@
+kind: flow
+version: 1
+fields:
+  - field: (file)
+    type: two YAML documents
+    required: true
+    description: The model, then a line that is exactly `---`, then the views the preview writes back.
+  - field: title
+    type: string
+    required: true
+    description: The flow's heading.
+  - field: dimensions
+    type: map of name → list of value
+    description: The closed parameter space — each dimension's ordered, finite values.
+  - field: defaults
+    type: map of dimension → value
+    description: The starting assignment for a simulation.
+  - field: derived
+    type: list of derived dimension
+    description: "Dimensions produced by first-match-wins rules — `{name, values, rules: [{when, value}]}`; `value: \"= other\"` copies a dimension."
+  - field: initial
+    type: screen id
+    required: true
+    description: The screen a walk starts on.
+  - field: start_mode
+    type: screen | entries
+    description: Start on `initial`, or from one of the `entries` start events.
+  - field: entries
+    type: list of entry
+    description: Start events, when `start_mode` is `entries`.
+  - field: sources
+    type: list of source
+    description: "Named versions the material panels read from — `{name, path}`."
+  - field: default_source
+    type: source name
+    description: The source panels use when they name none.
+  - field: frames
+    type: map of name → frame
+    description: Frames kept inside the flow, drawn live by a panel's `frame` + `view`.
+  - field: screens
+    type: list of screen
+    required: true
+    description: The screens; a screen that renders differently under different data is one screen with variants.
+  - field: screens[].id
+    type: string
+    required: true
+    description: Identity — what edges point at.
+  - field: screens[].title
+    type: string
+    required: true
+    description: The screen's heading.
+  - field: screens[].locals
+    type: map of name → list of value
+    description: The screen's own UI state; reset on every arrival, seen by no other screen.
+  - field: screens[].content
+    type: list of panel
+    description: "What the state shows, stepped one panel at a time — `{screenshot}`, `{frame, view}`, or `{file, source?}`."
+  - field: screens[].screenshot
+    type: storage key
+    description: Shorthand for a single screenshot panel.
+  - field: screens[].screenshots
+    type: list of storage key
+    description: Shorthand for several screenshot panels, for a tall screen.
+  - field: screens[].variants
+    type: list of variant
+    description: "The same screen under a condition — `{when, title?, content}`."
+  - field: screens[].edges
+    type: list of edge
+    description: The screen's controls; a button belongs to the page it sits on.
+  - field: screens[].edges[].id
+    type: string
+    required: true
+    description: Identity of the edge.
+  - field: screens[].edges[].event
+    type: string
+    required: true
+    description: The control's label.
+  - field: screens[].edges[].to
+    type: screen id
+    description: An unconditional edge — one control, one place.
+  - field: screens[].edges[].dispatch
+    type: list of {when, to}
+    description: A dispatch — precedence-ordered, first match wins.
+  - field: screens[].edges[].sets
+    type: map of dimension → value
+    description: Dimension values the edge establishes by being walked.
+  - field: screens[].edges[].when
+    type: when
+    description: The control is present only while it holds.

@@ -1,0 +1,27 @@
+kind: brief
+version: 1
+fields:
+  - field: title
+    type: string
+    required: true
+    description: The heading of the brief.
+  - field: description
+    type: string
+    description: One line under the title.
+  - field: sections
+    type: list of section
+    required: true
+    description: The titled tree; each entry is a section.
+  - field: sections[].title
+    type: string
+    required: true
+    description: The section's heading; the tree shows it as a node.
+  - field: sections[].description
+    type: string
+    description: One line under the section's title.
+  - field: sections[].body
+    type: markdown
+    description: The section's prose, rendered as markdown.
+  - field: sections[].children
+    type: list of section
+    description: Sections nested under this one, the same shape at any depth.

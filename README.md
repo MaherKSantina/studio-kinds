@@ -32,9 +32,15 @@ version that has none — the engine's own account under an always-on event — 
 `--check` (run by CI) fails when a book is missing or does not pass the checker. A kind that gains a
 version gains a book.
 
+**Beside the book, the schema**: `kinds/<ext>/v<N>.fields.yaml`, the kind's field table — every field
+(dot paths for nested ones, `[]` for a list's entries), its type, whether it is required, and what it
+is. `studio-check --fields <ext> [N]` prints the path; `--check` requires one for every kind the page
+offers. The book says how the kind works; the field table says what is in the file.
+
 The page offers the kinds "Which kind for what" names — brief, playbook, kanban, calendar, policy, flow,
 data (`.jsonl`), middleware, collection, clip, song and markdown — and checks a guide written inside a
-playbook.
+playbook. Beside the kind menu, "How .<ext> works" opens the kind's book and "Schema" its field table,
+each in a dialog over the document.
 
 ## Run it
 

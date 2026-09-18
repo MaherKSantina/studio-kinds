@@ -5,11 +5,12 @@
 //   node scripts/kind-books.mjs           write the book of every kind and version that has none yet —
 //                                         the engine's own account (the spec) under an always-on event,
 //                                         and the fresh document under another; never overwrites a book
-//   node scripts/kind-books.mjs --check   every book exists and passes the checker (exit 1 otherwise) — CI
+//   node scripts/kind-books.mjs --check   every book exists and passes the checker, and every kind the page
+//                                         offers has its field table, kinds/<ext>/v<N>.fields.yaml (exit 1 otherwise) — CI
 //
 // The checker must be built first: pnpm cli:build.
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 
@@ -58,5 +59,21 @@ let failed = 0;
 for (const b of after.filter((b) => b.exists)) {
   try { run(b.path); } catch (e) { failed++; console.error(String(e.stdout ?? e.message)); }
 }
-console.log(`${after.length} books: ${written} written, ${missing.length} missing, ${failed} failing`);
-process.exit(missing.length || failed ? 1 : 0);
+
+// The FIELD TABLES — kinds/<ext>/v<N>.fields.yaml, the schema as a table — for every kind the page
+// offers, at every version: present, YAML, a `fields` list whose entries each name a `field`.
+const OFFERED = ["brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "middleware", "collection", "clip", "song", "md"];
+let badFields = 0;
+for (const b of after.filter((b) => OFFERED.includes(b.ext))) {
+  const rel = path.relative(root, b.fields);
+  if (!b.fieldsExist) { badFields++; console.error(`missing field table: ${rel}`); continue; }
+  try {
+    const doc = yaml.load(readFileSync(b.fields, "utf8"));
+    const list = doc?.fields;
+    if (!Array.isArray(list) || !list.length) throw new Error("no `fields` list");
+    for (const f of list) if (!f || typeof f.field !== "string" || !f.field) throw new Error("an entry without a `field`");
+    if (doc.kind !== b.ext || doc.version !== b.version) throw new Error(`says kind ${doc.kind} v${doc.version}, sits under ${b.ext} v${b.version}`);
+  } catch (e) { badFields++; console.error(`${rel}: ${e.message}`); }
+}
+console.log(`${after.length} books: ${written} written, ${missing.length} missing, ${failed} failing; field tables: ${badFields} missing or wrong`);
+process.exit(missing.length || failed || badFields ? 1 : 0);

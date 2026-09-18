@@ -31,17 +31,7 @@ html, body, #root { height: 100%; margin: 0; }
   padding: 3px 8px; border: 1px solid var(--pg-line); border-radius: 6px; background: var(--pg-panel);
 }
 .bar button:hover { border-color: var(--pg-accent); }
-.bar button.on { border-color: var(--pg-accent); color: var(--pg-accent); font-weight: 700; }
-.bar button:disabled { opacity: 0.5; cursor: default; }
 
-/* ---- the kind's reference, over the preview ---- */
-.reference { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
-.reference-bar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 16px;
-  border-bottom: 1px solid var(--pg-line); background: var(--pg-panel); font-size: 13px; flex-shrink: 0;
-}
-.reference-bar button { font: inherit; color: inherit; cursor: pointer; padding: 3px 8px; border: 1px solid var(--pg-line); border-radius: 6px; background: #fff; }
-.reference .doc { margin-top: 0; }
 .name { font-family: var(--pg-mono); font-size: 12px; }
 .status { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
 .status.ok { color: var(--pg-ok); background: color-mix(in srgb, var(--pg-ok) 12%, transparent); }

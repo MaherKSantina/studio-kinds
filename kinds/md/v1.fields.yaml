@@ -1,0 +1,7 @@
+kind: md
+version: 1
+fields:
+  - field: (file)
+    type: markdown
+    required: true
+    description: Plain markdown, rendered; there are no fields and nothing to validate.

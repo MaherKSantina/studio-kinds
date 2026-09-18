@@ -65,18 +65,19 @@ describe("the page", () => {
     const root = createRoot(host);
     await act(async () => { root.render(<App />); });
 
-    // The book: kinds/playbook/v2.playbook, walked by the real renderer.
+    // The book: kinds/playbook/v2.playbook, walked by the real renderer in a dialog.
     await act(async () => { button(host, ".bar button", "How .playbook works").click(); });
-    expect(host.textContent).toContain("kinds/playbook/v2.playbook");
-    await until(host, "The file is opened");
+    await until(document.body, "kinds/playbook/v2.playbook");
+    await until(document.body, "The file is opened");
+    await act(async () => { (document.body.querySelector("button[aria-label=Close]") as HTMLButtonElement).click(); });
 
-    // The schema: the engine's account, as markdown.
+    // The schema: the field table, in a dialog.
     await act(async () => { button(host, ".bar button", "Schema").click(); });
-    await until(host, ".playbook — Playbook");
-    expect(host.textContent).toContain("A fresh document");
+    await until(document.body, "kinds/playbook/v2.fields.yaml");
+    expect(document.body.textContent).toContain("events[].content.kind");
+    await act(async () => { (document.body.querySelector("button[aria-label=Close]") as HTMLButtonElement).click(); });
 
-    // Back: the pasted document, untouched.
-    await act(async () => { button(host, ".reference-bar button", "Back to the document").click(); });
+    // The pasted document, untouched underneath.
     expect(host.textContent).toContain("Valid");
     expect(host.querySelector("textarea")!.value).toContain("A tiny venture");
     root.unmount();

@@ -1,0 +1,69 @@
+kind: policy
+version: 1
+fields:
+  - field: role
+    type: bucket | tags | order | run | table
+    description: Which policy this is; absent means the bucket machine.
+  - field: title
+    type: string
+    required: true
+    description: A name for the rules, never for the data.
+  - field: description
+    type: string
+    description: One line under the title.
+  - field: params
+    type: list of param
+    description: "Bucket and tags roles: the typed inputs an item carries — `{key, label?, type}`."
+  - field: cases
+    type: list of case
+    description: "Bucket role: an ordered switch; the first case whose clauses all hold wins."
+  - field: cases[].label
+    type: string
+    description: The case's name.
+  - field: cases[].when
+    type: list of clause
+    required: true
+    description: Clauses over the params, all of which must hold — `{param, op, value?}`.
+  - field: cases[].bucket
+    type: bucket key
+    required: true
+    description: The bucket the case assigns.
+  - field: buckets
+    type: list of bucket
+    description: "Bucket role: the declared outputs — `{key, label?, start?, end?}`."
+  - field: default
+    type: bucket key
+    description: "Bucket role: the bucket for items no case claims; omitted, the built-in unmatched bucket."
+  - field: tags
+    type: list of dimension | path
+    description: "Tags role: the dimensions the policy tags along, each with ordered `derive` rules (clauses → value) or `from` rules (refs over dimensions above → value), `hidden` for plumbing. Order role: the path of the tags policy it consumes."
+  - field: order
+    type: list of entry
+    description: "Order role: the ranking — each entry a `when` of `dimension=value` refs; its position is its rank; an entry with no refs takes everything left."
+  - field: policy
+    type: path
+    description: "Run role: the order policy the run applies."
+  - field: items
+    type: path
+    description: "Run role: the rows the run maps."
+  - field: map
+    type: map of param → list of field
+    description: "Run role: which row fields feed which param."
+  - field: date
+    type: date
+    description: "Run role: the day the run stands at."
+  - field: where
+    type: list of clause
+    description: "Table role: every clause must hold for a row to stay — `{field, op, value?}`, `field` a key or dot path."
+  - field: sort
+    type: list of sort key
+    description: "Table role: `{field, dir: asc|desc}`, first key first."
+  - field: columns
+    type: list of field
+    description: "Table role: the fields shown in this order; `\"*\"` every other column after these; omitted, every column."
+  - field: hide
+    type: list of field
+    description: "Table role: subtracted from the columns shown."
+  - field: limit
+    type: number
+    description: "Table role: at most this many rows."
