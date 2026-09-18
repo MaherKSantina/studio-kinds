@@ -17,7 +17,10 @@
 .md-body th, .md-body td { border: 1px solid var(--border, #e2e5eb); padding: 4px 8px; }
 
 /* Long unbroken strings — a path, a URL, a key — wrap inside the pane rather than widen it; a
-   wide table scrolls inside its own box. Nothing in a document may push its pane wider. */
-.md-body { min-width: 0; overflow-wrap: anywhere; }
-.md-body code, .md-body a { overflow-wrap: anywhere; word-break: break-word; }
+   wide table keeps its columns whole and scrolls inside its own box. A word breaks only when it
+   cannot fit a line of its own. Nothing in a document may push its pane wider. */
+.md-body { min-width: 0; overflow-wrap: break-word; }
+.md-body code, .md-body a { overflow-wrap: break-word; }
+/* In a table, code never breaks: the table keeps its natural width and scrolls in its own box. */
+.md-body th code, .md-body td code { white-space: nowrap; }
 .md-body table { display: block; max-width: 100%; overflow-x: auto; }
