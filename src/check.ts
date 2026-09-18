@@ -99,8 +99,8 @@ export const KINDS: Record<string, KindDef> = {
       }
 
       const varies = byEntries(doc).some((x) => x.entry.file);
-      const summary = `v${doc.version} · ${doc.decisions.length} decisions, ${doc.events.length} events, ${doc.topics.length} topics`
-        + (varies ? ", files vary by answers" : "") + (inline ? `, ${inline} written inline` : "");
+      const summary = `v${doc.version} · ${doc.decisions.length} decisions, ${doc.events.length} events${doc.version < 2 ? `, ${doc.topics.length} topics` : ""}`
+        + (varies ? ", files vary by answers" : "") + (inline ? `, ${inline} documents` : "");
       return result("playbook", problems, { version: doc.version, summary, notes });
     },
   },

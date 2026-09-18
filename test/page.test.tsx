@@ -25,18 +25,23 @@ describe("the page", () => {
     // Checked and rendered on arrival.
     expect(host.textContent).toContain("A tiny venture");
     expect(host.textContent).toContain("Valid");
-    expect(host.textContent).toContain("4 written inline");
+    expect(host.textContent).toContain("4 documents");
 
-    // An event opens; its content, written in the book, renders by its kind (a brief).
-    await act(async () => { button(host, "button.event", "We incorporate").click(); });
-    expect(host.textContent).toContain("hold the name for 60 days");
-    expect(host.textContent).toContain("written here");
-
-    // Unanswered, a written set shows the rule's process and asks for the answer.
+    // Unanswered, a written set asks for the answer; an event whose `when` does not hold yet is not on the table.
     await act(async () => { button(host, "button.event", "Somebody pays us").click(); });
     expect(host.textContent).toContain("Answer What are we? to see this.");
     expect(host.textContent).not.toContain("Into the joint account");
-    // An answer taken picks the member, hides the event its rule makes n/a, and writes nothing.
+    expect([...host.querySelectorAll("button.event")].map((b) => b.textContent)).not.toContain("We incorporate");
+    // A version-2 row is its label: the document shows, or the hint does.
+    expect(host.querySelector("button.event .dot")).toBeNull();
+
+    // An answer taken puts the event on the table; its content, written in the book, renders by its kind (a brief).
+    await act(async () => { button(host, "button.pill", "A company").click(); });
+    await act(async () => { button(host, "button.event", "We incorporate").click(); });
+    expect(host.textContent).toContain("hold the name for 60 days");
+
+    // Another answer picks the other member, takes the event off the table, and writes nothing.
+    await act(async () => { button(host, "button.event", "Somebody pays us").click(); });
     await act(async () => { button(host, "button.pill", "A partnership").click(); });
     expect(host.textContent).toContain("Into the joint account");
     expect(host.textContent).not.toContain("Into the company account");

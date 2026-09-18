@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PLAYBOOK_LATEST, byEntries, contentKey, contentPath, contentText, dumpPlaybook, eventsAt, inlineEntries, inlineProblems, isInline, legacyProblems, parsePlaybook, ruleFor, variationKeys, variationOf, variationProblems, variationsOf, versionProblems, writtenDoc, writtenDocs } from "./playbookDoc";
+import { PLAYBOOK_LATEST, byEntries, canArise, contentKey, contentPath, contentText, dumpPlaybook, eventsAt, inlineEntries, inlineProblems, isInline, legacyProblems, parsePlaybook, ruleFor, rulesOf, variationKeys, variationOf, variationProblems, variationsOf, versionProblems, writtenDoc, writtenDocs } from "./playbookDoc";
 import { fileTemplate } from "./fileTemplates";
 
 const TEXT = `title: t
@@ -81,6 +81,7 @@ view: {against: c}
 `;
     expect(legacyProblems(old).length).toBe(4);
     expect(legacyProblems(TEXT)).toEqual([]);
+    expect(legacyProblems("title: t\nevents: [{key: e, label: E, inputs: [{input: x}]}]\n")).toEqual(["event `inputs:` is gone — what an event needs or captures belongs in its content"]);
   });
 
   it("names materials, scales and thresholds as gone, and the parser drops them", () => {
@@ -106,7 +107,7 @@ view: {thresholds: {risk: 50}}
   });
 });
 
-describe("version 2 — decisions, events and rules; one document per event, written in the book; session-only", () => {
+describe("version 2 — decisions and events; one document per event, in the book; session-only", () => {
   const V2 = `version: 2
 title: t
 decisions:
@@ -117,7 +118,8 @@ events:
   - key: incorporate
     label: Incorporate
     trigger: chosen
-    detail: A door once the answer is company.
+    detail: On the table only as a company.
+    when: [entity=company]
     content:
       key: steps
       label: The steps
@@ -131,6 +133,7 @@ events:
   - key: paid
     label: Paid
     trigger: imposed
+    hint: Have the invoice ready.
     content:
       kind: md
       doc: |
@@ -139,25 +142,12 @@ events:
   - key: bare
     label: Bare
     trigger: imposed
-rules:
-  - event: incorporate
-    when: [entity=partnership]
-    status: n/a
-  - event: incorporate
-    when: [entity=company]
-    status: ready
-    sets: [entity=company]
-  - event: incorporate
-    status: gap
-  - event: paid
-    status: ready
-    process: Have the invoice ready.
 `;
   const doc = parsePlaybook(V2);
   const [steps] = doc.events[0].content ?? [];
   const [where] = doc.events[1].content ?? [];
 
-  it("reads decisions and rules as at version 1, one written document per event, and no view", () => {
+  it("reads decisions as at version 1, `when` and `hint` on the event, one document per event", () => {
     expect(doc.version).toBe(2);
     expect(doc.decisions.map((d) => d.key)).toEqual(["entity"]);
     expect(doc.events.map((e) => e.content?.length ?? 0)).toEqual([1, 1, 0]);
@@ -168,17 +158,47 @@ rules:
     expect(typeof where.doc).toBe("string");
     expect(doc.topics).toEqual([]);
     expect(doc.view).toEqual({});
-    expect(doc.rules[1]).toEqual({ event: "incorporate", when: ["entity=company"], status: "ready", sets: ["entity=company"] });
+    expect(doc.rules).toEqual([]);
+    expect(doc.events[0].when).toEqual(["entity=company"]);
+    expect(doc.events[1].hint).toBe("Have the invoice ready.");
+    expect(doc.events[2].when).toBeUndefined();
     expect(versionProblems(V2)).toEqual([]);
     expect(inlineProblems(doc)).toEqual([]);
     expect(variationProblems(doc)).toEqual([]);
   });
 
-  it("the answers drive the rules on screen: every decision opens unanswered", () => {
-    expect(ruleFor(doc, "incorporate", [])?.status).toBe("gap");
-    expect(ruleFor(doc, "incorporate", ["entity=company"])?.sets).toEqual(["entity=company"]);
+  it("an event is its own rule; `when` says whether it is on the table", () => {
+    expect(rulesOf(doc)).toEqual([
+      { event: "incorporate", when: ["entity=company"] },
+      { event: "paid", process: "Have the invoice ready." },
+    ]);
+    expect(ruleFor(doc, "incorporate", [])).toBeUndefined();
+    expect(ruleFor(doc, "incorporate", ["entity=company"])).toEqual({ event: "incorporate", when: ["entity=company"] });
+    expect(ruleFor(doc, "paid", [])?.process).toBe("Have the invoice ready.");
+    expect(ruleFor(doc, "bare", [])).toBeUndefined();
+    expect(Object.values(rulesOf(doc)).some((r) => "status" in r)).toBe(false);
+    expect(canArise(doc, doc.events[0], [])).toBe(false);
+    expect(canArise(doc, doc.events[0], ["entity=company"])).toBe(true);
+    expect(canArise(doc, doc.events[2], [])).toBe(true);
+    expect(eventsAt(doc, []).map((e) => e.key)).toEqual(["paid", "bare"]);
     expect(eventsAt(doc, ["entity=partnership"]).map((e) => e.key)).toEqual(["paid", "bare"]);
-    expect(eventsAt(doc, []).map((e) => e.key).sort()).toEqual(["bare", "incorporate", "paid"]);
+    expect(eventsAt(doc, ["entity=company"]).map((e) => e.key).sort()).toEqual(["bare", "incorporate", "paid"]);
+  });
+
+  it("version 1 keeps `when` and `hint` in rules: on an event they are dropped and named", () => {
+    const V1 = `title: t
+events:
+  - {key: e, label: E, trigger: imposed, when: [d=a], hint: Ask.}
+  - {key: f, label: F, trigger: imposed, hint: Respond.}
+`;
+    const old = parsePlaybook(V1);
+    expect(old.events[0].when).toBeUndefined();
+    expect(old.events[0].hint).toBeUndefined();
+    expect(dumpPlaybook({ ...old, events: [{ ...old.events[0], when: ["d=a"], hint: "Ask." }] })).not.toMatch(/when|hint/);
+    expect(versionProblems(V1)).toEqual([
+      "event e: `when`, `hint` on the event — version 1 says this in a rule; move it to `rules:`, or add `version: 2` at the top",
+      "event f: `hint` on the event — version 1 says this in a rule; move it to `rules:`, or add `version: 2` at the top",
+    ]);
   });
 
   it("names, paths and text: what the view and the renderer take", () => {
@@ -195,12 +215,13 @@ rules:
     expect(contentText(where)).toBe("# Where it lands\nThe business account.\n");
   });
 
-  it("round-trips through dump: a mapping in, a mapping out, decisions kept, no view or topics written", () => {
+  it("round-trips through dump: a mapping in, a mapping out, decisions kept, the event's own when/hint kept", () => {
     const text = dumpPlaybook(doc);
     expect(text).toMatch(/^version: 2\n/);
     expect(text).toMatch(/^decisions:\n  - key: entity\n/m);
-    expect(text).not.toMatch(/^topics:|^view:|file:|docs:|by:/m);
-    expect(text).toMatch(/    content:\n      key: steps\n      label: The steps\n      kind: brief\n      doc:\n/);
+    expect(text).not.toMatch(/^topics:|^view:|^rules:|file:|docs:|by:|status:/m);
+    expect(text).toMatch(/    when:\n      - entity=company\n    content:\n      key: steps\n      label: The steps\n      kind: brief\n      doc:\n/);
+    expect(text).toMatch(/    hint: Have the invoice ready.\n    content:\n/);
     expect(parsePlaybook(text)).toEqual(doc);
     // A view set in memory is never written for a version-2 book.
     expect(dumpPlaybook({ ...doc, view: { locks: ["entity=company"], collapsed: ["steps"] } })).not.toMatch(/view:/);
@@ -213,7 +234,7 @@ rules:
     expect(inlineEntries(doc).map((x) => x.where)).toEqual(["event incorporate", "event paid"]);
   });
 
-  it("a written set follows the answer: one document per combination, keyed in `by` order", () => {
+  it("a `docs` set follows the answer: one document per combination, keyed in `by` order", () => {
     const SET = `version: 2
 title: t
 decisions:
@@ -227,6 +248,7 @@ events:
   - key: always
     label: Always
     trigger: imposed
+    hint: Ask whether to push.
     content:
       key: steps
       kind: md
@@ -245,10 +267,11 @@ events:
       docs:
         push=yes: {title: Push and release, sections: [{title: Commit, body: Stage what changed.}]}
         push=no: {title: Nothing leaves}
-rules:
-  - {event: always, status: gap, process: Ask whether to push.}
 `;
     const set = parsePlaybook(SET);
+    // The ask lives on the event: what the pane shows while push or tag is unanswered.
+    expect(ruleFor(set, "always", [])?.process).toBe("Ask whether to push.");
+    expect(ruleFor(set, "always", ["push=yes", "tag=no"])?.process).toBe("Ask whether to push.");
     const [steps] = set.events[0].content ?? [];
     const [brief] = set.events[1].content ?? [];
     expect(isInline(steps)).toBe(true);
@@ -294,7 +317,7 @@ events:
     ]);
   });
 
-  it("the kind is normalised, and what a written entry cannot be is named", () => {
+  it("the kind is normalised, and what an entry cannot be is named", () => {
     const bad = parsePlaybook(`version: 2
 title: t
 events:
@@ -309,7 +332,7 @@ events:
     ]);
   });
 
-  it("drops what version 2 has not got, and names each", () => {
+  it("names what belongs to version 1 in a version-2 file, and drops it", () => {
     const old = `version: 2
 title: t
 view: {locks: [entity=none], collapsed: [steps]}
@@ -336,6 +359,12 @@ events:
     label: Empty
     trigger: imposed
     content: {kind: md, label: Nothing under it}
+  - key: triaged
+    label: Triaged
+    trigger: imposed
+    status: ready
+    sets: [entity=none]
+    content: {kind: md, doc: fine}
 rules:
   - {event: list, when: [entity=none], status: ready, sets: [entity=company]}
 `;
@@ -349,15 +378,20 @@ rules:
     // A set is a version-2 form: kept, and its closed set is the checker's business.
     expect(doc.events[2].content?.[0].docs).toEqual({ "entity=none": "x" });
     expect(doc.events[3].content).toBeUndefined();
-    expect(doc.rules).toEqual([{ event: "list", when: ["entity=none"], status: "ready", sets: ["entity=company"] }]);
+    // Rules are version 1: dropped, and nothing of them reaches the events.
+    expect(doc.rules).toEqual([]);
+    expect(rulesOf(doc)).toEqual([]);
     expect(versionProblems(old)).toEqual([
-      "`topics:` — version 2 has no topics; what is always true is the content of an always-on event, or take `version: 2` off",
+      "`rules:` — at version 2 an event carries its own `when` and `hint`, and its document shows once the answers it follows are taken. Move each rule's `process` onto its event as `hint`, a `when` where the event is on the table only under an answer, or take `version: 2` off",
+      "`topics:` — at version 2 what is always true is the content of an always-on event, or take `version: 2` off",
       "`view:` — a version-2 walk is session-only and writes nothing; every decision opens unanswered. Delete the view",
       "event list: `content` is one document at version 2 — a mapping, not a list; several sections belong in one brief",
-      "event file: Notes is a file beside the book — version 2 is written in the book; write it as `kind` + `doc`, or take `version: 2` off",
+      "event file: Notes is a file beside the book — at version 2 the document is in the book; write it as `kind` + `doc`, or take `version: 2` off",
       "event empty: Nothing under it has neither `doc` nor `docs` — write the document under it",
+      "event triaged: `status` — at version 2 the document shows when its answers are taken, and `hint` shows until then. Delete it",
+      "event triaged: `sets` — at version 2 an answer is taken on the rail, never by an event. Delete it",
     ]);
-    expect(dumpPlaybook(doc)).not.toMatch(/topics|view:|locks/);
+    expect(dumpPlaybook(doc)).not.toMatch(/topics|view:|locks|rules:|status/);
   });
 });
 
@@ -394,7 +428,7 @@ events:
     expect(parsePlaybook(V2).events[0].content).toBeUndefined();
     expect(versionProblems(V2)).toEqual([
       "event e: `content` is one document at version 2 — a mapping, not a list; several sections belong in one brief",
-      "event e: Notes is a file beside the book — version 2 is written in the book; write it as `kind` + `doc`, or take `version: 2` off",
+      "event e: Notes is a file beside the book — at version 2 the document is in the book; write it as `kind` + `doc`, or take `version: 2` off",
     ]);
   });
 
@@ -405,9 +439,10 @@ events:
     expect(versionProblems(`version: 1.5\ntitle: t\n`)[0]).toMatch(/not a whole number/);
   });
 
-  it("a new playbook starts at the latest version: a decision, a written event, rules per answer", () => {
+  it("a new playbook starts at the latest version: a decision, a `docs` set that follows it, the ask on the event", () => {
     const text = fileTemplate("x.playbook", "x");
     expect(text).toMatch(/^version: 2\n/);
+    expect(text).not.toMatch(/rules:|status:/);
     const doc = parsePlaybook(text);
     expect(doc.version).toBe(2);
     expect(doc.decisions.length).toBe(1);
@@ -415,7 +450,9 @@ events:
     expect(doc.events[0].content?.[0].kind).toBe("md");
     expect(doc.events[0].content?.[0].by).toEqual(["example"]);
     expect(Object.keys(doc.events[0].content?.[0].docs ?? {})).toEqual(["example=not-yet", "example=done"]);
-    expect(ruleFor(doc, "example", [])?.status).toBe("gap");
+    expect(doc.events[0].hint).toBe("Ask which.");
+    expect(ruleFor(doc, "example", [])?.process).toBe("Ask which.");
+    expect(doc.rules).toEqual([]);
     expect(versionProblems(text)).toEqual([]);
     expect(inlineProblems(doc)).toEqual([]);
   });

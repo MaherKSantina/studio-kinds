@@ -12,7 +12,8 @@
  * existence (`activates`) that has no meaning otherwise.
  *
  * EVENTS are global and unowned. They arrive regardless of where you stand.
- * What varies is whether they CAN arise, what you do about them (`rules`), and
+ * What varies is whether they CAN arise and what you do about them — version
+ * 1 says so in `rules`, version 2 on the event itself — and, at version 1,
  * whether they move you (`sets`). An event's `content` is what it shows when
  * taken — a markdown file, a guide, another playbook.
  *
@@ -42,21 +43,24 @@
  * order — `steps.brief` by `push` shows `steps.brief.variants/push=yes.brief`.
  * Every path is relative to the root book's folder.
  *
- * Version 2 is DECISIONS, EVENTS and RULES, each event showing ONE document
- * WRITTEN IN THE BOOK, and the walk over it is SESSION-ONLY. Decisions, their
- * answers, `activates`, `when` and `sets` are as at version 1: answering
- * changes which events can arise, which rule applies, what a door does and
- * which document shows — on screen. Nothing is written back: there is no
- * `view`, every decision starts unanswered each time the file opens, and a
- * host never saves a version-2 book from the walk. No topics: what is always
- * true is the content of an always-on event. An event's `content` is ONE
- * entry, a mapping, not a list: `kind` names the renderer (there is no
- * extension to pick it); then either `doc`, one document as that kind's YAML
- * parses it (a string for `md`), or `by` + `docs`, a closed set of them — one
- * per combination of the `by` answers, keyed `decision=answer,...` in `by`
- * order — so the document shown FOLLOWS the answer. While a `by` decision is
- * unanswered the pane shows the rule's `process` (what to do before
- * answering) and asks for the answer.
+ * Version 2 is DECISIONS and EVENTS, each event showing ONE document IN THE
+ * BOOK, and the walk over it is SESSION-ONLY. Decisions, their answers,
+ * `activates` and `when` are as at version 1. An event's document shows when
+ * the answers it follows are taken, and until then the pane shows the event's
+ * `hint` and asks for them. ON THE EVENT: `when` — present only where it
+ * holds; absent, the event is always on the table — `hint`, markdown shown
+ * while an answer the document follows is still open (or as the whole detail,
+ * when the event has no document). The book is stateless: it links answers
+ * to what each event shows, and answering changes which events are on the
+ * table and which document shows — on screen. Nothing is written back: every
+ * decision starts unanswered each time the file opens, and a host never saves
+ * a version-2 book from the walk. What is always true is the content of an
+ * always-on event. An event's `content` is ONE entry, a mapping, not a list:
+ * `kind` names the renderer (there is no extension to pick it); then either
+ * `doc`, one document as that kind's YAML parses it (a string for `md`), or
+ * `by` + `docs`, a closed set of them — one per combination of the `by`
+ * answers, keyed `decision=answer,...` in `by` order — so the document shown
+ * FOLLOWS the answer.
  *
  *   decisions:
  *     - key: push
@@ -65,6 +69,7 @@
  *   events:
  *     - key: always
  *       label: Always
+ *       hint: Ask whether to push.      # shown while push is unanswered
  *       content:
  *         key: steps               # optional: what the view collapses by
  *         label: What to do        # optional: the panel header
@@ -73,24 +78,23 @@
  *         docs:
  *           push=yes: {title: Push and release, sections: [...]}
  *           push=no: {title: Nothing leaves the machine, sections: [...]}
- *   rules:
- *     - {event: always, when: [push=yes], status: ready}
- *     - {event: always, when: [push=no], status: ready}
- *     - {event: always, status: gap, process: Ask whether to push.}   # unanswered
+ *     - key: tag
+ *       label: Cut a release
+ *       when: [push=yes]           # on the table only under this answer
+ *       content: {kind: md, doc: Tag the commit and push the tag.}
  *
  * A version-2 book is ONE FILE: paste it, validate it, render it with nothing
  * else on disk, and the checker runs each document through its own kind's
- * engine — a written `playbook` walks as a book of its own, read at the
- * version it says. Written content has no path, so it carries no annotations
- * and is never pinned; a document shared between books is a version-1 `file`.
+ * engine. Content has no path, so it carries no annotations and is never
+ * pinned; a document shared between books is a version-1 `file`.
  * Refused: `doc` or `docs` without `kind`, both `doc` and `docs`, `by` on a
  * `doc`, `docs` without `by`, a `docs` key that is not a combination of the
  * `by` answers, a combination with no document, an `md` document that is not
  * a string. Each version drops what only the other has and `versionProblems`
- * names it — in a version-1 file a written entry (add `version: 2`); in a
- * version-2 file `topics`, `view`, a `content` list, a `file` on an entry
- * (write the document into the book, delete the view, or take `version: 2`
- * off).
+ * names it — in a version-1 file a written entry, or `when` or `hint` on an
+ * event (add `version: 2`, or move them to a rule); in a
+ * version-2 file a `content` list or a `file` on an entry (write the document
+ * into the book, or take `version: 2` off).
  */
 import yaml from "js-yaml";
 import { dumpDocVersion, readDocVersion } from "./docVersion";
@@ -199,17 +203,12 @@ export interface PlaybookEvent {
   detail?: string;
   /** A grouping label only. It carries no rules and gates nothing. */
   domain?: string;
-  /** What the event NEEDS (chosen) or must CAPTURE as it arrives (imposed). */
-  inputs?: PlaybookEventInput[];
   /** What the event shows when taken. */
   content?: PlaybookContent[];
-}
-
-/** One input an event needs or captures. All prose — documentation, not wiring. */
-export interface PlaybookEventInput {
-  input: string;
-  from?: string;
-  why?: string;
+  /** Version 2 only — on the table only where this holds. Absent means always. (Version 1 says so in a rule.) */
+  when?: When;
+  /** Version 2 only — markdown shown while an answer the document follows is still open (the ask), or as the whole detail when the event has no document. */
+  hint?: string;
 }
 
 export interface PlaybookTopic {
@@ -367,15 +366,6 @@ export function parsePlaybook(text: string): PlaybookDoc {
     events: arr(raw.events).map((e, i) => {
       const o = rec(e);
       const label = str(o.label) ?? str(o.key) ?? `Event ${i + 1}`;
-      const inputs = arr(o.inputs).map((x) => {
-        const io = rec(x);
-        const input = str(io.input) ?? str(io.label);
-        return input ? {
-          input,
-          ...(str(io.from) ? { from: str(io.from)! } : {}),
-          ...(str(io.why) ? { why: str(io.why)! } : {}),
-        } : null;
-      }).filter(Boolean) as PlaybookEventInput[];
       const content = parseContent(o.content, version);
       return {
         key: str(o.key) ?? slugKey(label),
@@ -387,12 +377,14 @@ export function parsePlaybook(text: string): PlaybookDoc {
         ...(str(o.rate) ? { rate: str(o.rate)! } : {}),
         ...(str(o.detail) ? { detail: str(o.detail)! } : {}),
         ...(str(o.domain) ? { domain: str(o.domain)! } : {}),
-        ...(inputs.length ? { inputs } : {}),
         ...(content.length ? { content } : {}),
+        // Version 2 keeps on the event what version 1 keeps in a rule. At version 1 these are dropped and named.
+        ...(version >= 2 && refs(o.when).length ? { when: refs(o.when) } : {}),
+        ...(version >= 2 && str(o.hint) ? { hint: str(o.hint)! } : {}),
       };
     }),
 
-    // Version 2 has no topics: dropped on read and named by `versionProblems`.
+    // Topics are version 1; in a version-2 file `versionProblems` names them.
     topics: version >= 2 ? [] : arr(raw.topics).map((t, i) => {
       const o = rec(t);
       const label = str(o.label) ?? str(o.key) ?? `Topic ${i + 1}`;
@@ -405,7 +397,8 @@ export function parsePlaybook(text: string): PlaybookDoc {
       };
     }),
 
-    rules: arr(raw.rules).map((r) => {
+    // Rules are version 1; in a version-2 file `versionProblems` names them.
+    rules: version >= 2 ? [] : arr(raw.rules).map((r) => {
       const o = rec(r);
       const st = str(o.status);
       return {
@@ -461,7 +454,8 @@ export function dumpPlaybook(doc: PlaybookDoc): string {
       ...(e.rate ? { rate: e.rate } : {}),
       ...(e.domain ? { domain: e.domain } : {}),
       ...(e.detail ? { detail: e.detail } : {}),
-      ...(e.inputs?.length ? { inputs: e.inputs } : {}),
+      ...(doc.version >= 2 && e.when?.length ? { when: e.when } : {}),
+      ...(doc.version >= 2 && e.hint ? { hint: e.hint } : {}),
       ...(e.content?.length ? { content: dumpContent(e.content, doc.version) } : {}),
     })),
     ...(doc.topics.length ? {
@@ -502,6 +496,7 @@ export function legacyProblems(text: string): string[] {
   if (arr(raw.topics).some((t) => arr(rec(t).variants).length)) {
     out.push("topic `variants:` are gone — a topic has `content:` directly; content that differs by answer is a `by` entry with one whole document per answer");
   }
+  if (arr(raw.events).some((e) => arr(rec(e).inputs).length)) out.push("event `inputs:` is gone — what an event needs or captures belongs in its content");
   if (str(rec(raw.view).against)) out.push("`view.against` is gone with the A/B view");
   if (str(rec(raw.view).tab)) out.push("`view.tab` is gone — the walk is the only view");
   if (arr(raw.materials).length || arr(raw.scales).length || Object.keys(rec(rec(raw.view).thresholds)).length) {
@@ -512,12 +507,13 @@ export function legacyProblems(text: string): string[] {
 
 /**
  * What the file's version cannot carry: a version the engine does not know;
- * in a version-1 file, content written in the book; in a version-2 file,
- * topics, a view, a content list, a file or a set on an entry. Named so the
- * author moves the content rather than losing it on save; and while any of
- * these holds, a version-1 host does not save at all (`PlaybookPreview` keeps
- * the walk for the session), because a save re-emits what was read. A
- * version-2 host never saves from the walk anyway.
+ * in a version-1 file, content written in the book, or `when` or `hint` on
+ * an event; in a version-2 file, rules, topics, a view, a content list, a
+ * file on an entry, a status or sets on an event. Named so the author moves
+ * the content rather than losing it on save; and while any of these holds, a
+ * version-1 host does not save at all (`PlaybookPreview` keeps the walk for
+ * the session), because a save re-emits what was read. A version-2 host never
+ * saves from the walk anyway.
  */
 export function versionProblems(text: string): string[] {
   let raw: Record<string, unknown> = {};
@@ -531,20 +527,28 @@ export function versionProblems(text: string): string[] {
       arr(list).flatMap((x, i) => arr(rec(x).content).map(rec).filter(rawInline)
         .map((c) => `${at(what, rec(x), i)}: ${str(c.label) ?? str(c.key) ?? "a content entry"} is written in the book — version 1 has no such thing; add \`version: 2\` at the top`));
     out.push(...dropped(raw.events, "event"), ...dropped(raw.topics, "topic"));
+    arr(raw.events).forEach((x, i) => {
+      const o = rec(x);
+      const onEvent = ["when", "hint"].filter((k) => present(o[k]));
+      if (onEvent.length) out.push(`${at("event", o, i)}: ${onEvent.map((k) => `\`${k}\``).join(", ")} on the event — version 1 says this in a rule; move it to \`rules:\`, or add \`version: 2\` at the top`);
+    });
     return out;
   }
 
   const off = "or take `version: 2` off";
-  if (arr(raw.topics).length) out.push(`\`topics:\` — version 2 has no topics; what is always true is the content of an always-on event, ${off}`);
+  if (arr(raw.rules).length) out.push(`\`rules:\` — at version 2 an event carries its own \`when\` and \`hint\`, and its document shows once the answers it follows are taken. Move each rule's \`process\` onto its event as \`hint\`, a \`when\` where the event is on the table only under an answer, ${off}`);
+  if (arr(raw.topics).length) out.push(`\`topics:\` — at version 2 what is always true is the content of an always-on event, ${off}`);
   if (Object.keys(rec(raw.view)).length) out.push("`view:` — a version-2 walk is session-only and writes nothing; every decision opens unanswered. Delete the view");
   arr(raw.events).forEach((x, i) => {
     const o = rec(x);
     const where = at("event", o, i);
+    if (present(o.status)) out.push(`${where}: \`status\` — at version 2 the document shows when its answers are taken, and \`hint\` shows until then. Delete it`);
+    if (present(o.sets)) out.push(`${where}: \`sets\` — at version 2 an answer is taken on the rail, never by an event. Delete it`);
     if (!present(o.content)) return;
     if (Array.isArray(o.content)) out.push(`${where}: \`content\` is one document at version 2 — a mapping, not a list; several sections belong in one brief`);
     const c = rawOne(o.content);
     const name = str(c.label) ?? str(c.key) ?? str(c.file) ?? "the content";
-    if (str(c.file)) out.push(`${where}: ${name} is a file beside the book — version 2 is written in the book; write it as \`kind\` + \`doc\`, ${off}`);
+    if (str(c.file)) out.push(`${where}: ${name} is a file beside the book — at version 2 the document is in the book; write it as \`kind\` + \`doc\`, ${off}`);
     if (!rawInline(c) && !str(c.file) && Object.keys(c).length) out.push(`${where}: ${name} has neither \`doc\` nor \`docs\` — write the document under it`);
   });
   return out;
@@ -619,17 +623,36 @@ export function applyRefs(locks: string[], refs: string[]): string[] {
   return next;
 }
 
+/**
+ * Every rule in the book. Version 1 lists them. At version 2 an event is its
+ * own rule — its `when`, and its `hint` as the rule's process — and an event
+ * carrying neither has no rule to read; so the walk, the planner and the
+ * element view read both versions the same way.
+ */
+export const rulesOf = (doc: PlaybookDoc): PlaybookRule[] =>
+  doc.version >= 2
+    ? doc.events.filter((e) => e.when?.length || e.hint).map((e) => ({
+        event: e.key,
+        ...(e.when?.length ? { when: e.when } : {}),
+        ...(e.hint ? { process: e.hint } : {}),
+      }))
+    : doc.rules;
+
 /** The rule that applies to this event right now. First match wins. */
 export const ruleFor = (doc: PlaybookDoc, event: string, locks: string[]): PlaybookRule | undefined =>
-  doc.rules.find((r) => r.event === event && meets(locks, r.when));
+  rulesOf(doc).find((r) => r.event === event && meets(locks, r.when));
+
+/** Can this event arise here? Version 2: its `when` holds. Version 1: no rule says `n/a`. */
+export const canArise = (doc: PlaybookDoc, e: PlaybookEvent, locks: string[]): boolean =>
+  doc.version >= 2 ? meets(locks, e.when) : ruleFor(doc, e.key, locks)?.status !== "n/a";
 
 /** Topics live here. */
 export const topicsAt = (doc: PlaybookDoc, locks: string[]): PlaybookTopic[] =>
   doc.topics.filter((t) => meets(locks, t.when));
 
-/** Events that can arise here — everything not ruled out as `n/a`. */
+/** Events that can arise here — everything not ruled out (`n/a` at version 1; a `when` that does not hold at version 2). */
 export function eventsAt(doc: PlaybookDoc, locks: string[]): PlaybookEvent[] {
-  const live = doc.events.filter((e) => ruleFor(doc, e.key, locks)?.status !== "n/a");
+  const live = doc.events.filter((e) => canArise(doc, e, locks));
   // DOMAIN first, then imposed before chosen inside it, so a heading appears
   // once per domain rather than once per run.
   const order = new Map<string, number>();

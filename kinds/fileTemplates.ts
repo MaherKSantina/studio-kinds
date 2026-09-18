@@ -7,7 +7,7 @@
  */
 const playbookText = (stem: string) => `version: 2
 title: ${stem}
-description: The questions, the events, and what each event shows — every document written in this file; answers are session-only.
+description: The questions, the events, and what each event shows — every document in this file; answers are session-only.
 decisions:
   - key: example
     label: An example decision
@@ -18,22 +18,13 @@ events:
   - key: example
     label: An example event
     trigger: imposed
+    hint: Ask which.
     content:
       kind: md
       by: [example]
       docs:
         example=not-yet: ""
         example=done: ""
-rules:
-  - event: example
-    when: [example=done]
-    status: ready
-  - event: example
-    when: [example=not-yet]
-    status: ready
-  - event: example
-    status: gap
-    process: Ask which.
 `;
 
 const briefText = (stem: string) => `title: ${stem}

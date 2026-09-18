@@ -60,7 +60,7 @@ function ContentPanel({ doc, entry, eff, at, depth, collapsed, onCollapse }: {
         <span className="caret">{open ? "▾" : "▸"}</span>
         <span className="panel-label">{entry.label ?? (inline ? id : c.file)}</span>
         <span className="muted panel-src">
-          {inline ? `written here${c.segs.length ? ` · ${variantKey(c.segs)}` : ""}` : c.file}
+          {inline ? (c.segs.length ? variantKey(c.segs) : "") : c.file}
         </span>
       </button>
       {open && (inline
@@ -82,14 +82,6 @@ function EventDetail({ doc, event, eff, depth, collapsed, onCollapse, onDoor }: 
       <div className="event-title">
         <span className={`glyph ${event.trigger}`}>{event.trigger === "chosen" ? "✋" : "⚡"}</span> {event.label}
       </div>
-      {!!event.inputs?.length && (
-        <table className="inputs">
-          <thead><tr><th>{event.trigger === "chosen" ? "Needs" : "Captures"}</th><th>From</th><th>Why</th></tr></thead>
-          <tbody>
-            {event.inputs.map((i, n) => <tr key={n}><td>{i.input}</td><td>{i.from}</td><td>{i.why}</td></tr>)}
-          </tbody>
-        </table>
-      )}
       {event.detail && <p className="detail">{event.detail}</p>}
       {!!rule?.sets?.length && (
         <button type="button" className="door" onClick={() => onDoor(event, rule.sets!)}>
@@ -206,7 +198,9 @@ export default function PlaybookView({ text, depth = 0 }: { text: string; depth?
                 <div key={dom || "_"} className="domain">
                   {dom && <div className="domain-name">{dom}</div>}
                   {events.filter((e) => (e.domain ?? "") === dom).map((e) => {
-                    const status = ruleFor(doc, e.key, eff)?.status ?? "unseen";
+                    // Version 1 triages each event and the dot says which; at version 2 the
+                    // document shows, or the hint does.
+                    const status = doc.version < 2 ? (ruleFor(doc, e.key, eff)?.status ?? "unseen") : null;
                     return (
                       <button type="button" key={e.key} className={`event${open === e.key ? " open" : ""}`}
                               onClick={() => setOpen(e.key)}>
@@ -218,7 +212,7 @@ export default function PlaybookView({ text, depth = 0 }: { text: string; depth?
                           {e.label}
                           {e.arity === "many" && <span className="rate"> ↻{e.rate ? ` ${e.rate}` : ""}</span>}
                         </span>
-                        <span className={`dot ${status}`} title={STATUS_TITLE[status]} />
+                        {status && <span className={`dot ${status}`} title={STATUS_TITLE[status]} />}
                       </button>
                     );
                   })}

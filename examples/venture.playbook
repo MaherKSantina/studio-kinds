@@ -1,6 +1,6 @@
 version: 2
 title: A tiny venture
-description: What we are, what can happen, and what each event shows. Everything this book shows is written in it — paste it anywhere; answers taken are session-only.
+description: What we are, what can happen, and what each event shows. Everything this book shows is in it — paste it anywhere; answers taken are session-only.
 decisions:
   - key: entity
     label: What are we?
@@ -24,17 +24,16 @@ events:
     label: We incorporate
     trigger: chosen
     domain: Setting up
-    detail: Chosen — it happens when we say so.
-    inputs:
-      - { input: A name, from: the register, why: it must be free }
-      - { input: A director, from: us, why: one is enough to start }
+    detail: Chosen — it happens when we say so. On the table only as a company.
+    when: [entity=company]
+    hint: Have the name and the director ready, then take it.
     content:
       key: paperwork
       label: The paperwork
       kind: brief
       doc:
         title: Incorporation paperwork
-        description: Written in the book itself — no file beside it.
+        description: In the book itself.
         sections:
           - title: Reserve the name
             body: Check the register, then hold the name for 60 days.
@@ -46,6 +45,7 @@ events:
     domain: Money
     arity: many
     rate: 5/mo
+    hint: Say what we are — the account differs.
     content:
       key: where-it-lands
       label: Where the money lands
@@ -82,30 +82,3 @@ events:
             content:
               kind: md
               doc: Three letters, one visit, nothing owed — when the folder was ready.
-        rules:
-          - { event: letter, status: ready }
-          - { event: visit, status: ready }
-rules:
-  - event: always
-    status: ready
-  - event: incorporate
-    when: [entity=partnership]
-    status: n/a
-  - event: incorporate
-    when: [entity=company]
-    status: ready
-    process: Have the name and the director ready, then take it.
-  - event: incorporate
-    status: gap
-    process: Unanswered — say what we are.
-  - event: paid
-    when: [entity=company]
-    status: ready
-  - event: paid
-    when: [entity=partnership]
-    status: ready
-  - event: paid
-    status: gap
-    process: Say what we are — the account differs.
-  - event: audit
-    status: gap
