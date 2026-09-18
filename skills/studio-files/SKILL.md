@@ -76,6 +76,9 @@ are `.md`.
    studio-check C:/Github/Neogrids          # the whole folder
    ```
    Exit 1 = problems, printed per file. Fix them; a document that fails here fails in the Studio.
+   Without the checker (another PC, Claude.ai, Cowork), POST the file to the same engines:
+   `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>` —
+   playbook, brief, guide and md; it cannot see files beside the document.
 6. **Refer to documents by path** in replies, exactly as on disk.
 
 ## 2 · The kinds

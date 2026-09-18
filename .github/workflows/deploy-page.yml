@@ -1,0 +1,48 @@
+# The paste-and-check page and its endpoint, deployed to Cloudflare Pages (project `studio-kinds`,
+# https://studio-kinds.pages.dev) on every push to master and on every release tag.
+#
+# Needs two repository secrets: CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN — an API token with
+# the permission Account › Cloudflare Pages › Edit (the "Edit Cloudflare Workers" template works).
+name: Deploy the page
+
+on:
+  push:
+    branches: [master]
+    tags: ["studio-v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-page
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the page
+        run: pnpm page:build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/page
+          command: pages deploy dist --project-name studio-kinds --branch master
