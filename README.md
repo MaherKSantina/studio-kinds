@@ -10,7 +10,8 @@ apps/desktop           the Electron shell: the Studio over a real folder on disk
 apps/vscode            the VS Code extension: the Studio as a custom editor and side preview
 apps/cli               studio-check: validate documents, print a kind's spec or a fresh template
 apps/page              the paste-and-check page and the stateless POST /api/check endpoint (Cloudflare Pages)
-skills/studio-files    the studio-files skill for Claude Code, shipped in the release zip
+skills/studio-files    the studio-files skill for Claude Code — generated from claude/claude.playbook by pnpm skill:export, shipped in the release zip
+claude/                Claude's master playbook for this repository (claude.playbook) and its memory (memory.playbook, never committed)
 examples/              a playbook and a brief to paste
 ```
 

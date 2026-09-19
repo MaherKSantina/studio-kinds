@@ -5,7 +5,7 @@ description: Author and edit Studio documents on DISK — every kind of Maher's 
 # Studio documents on disk — how to edit them safely
 
 **The load-bearing fact:** a Studio document is a YAML file whose EXTENSION picks its engine. The
-engine (`C:\Github\orchestration\suite\packages\filekinds\src\lib\<kind>Doc.ts`) is the specification; the same
+engine (`packages/filekinds/src/lib/<kind>Doc.ts` in this repository, `C:\Github\studio-kinds`) is the specification; the same
 engine renders the file in the web Studio, the desktop app and the VS Code extension. Edit the text
 directly — no API, no worker — and let the engine judge the result.
 
@@ -16,7 +16,7 @@ in the VS Code extension, the terminal, or the Code tab of the Claude desktop ap
 inside a folder starts with an EMPTY memory of its own, so this event and the folder's `CLAUDE.md` are
 what it knows. On a PC without this repository, and in **Claude.ai chat** and **Cowork**, which never
 read `CLAUDE.md` or this book on their own, the same text travels as a skill: a release ships
-`studio-files-skill.zip`, exported from this event by `pnpm skill:export` in `suite`, to unzip into
+`studio-files-skill.zip`, exported from this event by `pnpm skill:export` in this repository (`skills/studio-files/SKILL.md`), to unzip into
 `~/.claude/skills` or upload under Settings › Skills. Cowork given the folder DOES read the `CLAUDE.md`
 in it and follows it. Neither runs the checker — validate what they write with `studio-check` from
 Claude Code or by opening it in the Studio.
@@ -54,11 +54,11 @@ are `.md`.
 1. **Read the kind's book first**, once per kind. Every kind has a playbook that explains how it
    works, one per version, at a predictable path in studio-kinds:
    ```bash
-   studio-check --book playbook        # prints C:\Github\orchestration\suite\studio-kinds\kinds\playbook\v2.playbook
+   studio-check --book playbook        # prints kinds/playbook/v2.playbook, in the checkout the command links to
    studio-check --book playbook 1      # an earlier version's book
    studio-check --books                # every kind and version, with its book
    ```
-   The path is always `kinds/<ext>/v<N>.playbook` in studio-kinds; open it and walk it. Beside it,
+   The path is always `kinds/<ext>/v<N>.playbook` in this repository; open it and walk it. Beside it,
    the kind's SCHEMA — every field, its type, whether it is required, what it is — as a table:
    ```bash
    studio-check --fields playbook      # prints kinds/playbook/v2.fields.yaml
@@ -180,13 +180,13 @@ are `.md`.
 
 ## 5 · Where things are
 
-- Engines / specs: `C:\Github\orchestration\suite\packages\filekinds\src\lib\` (`briefDoc.ts`,
+- Engines / specs: `packages/filekinds/src/lib/` in this repository, `C:\Github\studio-kinds` (`briefDoc.ts`,
   `playbookDoc.ts`, `kanbanDoc.ts`, `policyDoc.ts`, `flowOps.ts` for flows, …); editors:
   `packages/filekinds/src/components`.
 - The checker is the global command `studio-check` (`--spec <ext>`, `--template <ext>`,
   `--collect <file.jsonl>`, `--midi <file.clip|file.song> [name.mid]`, `<files or folders>`). On the dev machine it links to
-  `C:\Github\orchestration\suite\apps\cli\dist\check.cjs` (`pnpm cli:build` refreshes it); on any other
-  machine it comes from a GitHub Release of the orchestration repository — `npm install -g
+  a checkout of this repository's `apps/cli` (`npm ls -g studio-cli` prints which; `pnpm cli:build` there refreshes it); on any other
+  machine it comes from a GitHub Release of this repository — `npm install -g
   studio-cli-<version>.tgz`, or `install-studio.ps1` from the release, which also installs the desktop
   app, the VS Code extension and this guide as a skill. If `studio-check` is not on the PATH, say so and install it
   before editing documents.

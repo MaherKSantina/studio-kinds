@@ -16,6 +16,7 @@
     "vscode:renderer": "pnpm --filter studio-frontend build:vscode",
     "vscode:vsix": "pnpm --filter studio-frontend build:vscode && pnpm --filter studio-vscode package",
     "cli:build": "pnpm --filter studio-cli build",
+    "skill:export": "node scripts/export-skill.mjs",
     "check": "node apps/cli/dist/check.cjs",
     "desktop:dist": "pnpm --filter studio-frontend build:desktop && pnpm --filter studio-desktop dist",
     "release:build": "pnpm vscode:vsix && pnpm desktop:dist && pnpm cli:pack",

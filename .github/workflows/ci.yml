@@ -19,4 +19,5 @@ jobs:
       - run: pnpm test
       - run: pnpm cli:build
       - run: node scripts/kind-books.mjs --check
+      - run: node scripts/export-skill.mjs --check
       - run: pnpm page:build

@@ -27,7 +27,7 @@ Every file in this folder and below is a Studio document picked by its extension
 (the front door over C:\\Github, the desktop app, VS Code's Studio editor).
 
 For anything touching these files, open the event **Maher asks for a Studio document** in
-\`C:\\Github\\orchestration\\claude\\claude.playbook\` and follow its document — including the question
+\`C:\\Github\\studio-kinds\\claude\\claude.playbook\` and follow its document — including the question
 "which file type should this be?": its "Which kind for what" table is the answer (a hierarchy of content → \`.brief\`;
 event-based content under decision answers → \`.playbook\`; workflows tracked through one process →
 \`.kanban\` + \`.calendar\`; rules that sort and filter → \`.policy\`; data rows → \`.jsonl\`; nothing fits → \`.md\`).

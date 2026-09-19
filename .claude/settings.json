@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:/Github/studio-kinds/claude/hook.mjs\" session",
+            "timeout": 15,
+            "statusMessage": "Reading the Studio's master playbook"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:/Github/studio-kinds/claude/hook.mjs\" prompt",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
+  "autoMemoryEnabled": false
+}
