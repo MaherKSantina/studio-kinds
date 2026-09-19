@@ -1,6 +1,6 @@
 version: 2
 title: How a version-1 brief works
-description: A titled tree of sections, each with a one-line description and a markdown body — what the parser keeps, what a click shows, where a brief turns up inside other kinds, and what the checker leaves alone.
+description: A titled tree of sections, each with a one-line description, a markdown body and, where it holds one, a document of another kind written in — what the parser keeps, what a click shows, where a brief turns up inside other kinds, and what the checker judges.
 decisions:
   - key: width
     label: How wide is the surface it renders in?
@@ -52,6 +52,31 @@ events:
               A section has no id. Its handle is the chain of titles above it
               (`Money › Banking`), which is why a diff over two briefs reports a renamed section
               as a removal plus an addition rather than pretending to track it.
+          - title: A document in a section
+            body: |
+              ```yaml
+              sections:
+                - title: The master is read
+                  body: What happens, in prose.
+                  content:                    # one document of another kind, written here
+                    kind: playbook            # any kind the Studio knows — brief, kanban, guide, policy, jsonl, md, …
+                    doc:                      # the document, exactly as a file of that kind would hold it
+                      version: 2
+                      events:
+                        - key: missing
+                          label: The master playbook is missing
+                          content: {kind: md, doc: The missing note goes out, exit 0.}
+              ```
+
+              `content` is one mapping: `kind` names the engine that renders `doc`, since there is
+              no file extension to pick it from; `doc` is that kind's YAML, or a block string for
+              `md`. One document per section — a section that needs two has two children. The
+              document has no path: nothing is read from disk to show it, so it carries no
+              annotations and is never pinned, and a document two briefs share is written in each.
+              The kind's own viewer draws it under the section's prose; the kind's own engine
+              checks it. Refused: a `content` that is not a mapping, one without `kind` or without
+              `doc`, an `md` document that is not a string, and `by`, `docs` or `file` on it — a
+              brief has no answers to vary by and names no file.
           - title: Provenance keys
             body: |
               A brief that arrived through an applied diff carries marks the viewer colours:
@@ -74,10 +99,13 @@ events:
           - title: Where the engine lives
             body: |
               `packages/filekinds/src/lib/briefDoc.ts` — `parseBrief`, `dumpBrief`, `withSections`,
-              `flattenBrief`, `briefLensOf`; its header comment is what `studio-check --spec brief`
-              prints. The node shape is `featureTree.ts`. The viewer is
+              `flattenBrief`, `briefLensOf`, `briefProblems`, `writtenSections`; its header comment
+              is what `studio-check --spec brief` prints. The node shape is `featureTree.ts`. The
+              written-document shape — `kind` + `doc`, the synthetic path, the text a renderer
+              takes — is `writtenDocument.ts`, shared with the playbook. The viewer is
               `components/brief/BriefViewer.tsx`, registered under `.brief` in
-              `lib/filePreviews.tsx`; the checker is `apps/cli/src/check.ts`.
+              `lib/filePreviews.tsx`; a written document is drawn through
+              `components/WrittenDocumentView.tsx`; the checker is `apps/cli/src/check.ts`.
   - key: opened
     label: The file is opened
     trigger: imposed
@@ -91,9 +119,11 @@ events:
         **The parse.** An empty file, a YAML error, or a root that is not a mapping reads as an
         empty brief — no title, no sections — so a half-written file still renders. For every
         section: the first non-empty of `title`, `name`, `heading` is the name; `description`
-        is kept when non-empty; the first non-empty of `body`, `prose` is the prose; `children`
-        is kept only when it holds at least one mapping. A list entry that is not a mapping is
-        dropped. A value that is not a string reads as empty.
+        is kept when non-empty; the first non-empty of `body`, `prose` is the prose; `content`
+        is kept when it is a mapping — its `kind` lower-cased with a leading dot dropped, its
+        `doc` as parsed, whatever shape, for the kind's own engine to judge; `children` is kept
+        only when it holds at least one mapping. A list entry that is not a mapping is dropped.
+        A value that is not a string reads as empty.
 
         **The surface.** In the Studio, the desktop app and VS Code there is one surface per
         document — the kind's preview, inside `DocumentPreview` — so this viewer is what opens,
@@ -103,8 +133,9 @@ events:
         **What is drawn.** A header with the title ("Untitled brief" when there is none). The
         tree, every root open with its children shown; a row with children carries a chevron.
         The section at path `0` is selected: its name ("Untitled" when empty), its description,
-        and its prose rendered as markdown, or "No prose on this section." A brief with no
-        sections shows "No sections yet". A `change` mark draws a chip at the row's end: green
+        its prose rendered as markdown — or "No prose on this section." when it has neither prose
+        nor a document — and, when it holds a document, that document under the prose, drawn by
+        its own kind's viewer. A brief with no sections shows "No sections yet". A `change` mark draws a chip at the row's end: green
         `add`, amber `edit`, red `remove`.
 
         **The width.** A `ResizeObserver` on the component decides the layout the moment it
@@ -126,12 +157,14 @@ events:
       docs:
         width=wide: |
           The row's label selects the section: the right pane shows its name, description and
-          prose. The chevron is its own target — it opens or closes the children and never
-          changes the selection. Which rows are open and which is selected live in the
-          viewer's state for the session; the file is untouched.
+          prose, and under them the document written in it, drawn by that kind's own viewer —
+          markdown, a brief and a guide at their natural height, any other kind in a box of its
+          own that lays out and scrolls as a pane would. The chevron is its own target — it opens
+          or closes the children and never changes the selection. Which rows are open and which
+          is selected live in the viewer's state for the session; the file is untouched.
         width=narrow: |
-          The row's label selects the section and, when the section has prose or a description,
-          opens it as the next step:
+          The row's label selects the section and, when the section has prose, a description or
+          a document written in, opens it as the next step:
 
           - **Inside a pane trail** — a points store, a workup, a project lens, any host that
             passes `onDrill`: a pane keyed `section:<path>` and titled with the section's name
@@ -139,8 +172,8 @@ events:
           - **Standalone**: the content replaces the tree in place, behind a "‹ back" chip that
             returns to it.
 
-          A section with neither prose nor description only becomes selected. The chevron only
-          folds. Nothing is written.
+          A section with neither prose, description nor document only becomes selected. The
+          chevron only folds. Nothing is written.
   - key: changed-on-disk
     label: The file changes on disk
     trigger: imposed
@@ -174,8 +207,13 @@ events:
       kind: brief
       doc:
         title: Where a brief turns up
-        description: Four places a brief is opened by something other than its own file.
+        description: Five places a brief is opened by something other than its own file.
         sections:
+          - title: A section of another brief
+            body: |
+              A section written as `content: {kind: brief, doc: {title, sections}}` holds a whole
+              brief, drawn under the section's prose through this same viewer, at its natural
+              height. Any depth: that brief's sections may hold documents of their own.
           - title: A kanban task
             body: |
               `file: notes.brief` on a task opens the whole brief in the task dialog, rendered by
@@ -200,7 +238,7 @@ events:
     label: studio-check runs on it
     trigger: imposed
     domain: Writing
-    detail: One file in, one verdict out — and for a brief the verdict is ok whenever the YAML is.
+    detail: One file in, one verdict out — the YAML, what a section's content cannot be, and every written document through its own kind.
     content:
       key: checker
       label: What the checker does
@@ -212,16 +250,24 @@ events:
           - title: In order
             body: |
               1. Parse the YAML — a parse error is the only problem reported; the page adds its line.
-              2. `parseBrief` — it never throws, so a file that is valid YAML always passes.
+              2. `parseBrief` — it never throws, so the prose and the tree never fail here.
+              3. `briefProblems` — a `content` that is not a mapping; one without `kind` or
+                 without `doc`; an `md` document that is not a string; `by`, `docs` or `file` on
+                 it. Each named by the section's title chain: `section Money › Tax: …`.
+              4. Each written document through its own kind's check, named
+                 `section <title chain> (<kind>)` — a broken playbook in a section fails the brief,
+                 and a kind the checker does not know is a problem of its own.
           - title: The summary line
             body: |
-              The command line prints `ok <name>  Brief` and nothing more. The page, and
-              `POST /api/check?kind=brief`, count every section at every depth: `N sections`.
+              Every section at every depth, then the written documents when there are any:
+              `N sections` or `N sections, M documents` — on the command line, on the page and
+              from `POST /api/check?kind=brief` alike.
           - title: Not checked
             body: |
               A section with no title (it renders as "Untitled"). An empty `sections` list. A
               body that is not a string (it reads as empty). Whether `children` sit where they were
-              meant to. The checker judges the file, never the prose.
+              meant to, or a written document where it belongs. The checker judges the file, never
+              the prose.
   - key: authored
     label: A brief is written
     trigger: chosen
@@ -254,6 +300,15 @@ events:
               One `title` per section, `description` for the line under it, `body` for the prose
               as a block string. Nest with `children`, to any depth. Write `title`, not `name` or
               `heading` — all three are read, but a dump writes `title`.
+          - key: written
+            label: Write a document into a section
+            after: [tree]
+            detail: |
+              Where what a section holds is a document of another kind — the moments that can
+              arise while a step runs are a playbook, the work it tracks is a kanban — write it in:
+              `content:` under the section, `kind: <kind>`, then `doc:` holding the document
+              exactly as a file of that kind would. A block string for `md`. Indentation is the
+              only thing to get right; the kind's own checker judges the rest.
           - key: order
             label: Put the hierarchy in the order it reads
             after: [tree]
@@ -262,7 +317,8 @@ events:
               reader sees first. A section that is only a heading over its children needs no body.
           - key: check
             label: Check it
-            after: [order]
+            after: [written, order]
             detail: |
-              `studio-check new.brief`. Only the YAML can fail. Then open it: a section that shows
-              as "Untitled" was parsed but is missing its `title` key.
+              `studio-check new.brief`. The YAML, a section's `content`, and every written
+              document through its own kind can fail. Then open it: a section that shows as
+              "Untitled" was parsed but is missing its `title` key.

@@ -13,7 +13,7 @@
  * checked because a playbook may carry one written in, but is not offered.
  */
 import yaml from "js-yaml";
-import { parseBrief } from "filekinds/src/lib/briefDoc.ts";
+import { briefProblems, parseBrief, writtenSections } from "filekinds/src/lib/briefDoc.ts";
 import { parseCalendarLens } from "filekinds/src/lib/calendarDoc.ts";
 import { clipSummary, parseClip } from "filekinds/src/lib/clipDoc.ts";
 import { collectionSummary, parseCollection } from "filekinds/src/lib/collectionDoc.ts";
@@ -98,7 +98,25 @@ export const KINDS: Record<string, KindDef> = {
       if (y) return result("brief", [y]);
       const doc = parseBrief(text);
       const count = (nodes: FeatureNode[]): number => nodes.reduce((n, s) => n + 1 + count(s.children ?? []), 0);
-      return result("brief", [], { summary: plural(count(doc.sections), "section") });
+      const problems = asProblems(briefProblems(text));
+      const notes: string[] = [];
+      // A document written in a section: through its own kind's check, named by the section's title chain.
+      let written = 0;
+      for (const { where, content } of writtenSections(doc)) {
+        if (!content.kind) continue;
+        written++;
+        const name = `${where} (${content.kind})`;
+        const kind = KINDS[content.kind];
+        if (!kind) {
+          problems.push({ message: `${name}: not a kind this check knows — one of ${Object.keys(KINDS).join(", ")}` });
+          continue;
+        }
+        const r = kind.check(docText(content.doc));
+        for (const p of r.problems) problems.push({ message: `${name}: ${p.message}` });
+        for (const n of r.notes) notes.push(`${name}: ${n}`);
+      }
+      const summary = plural(count(doc.sections), "section") + (written ? `, ${plural(written, "document")}` : "");
+      return result("brief", problems, { summary, notes });
     },
   },
   playbook: {

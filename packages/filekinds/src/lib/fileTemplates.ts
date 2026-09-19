@@ -14,7 +14,7 @@ export const TEMPLATE_KINDS: ReadonlyArray<{ ext: string; what: string }> = [
   { ext: "md", what: "a markdown note (content may be given)" },
   { ext: "frame", what: "a single-screen UI design — created from its title as an empty screen" },
   { ext: "flow", what: "a parameterised walkthrough of screens" },
-  { ext: "brief", what: "a titled tree of sections with prose" },
+  { ext: "brief", what: "a titled tree of sections with prose; a section can hold one document of another kind" },
   { ext: "list", what: "a list of rows" },
   { ext: "kanban", what: "a board of columns and tasks" },
   { ext: "policy", what: "params → ordered cases (first match wins) → buckets" },

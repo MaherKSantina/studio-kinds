@@ -32,7 +32,8 @@ import { FRAME_LEGEND, frameProblems, parseFrame } from "../../../packages/filek
 import { PLAYBOOK_LATEST, byEntries, docText, inlineEntries, inlineProblems, legacyProblems, parsePlaybook, variationProblems, variationsOf, versionProblems, writtenDocs } from "../../../packages/filekinds/src/lib/playbookDoc";
 import { parsePlan } from "../../../packages/filekinds/src/lib/planDoc";
 import { parseGuide } from "../../../packages/filekinds/src/lib/guideDoc";
-import { parseBrief } from "../../../packages/filekinds/src/lib/briefDoc";
+import { briefProblems, parseBrief, writtenSections } from "../../../packages/filekinds/src/lib/briefDoc";
+import type { FeatureNode } from "../../../packages/filekinds/src/lib/featureTree";
 import { parseDocList } from "../../../packages/filekinds/src/lib/listDoc";
 import { parseKanban } from "../../../packages/filekinds/src/lib/kanbanDoc";
 import { parsePoints } from "../../../packages/filekinds/src/lib/pointsDoc";
@@ -123,7 +124,7 @@ const KINDS: Record<string, Kind> = {
     },
   },
   playbook: {
-    label: "Playbook", spec: "playbookDoc.ts",
+    label: "Playbook", spec: "playbookDoc.ts", also: ["writtenDocument.ts"],
     check: async (text, file) => {
       const base = via("playbook", parsePlaybook, (d: ReturnType<typeof parsePlaybook>) => `v${d.version} · ${d.decisions.length} decisions, ${d.events.length} events${d.version < 2 ? `, ${d.topics.length} topics` : ""}`)(text);
       if (base.problems.length) return base;
@@ -161,7 +162,30 @@ const KINDS: Record<string, Kind> = {
   },
   plan: { label: "Plan", spec: "planDoc.ts", check: via("plan", parsePlan) },
   guide: { label: "Guide", spec: "guideDoc.ts", check: via("guide", parseGuide, (d: ReturnType<typeof parseGuide>) => `${d.steps.length} steps`) },
-  brief: { label: "Brief", spec: "briefDoc.ts", check: via("brief", parseBrief) },
+  brief: {
+    label: "Brief", spec: "briefDoc.ts", also: ["writtenDocument.ts"],
+    check: async (text, file) => {
+      const count = (nodes: FeatureNode[]): number => nodes.reduce((n, s) => n + 1 + count(s.children ?? []), 0);
+      const base = via("brief", parseBrief, (d: ReturnType<typeof parseBrief>) => `${count(d.sections)} sections`)(text);
+      if (base.problems.length) return base;
+      const doc = parseBrief(text);
+      const problems = briefProblems(text);
+      // A document written in a section is checked by its own kind's engine, as the file beside it would be —
+      // handed THIS file's path, so a kind that names files resolves them beside the brief.
+      let written = 0;
+      for (const { where, content } of writtenSections(doc)) {
+        if (!content.kind) continue;
+        written++;
+        const kind = KINDS[content.kind];
+        const name = `${where} (${content.kind})`;
+        if (!kind) { problems.push(`${name}: not a kind the Studio knows — \`--kinds\` lists them`); continue; }
+        if (!kind.check) continue;
+        const r = await kind.check(docText(content.doc), file);
+        for (const p of r.problems) problems.push(`${name}: ${p}`);
+      }
+      return { problems, summary: `${base.summary}${written ? `, ${written} documents` : ""}` };
+    },
+  },
   list: { label: "List", spec: "listDoc.ts", check: via("list", parseDocList, (d: ReturnType<typeof parseDocList>) => `${d.items.length} items`) },
   kanban: { label: "Kanban", spec: "kanbanDoc.ts", check: via("kanban", parseKanban) },
   calendar: { label: "Calendar", spec: "calendarDoc.ts", check: via("calendar", parseCalendarLens) },

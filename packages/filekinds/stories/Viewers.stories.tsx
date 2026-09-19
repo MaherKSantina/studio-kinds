@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { previewForPath } from "../src/lib/filePreviews";
-import { BRIEF, GUIDE, PLAN, PLAYBOOK, useFixtureFs } from "./fixtures";
+import { BRIEF, BRIEF_WRITTEN, GUIDE, PLAN, PLAYBOOK, useFixtureFs } from "./fixtures";
 
 useFixtureFs();
 
@@ -21,6 +21,10 @@ export const Playbook: StoryObj = {
   render: () => <View path="/Books/fixture.playbook" content={PLAYBOOK} />,
 };
 export const Brief: StoryObj = { render: () => <View path="/Books/overview.brief" content={BRIEF} /> };
+export const BriefWritten: StoryObj = {
+  name: "Brief (a playbook and a note written into its sections)",
+  render: () => <View path="/Books/session.brief" content={BRIEF_WRITTEN} />,
+};
 export const Guide: StoryObj = { render: () => <View path="/Books/fund-the-venture.guide" content={GUIDE} /> };
 export const Plan: StoryObj = { render: () => <View path="/Books/fixture.plan" content={PLAN} /> };
 export const BriefEmpty: StoryObj = {

@@ -22,7 +22,8 @@ content entries as files beside the book (`file`, varying `by` answer as
 `<file>.variants/...`); version 2 is decisions and events (an event carries its own `when` and
 `hint`), and every event shows one document in the book
 (`content: {kind, doc}`), so a version-2 book is one file, and its walk is session-only:
-nothing clicked is ever saved.
+nothing clicked is ever saved. A `.brief` section holds the same shape — one document of any
+kind, written in under its prose (`src/lib/writtenDocument.ts` is the shape both share).
 The pure engines (`playbookDoc`, `briefDoc`, `docVersion`, the decision space) are
 mirrored into the public `studio-kinds` repository by `pnpm kinds:sync` from `suite/`.
 

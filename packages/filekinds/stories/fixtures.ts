@@ -25,6 +25,37 @@ sections:
     body: XP accrues per post; streaks multiply it.
 `;
 
+/** A brief whose sections hold documents of other kinds — the moments that can arise while a
+ *  step runs, as a playbook; a note, as markdown — written in, no file beside it. */
+export const BRIEF_WRITTEN = `title: At a session's start
+description: Steps as sections; what can happen during one, as the book it holds.
+sections:
+  - title: 1 · The master is read
+    body: |
+      The file is read as UTF-8 and parsed. The moments that can arise while it is read are the
+      book below.
+    content:
+      kind: playbook
+      doc:
+        version: 2
+        title: While the master is read
+        decisions: []
+        events:
+          - key: missing
+            label: The master playbook is missing
+            trigger: imposed
+            content: {kind: md, doc: The missing note goes out as the whole text, exit 0.}
+          - key: broken
+            label: The master playbook does not parse
+            trigger: imposed
+            content: {kind: md, doc: The note with the parser's message goes out, exit 0.}
+  - title: 2 · The map is written
+    content:
+      kind: md
+      doc: |
+        One text — the header, the events, the questions, the memory — on stdout, exit 0.
+`;
+
 export const GUIDE = `title: Fund the venture
 description: What to do when money must come in.
 decisions:

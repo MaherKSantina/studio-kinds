@@ -13,3 +13,14 @@ sections:
         body: One account, one card, receipts photographed the same day.
       - title: Tax
         body: Quarterly, by the accountant. We keep the folder.
+        content:
+          kind: playbook
+          doc:
+            version: 2
+            title: When a quarter ends
+            decisions: []
+            events:
+              - key: quarter-ends
+                label: The quarter ends
+                trigger: imposed
+                content: {kind: md, doc: The folder goes to the accountant; the return comes back signed within the month.}

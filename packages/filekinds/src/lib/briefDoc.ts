@@ -1,6 +1,7 @@
 /**
  * The `.brief` file kind: a nested set of titled sections, each with a one-line
- * description and a markdown body.
+ * description, a markdown body, and — where what the section holds is a document
+ * of another kind — that document, written in.
  *
  * It exists because the shape kept being wanted outside the one place it grew. The foundry
  * FEATURES stage renders exactly this — a tree on the left, and a title + description +
@@ -14,11 +15,34 @@
  *     YAML          in memory
  *     title    ↔    name
  *     body     ↔    prose
+ *     content  ↔    content
  *     children ↔    children
  *
  * The YAML spelling wins on the file side because `title`/`description`/`body` is what every
  * other authored kind here uses (`.list`, `.kanban`, `.email`), and a file people and agents
  * write should not inherit a vocabulary from the one stage that happened to need it first.
+ *
+ * A SECTION CAN HOLD ONE DOCUMENT OF ANY KIND the Studio knows — a playbook, a kanban, a
+ * guide, a policy, a data table, markdown — written in the section as `content: {kind, doc}`
+ * (writtenDocument.ts): `kind` names the engine, `doc` is the document exactly as a file of
+ * that kind would hold it. The viewer shows it under the section's prose through that kind's
+ * own viewer, and the checker runs it through that kind's own engine, so a broken document in
+ * a section is a broken brief. One document per section: a section that needs two has two
+ * children. Refused (`briefProblems`): a `content` that is not a mapping, one without `kind`
+ * or without `doc`, an `md` document that is not a string, and `by`, `docs` or `file` on it —
+ * a brief has no answers to vary by and names no file.
+ *
+ *     sections:
+ *       - title: The master is read
+ *         body: What happens, in prose; the moments that can arise are the book below.
+ *         content:
+ *           kind: playbook
+ *           doc:
+ *             version: 2
+ *             events:
+ *               - key: missing
+ *                 label: The master playbook is missing
+ *                 content: {kind: md, doc: The missing note goes out, exit 0.}
  *
  * Parsing is LENIENT and never throws — a half-written file still has to render. It also
  * accepts the in-memory spelling (`name`/`prose`) and the foundry array key (`features`), so
@@ -26,6 +50,7 @@
  */
 import yaml from "js-yaml";
 import type { FeatureNode } from "./featureTree";
+import { writtenKind, type WrittenDocument } from "./writtenDocument";
 
 /** A parsed `.brief`. `sections` is the tree, in the explorer's own node shape. */
 export interface BriefDoc {
@@ -40,7 +65,7 @@ export interface BriefDoc {
  *  (`__op`), not something the document says about itself, and a marked view being edited must not
  *  bake it into the file. */
 const NODE_KEYS = new Set([
-  "title", "name", "heading", "description", "body", "prose", "children",
+  "title", "name", "heading", "description", "body", "prose", "content", "children",
   "change", "__change", "__was", "__op", "opId", "__note", "note",
 ]);
 
@@ -49,6 +74,11 @@ const isObj = (v: unknown): v is Record<string, unknown> =>
 const asStr = (v: unknown): string => (typeof v === "string" ? v : "");
 
 export const emptyBrief = (): BriefDoc => ({ title: "", description: "", sections: [] });
+
+/** A section's written document: kept when it is a mapping — its kind normalised, its doc as
+ *  parsed, whatever shape; the kind's own engine judges it. Anything else is not content. */
+const coerceContent = (raw: unknown): WrittenDocument | null =>
+  isObj(raw) ? { kind: writtenKind(raw.kind) ?? "", doc: raw.doc } : null;
 
 function coerceNode(raw: unknown): FeatureNode | null {
   if (!isObj(raw)) return null;
@@ -62,6 +92,8 @@ function coerceNode(raw: unknown): FeatureNode | null {
   if (description) node.description = description;
   const body = asStr(raw.body) || asStr(raw.prose);
   if (body) node.prose = body;
+  const content = coerceContent(raw.content);
+  if (content) node.content = content;
   // `__change` is what the diff engine stamps when contributions are applied; `change` is
   // the authored spelling. Reading both is what makes a contributed section arrive already
   // coloured in the explorer, with no separate provenance channel to keep in step.
@@ -119,6 +151,12 @@ function nodeToRaw(node: FeatureNode): Record<string, unknown> {
   const out: Record<string, unknown> = { title: node.name };
   if (node.description) out.description = node.description;
   if (node.prose) out.body = node.prose;
+  if (node.content) {
+    const c: Record<string, unknown> = {};
+    if (node.content.kind) c.kind = node.content.kind;
+    if (node.content.doc !== undefined) c.doc = node.content.doc;
+    out.content = c;
+  }
   if (node.change) out.change = node.change;
   for (const [key, value] of Object.entries(node)) {
     if (!NODE_KEYS.has(key)) out[key] = value;
@@ -160,6 +198,60 @@ export function briefLensOf(content: string): Record<string, unknown> | null {
   if (!isObj(select) || typeof select.epic !== "number") return null;
   return loaded;
 }
+
+/** The section list a node holds, in the spellings the parser reads: `sections`, `features` or
+ *  `items` at the root, `children` below. */
+const listOf = (raw: Record<string, unknown>, root: boolean): unknown[] => {
+  if (!root) return Array.isArray(raw.children) ? raw.children : [];
+  return Array.isArray(raw.sections) ? raw.sections
+    : Array.isArray(raw.features) ? raw.features
+    : Array.isArray(raw.items) ? raw.items
+    : [];
+};
+
+/**
+ * What a section's `content` cannot be, read from the text as written: not a mapping; no
+ * `kind`; no `doc`; an `md` document that is not a string; `by`, `docs` or `file` on it — a
+ * brief has no answers to vary by and names no file. Each is named by the section's title
+ * chain. A YAML error is not reported here: the checker reports it first, and a lenient
+ * parse has nothing to say about it.
+ */
+export function briefProblems(text: string): string[] {
+  let loaded: unknown;
+  try { loaded = yaml.load(text); } catch { return []; }
+  if (!isObj(loaded)) return [];
+  const out: string[] = [];
+  const walk = (list: unknown[], prefix: string) => {
+    for (const raw of list) {
+      if (!isObj(raw)) continue;
+      const name = asStr(raw.title) || asStr(raw.name) || asStr(raw.heading) || "Untitled";
+      const path = prefix ? `${prefix} › ${name}` : name;
+      if (raw.content !== undefined) {
+        const where = `section ${path}`;
+        const c = raw.content;
+        if (!isObj(c)) out.push(`${where}: \`content\` is not a mapping — write \`kind\` and \`doc\``);
+        else {
+          const kind = writtenKind(c.kind);
+          if (!kind) out.push(`${where}: \`content\` has no \`kind\` — say which kind renders it (playbook, kanban, md, …)`);
+          if (c.doc === undefined) out.push(`${where}: \`content\` has no \`doc\` — the document itself, as a file of that kind would hold it`);
+          for (const k of ["by", "docs", "file"]) {
+            if (c[k] !== undefined) out.push(`${where}: \`content\` has \`${k}\` — a section holds one document written in; a brief has no answers to vary by and names no file`);
+          }
+          if (kind === "md" && c.doc !== undefined && typeof c.doc !== "string") out.push(`${where}: an \`md\` document is its text — write it as a block string`);
+        }
+      }
+      walk(listOf(raw, false), path);
+    }
+  };
+  walk(listOf(loaded, true), "");
+  return out;
+}
+
+/** Every section holding a written document, with where it sits (`section Money › Banking`). */
+export const writtenSections = (doc: BriefDoc): { where: string; node: FeatureNode; content: WrittenDocument }[] =>
+  [...flattenBrief(doc.sections)]
+    .filter(([, node]) => !!node.content)
+    .map(([path, node]) => ({ where: `section ${path}`, node, content: node.content! }));
 
 /** Flatten to `path → node` for diffing, where a path is the chain of titles. A title
  *  is the only stable-ish handle a `.brief` node has (it has no id), which is also why

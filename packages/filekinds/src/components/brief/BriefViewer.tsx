@@ -1,8 +1,10 @@
 /**
  * Read-only `.brief` viewer — a hierarchical section tree.
  *
- * Wide containers: tree on the left, the selected section's description +
- * prose on the right — standalone AND inside a PaneTrail alike.
+ * Wide containers: tree on the left, the selected section's description,
+ * prose and — when the section holds a document of another kind — that
+ * document, rendered by its own viewer, on the right — standalone AND inside
+ * a PaneTrail alike.
  *
  * Narrow containers: the tree fills the width and a section's content opens
  * as the next step — through the enclosing trail (`onDrill`) when the host
@@ -17,6 +19,7 @@ import { parseBrief } from "../../lib/briefDoc";
 import type { FeatureNode } from "../../lib/featureTree";
 import { MarkdownPane } from "../../lib/MarkdownPane";
 import type { ViewerProps } from "../../lib/filePreviews";
+import WrittenDocumentView from "../WrittenDocumentView";
 
 const CHANGE_FG: Record<string, string> = { add: "#15803d", edit: "#b45309", remove: "#dc2626" };
 
@@ -79,18 +82,30 @@ const nodeAt = (roots: FeatureNode[], path: string): FeatureNode | null => {
   return node;
 };
 
-const sectionBody = (node: FeatureNode) => (
+/** What a section shows: its description, its prose, and the document written in it, rendered by
+ *  its kind. A section with a document and no prose shows the document alone — no placeholder. */
+type SectionHost = Pick<ViewerProps, "agentId" | "onDrill" | "onOpenPath">;
+const sectionBody = (node: FeatureNode, host: SectionHost) => (
   <>
     {node.description && (
       <Typography sx={{ fontSize: 12, color: "text.secondary", mt: 0.25 }}>{node.description}</Typography>
     )}
     {node.prose
       ? <Box sx={{ "& .md-body": { px: 0, py: 1 } }}><MarkdownPane content={node.prose} height="auto" /></Box>
-      : <Typography sx={{ fontSize: 12, color: "text.disabled", mt: 1.5 }}>No prose on this section.</Typography>}
+      : !node.content && <Typography sx={{ fontSize: 12, color: "text.disabled", mt: 1.5 }}>No prose on this section.</Typography>}
+    {node.content && (
+      <Box sx={{ mt: node.prose ? 0.5 : 1.25 }}>
+        <WrittenDocumentView content={node.content} agentId={host.agentId} onDrill={host.onDrill} onOpenPath={host.onOpenPath} />
+      </Box>
+    )}
   </>
 );
 
-export default function BriefViewer({ content, height = "100%", onDrill }: ViewerProps) {
+/** A section has something to open when it has prose, a description, or a document written in. */
+const hasContent = (node: FeatureNode): boolean => !!(node.prose || node.description || node.content);
+
+export default function BriefViewer({ content, height = "100%", onDrill, agentId, onOpenPath }: ViewerProps) {
+  const host: SectionHost = { agentId, onDrill, onOpenPath };
   const doc = useMemo(() => parseBrief(content), [content]);
   const [selected, setSelected] = useState("0");
   const [openSet, setOpenSet] = useState<Set<string>>(() => new Set(doc.sections.map((_, i) => String(i))));
@@ -139,12 +154,12 @@ export default function BriefViewer({ content, height = "100%", onDrill }: Viewe
   const narrowSelect = (p: string) => {
     setSelected(p);
     const node = nodeAt(doc.sections, p);
-    if (!node || !(node.prose || node.description)) return;
+    if (!node || !hasContent(node)) return;
     if (onDrill) {
       onDrill({
         key: `section:${p}`,
         title: node.name || "Untitled",
-        render: () => <Box sx={{ px: 2, py: 1 }}>{sectionBody(node)}</Box>,
+        render: () => <Box sx={{ px: 2, py: 1 }}>{sectionBody(node, host)}</Box>,
       });
     } else {
       setDetail(p);
@@ -164,7 +179,7 @@ export default function BriefViewer({ content, height = "100%", onDrill }: Viewe
             {sel ? (
               <Box sx={{ px: 2, py: 1.5 }}>
                 <Typography sx={{ fontSize: 15, fontWeight: 650 }}>{sel.name || "Untitled"}</Typography>
-                {sectionBody(sel)}
+                {sectionBody(sel, host)}
               </Box>
             ) : (
               <Typography sx={{ p: 2, fontSize: 12, color: "text.disabled" }}>Select a section</Typography>
@@ -182,7 +197,7 @@ export default function BriefViewer({ content, height = "100%", onDrill }: Viewe
                         "&:hover": { bgcolor: "#0f172a0a" } }} />
             <Typography sx={{ fontSize: 13, fontWeight: 650 }}>{detailNode.name || "Untitled"}</Typography>
           </Stack>
-          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: 2, py: 1 }}>{sectionBody(detailNode)}</Box>
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: 2, py: 1 }}>{sectionBody(detailNode, host)}</Box>
         </Box>
       ) : (
         /* ── Narrow: the tree full width; labels open content, chevrons only fold ── */

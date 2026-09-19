@@ -98,6 +98,9 @@
  */
 import yaml from "js-yaml";
 import { dumpDocVersion, readDocVersion } from "./docVersion";
+import { docText, writtenKind, writtenPath } from "./writtenDocument";
+// The text a renderer takes for a written document — shared with the brief, re-exported for the checkers.
+export { docText };
 import {
   decisionRows as sharedRows, impliedLocks as sharedImplied,
   type SpaceDecision, type SpaceValue,
@@ -169,7 +172,7 @@ export const contentKey = (c: PlaybookContent, at = "inline"): string =>
   c.key ?? c.file ?? (c.label ? slugKey(c.label) : at);
 
 /** A path the registry can pick a renderer from — real, or synthetic for an inline entry. */
-export const contentPath = (c: PlaybookContent): string => c.file ?? `inline.${c.kind ?? "md"}`;
+export const contentPath = (c: PlaybookContent): string => c.file ?? writtenPath(c.kind);
 
 /** The key a `by` combination is filed under: `decision=answer,...` in `by` order — a variant file's name, a `docs` member's key. */
 export const variantKey = (segs: string[]): string => segs.join(",");
@@ -182,10 +185,6 @@ export const writtenDoc = (c: PlaybookContent, segs: string[] = []): unknown =>
 export const writtenDocs = (c: PlaybookContent): { at: string; doc: unknown }[] =>
   c.docs ? Object.entries(c.docs).map(([at, doc]) => ({ at, doc }))
     : c.doc !== undefined ? [{ at: "", doc: c.doc }] : [];
-
-/** The text a renderer takes for a written document: as YAML, or as is when it is a string. */
-export const docText = (d: unknown): string =>
-  typeof d === "string" ? d : yaml.dump(d ?? {}, { lineWidth: -1, noRefs: true });
 
 /** The text a renderer takes: a written entry's document under these segments. */
 export const contentText = (c: PlaybookContent, segs: string[] = []): string => docText(writtenDoc(c, segs));
@@ -299,7 +298,7 @@ function parseContent(x: unknown, version: number): PlaybookContent[] {
     return [{
       ...(str(o.key) ? { key: str(o.key)! } : {}),
       ...(str(o.label) ? { label: str(o.label)! } : {}),
-      ...(str(o.kind) ? { kind: str(o.kind)!.replace(/^\./, "").toLowerCase() } : {}),
+      ...(str(o.kind) ? { kind: writtenKind(o.kind)! } : {}),
       ...(refs(o.by).length ? { by: refs(o.by) } : {}),
       ...(present(o.doc) ? { doc: o.doc } : {}),
       ...(present(o.docs) ? { docs: rec(o.docs) } : {}),

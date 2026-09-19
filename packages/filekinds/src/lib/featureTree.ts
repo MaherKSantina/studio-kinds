@@ -14,6 +14,8 @@
 // Paths are index paths: [1, 0] is the 2nd root's 1st child — the same path FeatureTreeExplorer
 // derives from a row's dotted id. Every edit returns a FRESH tree so React sees a new reference.
 
+import type { WrittenDocument } from "./writtenDocument";
+
 export interface FeatureNode {
   /** The feature title. */
   name: string;
@@ -42,6 +44,10 @@ export interface FeatureNode {
    * rather than announce it. Read-only provenance, never serialized back.
    */
   was?: { description?: string; prose?: string };
+  /** One document of another kind written in this node — a playbook, a kanban, a guide —
+   *  shown under the prose by that kind's own viewer. `.brief` reads and writes it as
+   *  `content: {kind, doc}`; see `writtenDocument.ts`. */
+  content?: WrittenDocument;
   /** Nested sub-features (optional) — this is what makes it a tree. */
   children?: FeatureNode[];
 }
