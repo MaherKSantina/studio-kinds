@@ -16,12 +16,12 @@ content, a checklist or a child playbook, is written in the file itself. Consult
 Maher adds events and content in the Studio; Claude keeps the checklists true to how the Studio
 actually works. After every edit to these files: `studio-check <file>`.
 
-Memory is IN a playbook: `claude/memory.playbook` (version 2, one file). Its `Working on: <area>`
-events each hold one brief, one section per remembered fact. Take an area's event and read its
-document before working there. Writing to `memory.playbook` or to `claude.playbook` happens only
+Memory is IN a brief: `claude/memory.brief` (one file). Its top sections are the areas, each
+holding one child section per remembered fact. Take an area's section and read its facts before
+working there. Writing to `memory.brief` or to `claude.playbook` happens only
 through the master's event "Something should be committed to memory": show the write, ask, write
 only on a yes, and show every write in full in the report. Never write to
-`~/.claude/projects/*/memory` — auto-memory is off for this repo. `memory.playbook` is listed in
+`~/.claude/projects/*/memory` — auto-memory is off for this repo. `memory.brief` is listed in
 `.gitignore`: this repository is public and the memory is Maher's private notes, so it never
 leaves the machine.
 

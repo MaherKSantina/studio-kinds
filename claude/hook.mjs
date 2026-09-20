@@ -1,16 +1,16 @@
 // Claude Code hook: puts the Studio's master playbook in front of Claude.
-//   node hook.mjs session   -> SessionStart: the whole map (events, their content, the questions with no answer)
+//   node hook.mjs session   -> SessionStart: the whole map (events, their content, the questions with no answer, the memory's areas and facts)
 //   node hook.mjs prompt    -> UserPromptSubmit: a one-paragraph reminder of the events to watch
-// Reads claude.playbook (version 2: every checklist and child book in it) and memory.playbook (version 2: one
-// brief per area, in the book) from the folder this file sits in, on every run, so whatever Maher adds in the
-// Studio is what Claude sees. Never throws: a broken file yields a note.
+// Reads claude.playbook (version 2: every checklist and child book in it) and memory.brief (one top section per area,
+// one child per fact) from the folder this file sits in, on every run, so whatever Maher adds in the Studio is what
+// Claude sees. Never throws: a broken file yields a note.
 import { readFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const MASTER = path.join(DIR, "claude.playbook");
-const MEMORY = path.join(DIR, "memory.playbook");
+const MEMORY = path.join(DIR, "memory.brief");
 const mode = process.argv[2] ?? "session";
 
 let yaml = null;
@@ -42,7 +42,7 @@ try { doc = load(MASTER); } catch (e) { emit(eventName, `Master playbook at ${MA
 let memoryDoc = null;
 let memoryNote = "";
 if (existsSync(MEMORY)) {
-  try { memoryDoc = load(MEMORY); } catch (e) { memoryNote = `\nMemory playbook at ${MEMORY} did not parse: ${e?.message ?? e}. Read it raw and fix it first.`; }
+  try { memoryDoc = load(MEMORY); } catch (e) { memoryNote = `\nMemory brief at ${MEMORY} did not parse: ${e?.message ?? e}. Read it raw and fix it first.`; }
 }
 
 /** A version-2 content entry is one mapping; version 1 is a list of files. Both come back as a list. */
@@ -54,9 +54,12 @@ const entriesOf = (e) => {
 const nameOf = (c) => c.file
   ? (c.by?.length ? `${c.file} by ${c.by.join(",")}` : c.file)
   : `${c.label ?? c.key ?? "content"} (${c.kind ?? "md"})`;
+/** A brief section by its title; the children of a section as a list. */
+const titleOf = (s) => s?.title ?? "(untitled)";
+const childrenOf = (s) => Array.isArray(s?.children) ? s.children : [];
 
 const working = Array.isArray(doc?.events) ? doc.events : [];
-const memory = Array.isArray(memoryDoc?.events) ? memoryDoc.events : [];
+const areas = Array.isArray(memoryDoc?.sections) ? memoryDoc.sections : [];
 const lines = working.map((e) => `- ${e.label} → ${entriesOf(e).map(nameOf).join(", ") || "(no content yet)"}`);
 
 // The questions: every decision of every child book written into the master. None has an answer in the
@@ -74,7 +77,7 @@ if (mode === "prompt") {
   emit("UserPromptSubmit",
     `Master playbook (${MASTER}): as you work, watch for these events and, when one happens, open its content in the book and do every item — ` +
     working.map((e) => e.label).join(" · ") +
-    (memory.length ? `. MEMORY lives in ${MEMORY}: before touching an area, take its event (${memory.map((e) => e.label.replace(/^Working on: /, "")).join(", ")}) and read its document. Never write to a playbook under claude/ except through the "Something should be committed to memory" event and Maher's answer there.` : ".") +
+    (areas.length ? `. MEMORY lives in ${MEMORY}: before touching an area, take its section (${areas.map(titleOf).join(", ")}) and read its facts. Never write to a book under claude/ except through the "Something should be committed to memory" event and Maher's answer there.` : ".") +
     " The child books' questions have NO standing answer (a version-2 walk is session-only, nothing is ever saved): ask Maher each question in chat and act on his answer there; the event's content follows his answer, and until he answers the event's own hint says what to do.");
   process.exit(0);
 }
@@ -86,6 +89,6 @@ emit("SessionStart",
   lines.join("\n") +
   `\nQUESTIONS — the child books' decisions. None has an answer in the file and nothing clicked in the Studio is saved: ask Maher each one in chat when its event fires; the event's content (docs, keyed by answer) is what to do under his answer, and the event's own hint is what to do until he answers.\n` +
   (questions.length ? questions.map((q) => `- ${q}`).join("\n") : "- (no child book carries a decision)") +
-  (memory.length ? `\nMEMORY — ${MEMORY} (version 2, one file). The brief under each event IS Claude's memory for that area (there is no MEMORY.md). Take an area's event before working there and read its document. Writing to memory.playbook or to claude.playbook happens ONLY through the "Something should be committed to memory" event: show the write, ask, and write only on a yes; every write is shown in full in the report.\n` +
-    memory.map((e) => `- ${e.label} → ${entriesOf(e).map(nameOf).join(", ")}`).join("\n") : "") +
+  (areas.length ? `\nMEMORY — ${MEMORY} (a brief, one file). Each top section IS Claude's memory for that area, one child per fact (there is no MEMORY.md). Take an area's section before working there and read its facts. Writing to memory.brief or to claude.playbook happens ONLY through the "Something should be committed to memory" event: show the write, ask, and write only on a yes; every write is shown in full in the report.\n` +
+    areas.map((a) => `- ${titleOf(a)} → ${childrenOf(a).map(titleOf).join(", ")}`).join("\n") : "") +
   memoryNote);

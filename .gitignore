@@ -17,4 +17,4 @@ apps/cli/dist/
 apps/cli/out/
 release/
 .wrangler/
-claude/memory.playbook
+claude/memory.brief

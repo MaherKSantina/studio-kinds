@@ -33,7 +33,7 @@ events:
         # Text between tildes
 
         - [ ] `~like this~` in Maher's message is context for the current task only
-        - [ ] Use it for the task, and write neither it nor anything derived from it into `memory.playbook` or this playbook — a yes to "Commit to memory?" does not cover it
+        - [ ] Use it for the task, and write neither it nor anything derived from it into `memory.brief` or this playbook — a yes to "Commit to memory?" does not cover it
         - [ ] Leave it out of the write shown under "Something should be committed to memory"
         - [ ] Never restate it in the report as a fact to keep
   - key: studio-document
@@ -327,7 +327,7 @@ events:
                   sections:
                     - title: Commit
                       body: |
-                        Stage only what the task changed; leave Maher's parallel edits unstaged. `claude/memory.playbook` is never staged: this repository is public and the memory is his private notes — `.gitignore` keeps it out.
+                        Stage only what the task changed; leave Maher's parallel edits unstaged. `claude/memory.brief` is never staged: this repository is public and the memory is his private notes — `.gitignore` keeps it out.
                         Message: what changed and why, then `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
                         The working branch is `master`, and a push to it deploys the page — commit there unless he says otherwise.
                     - title: Push
@@ -412,9 +412,9 @@ events:
             label: Always
             trigger: imposed
             hint: |
-              Show what would be written: name the area (its `Working on:` event in `claude/memory.playbook`, this repository's), whether it is a new section or an amendment, and quote the section as it would be written — title, one-line description, body with **Why** and **How to apply**. A new area also means a new `Working on:` event in `memory.playbook`; say so. A fact about the suite around the Studio — its apps, servers, drive, data, or Maher's own areas — is not this book's: name it as belonging to `C:\Github\orchestration\claude\memory.playbook` and leave it for that book's own event.
+              Show what would be written: name the area (its top section in `claude/memory.brief`, this repository's), whether it is a new fact or an amendment, and quote the fact as it would be written — title, one-line description, body with **Why** and **How to apply**. A new area also means a new top section in `memory.brief`; say so. A fact about the suite around the Studio — its apps, servers, drive, data, or Maher's own areas — is not this book's: name it as belonging to `C:\Github\orchestration\claude\memory.playbook` and leave it for that book's own event.
 
-              Then ask Maher whether to commit it. Write nothing to either playbook until he answers yes. A no, or no answer, means it is not written.
+              Then ask Maher whether to commit it. Write nothing to either book until he answers yes. A no, or no answer, means it is not written.
             content:
               key: steps
               label: What to do
@@ -427,13 +427,13 @@ events:
                   sections:
                     - title: Find the area
                       body: |
-                        The `Working on: <area>` event in `claude/memory.playbook` whose brief the fact belongs to. A new area = a new event in `memory.playbook` (`domain: Memory`, `content: {key, label, kind: brief, doc: {title, sections}}`). A fact about the suite goes to `C:\Github\orchestration\claude\memory.playbook` through that book's own event, never here.
+                        The top section of `claude/memory.brief` the fact belongs to; its children are the area's facts. A new area = a new top section in `memory.brief` (`{title, children: [...]}`). A fact about the suite goes to `C:\Github\orchestration\claude\memory.playbook` through that book's own event, never here.
                     - title: Amend before adding
                       body: |
                         Look for a section that already covers it and change that one — never add a twin. Delete a section that turned out wrong. Do not record what the repo, git history or CLAUDE.md already say.
                     - title: Write
                       body: |
-                        A section is `title`, a one-line `description`, and a `body` with **Why** and **How to apply**; dates absolute. Then `studio-check claude/memory.playbook`. The file is not under git — `.gitignore` keeps it out of a public repository — so the report is the only record of the write besides the file itself.
+                        A fact is a section: `title`, a one-line `description`, and a `body` with **Why** and **How to apply**; dates absolute. Then `studio-check claude/memory.brief`. The file is not under git — `.gitignore` keeps it out of a public repository — so the report is the only record of the write besides the file itself.
                     - title: Make it visible
                       body: |
                         In the report, list every area touched and quote each section added or changed, in full. Nothing is committed to memory silently.
@@ -442,7 +442,7 @@ events:
                   sections:
                     - title: Do not write
                       body: |
-                        Do not add or change anything in `memory.playbook`. If something seemed worth keeping, say so in one line of the report and leave it there.
+                        Do not add or change anything in `memory.brief`. If something seemed worth keeping, say so in one line of the report and leave it there.
   - key: refactor
     label: A refactor changed existing behaviour
     trigger: imposed
@@ -469,7 +469,7 @@ events:
               - key: changelog
                 label: Changelog — keep what was, add what changed
               - key: wipe
-                label: Wipe — the briefs describe only what exists now
+                label: Wipe — the memory describes only what exists now
         events:
           - key: touchpoints
             label: How far the change reaches
@@ -510,7 +510,7 @@ events:
             label: How memory takes the change
             trigger: imposed
             hint: |
-              Search every area's brief in `claude/memory.playbook` for the old behaviour's names, not only the area being worked on. For each hit, propose one of: amend the sentence, delete the section, or keep a one-line note that the thing is gone and what names it now. Ask Maher which. The write itself still goes through "Something should be committed to memory" and its answer.
+              Search every area of `claude/memory.brief` for the old behaviour's names, not only the area being worked on. For each hit, propose one of: amend the sentence, delete the section, or keep a one-line note that the thing is gone and what names it now. Ask Maher which. The write itself still goes through "Something should be committed to memory" and its answer.
             content:
               key: memory
               label: Memory after a refactor
@@ -524,18 +524,18 @@ events:
                     - title: Never delete
                       body: |
                         A section about the old behaviour stays. Add a dated line at the top of its body — "Changed <date>: <what replaced it>" — and mark the old description below it as "was". A reader can see the sequence.
-                    - title: Every brief
+                    - title: Every area
                       body: |
-                        Do this in every brief that mentions the old names, not only the area being worked on. The write itself still goes through "Something should be committed to memory" and its answer.
+                        Do this in every area that mentions the old names, not only the area being worked on. The write itself still goes through "Something should be committed to memory" and its answer.
                 memory=wipe:
-                  title: Wipe — the briefs describe only what exists now
+                  title: Wipe — the memory describes only what exists now
                   sections:
-                    - title: Search every brief
+                    - title: Search every area
                       body: |
-                        Search every area's brief in `memory.playbook` for the old behaviour's names, not only the area being worked on. Every stale sentence will be acted on as if true, so every hit is handled.
+                        Search every area of `memory.brief` for the old behaviour's names, not only the area being worked on. Every stale sentence will be acted on as if true, so every hit is handled.
                     - title: Delete or rewrite
                       body: |
-                        Delete each section that described the removed behaviour, and rewrite each sentence that leaned on it, so the briefs read as if it never existed. Git is the history.
+                        Delete each section that described the removed behaviour, and rewrite each sentence that leaned on it, so the areas read as if it never existed. Git is the history.
                     - title: One sentence if absence needs explaining
                       body: |
                         Keep at most one sentence about a removed thing, and only when its absence needs explaining — a checker that names an old key as legacy, a file on disk that may still carry it. That is a current fact, not a history entry. The write itself still goes through "Something should be committed to memory" and its answer.
