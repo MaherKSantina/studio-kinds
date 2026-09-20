@@ -130,7 +130,7 @@ events:
   it("brief and markdown", () => {
     const b = check("brief", brief);
     expect(b.ok).toBe(true);
-    expect(b.summary).toBe("4 sections");
+    expect(b.summary).toBe("4 sections, 1 document");
     expect(check(".BRIEF", "title: t").kind).toBe("brief");
     expect(check("brief", "title: [").ok).toBe(false);
     expect(check("md", "# hi\n").ok).toBe(true);
