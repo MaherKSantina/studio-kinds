@@ -46,11 +46,12 @@ A Studio tab has an **Open Source (text)** button to bring the YAML back beside 
   `127.0.0.1:9250` when it runs. `img-src https:` is for a `.collection`'s item
   images and the images a markdown body names, which live where they were
   written — the host serving one sees the request, as with any image viewer —
-  and `frame-src` admits the collection's directions map. The setting
-  **`studio.remoteContent: false`** removes both from the policy and tells the
-  page (a `<meta name="studio-remote-content">` beside it) to hold a placeholder
-  where each would load; reopen the document after changing it. A document that
-  names no remote image makes no request either way.
+  and `frame-src` admits the collection's directions map — both only when the
+  setting **`studio.remoteContent`** is `true`. Off, the default, neither is in
+  the policy and the page (told by a `<meta name="studio-remote-content">`
+  beside it) holds a placeholder where each would load; reopen the document
+  after changing it. A document that names no remote image makes no request
+  either way.
 
 ## Development
 

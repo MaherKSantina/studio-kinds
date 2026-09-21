@@ -3,12 +3,12 @@ import { describe, expect, it } from "vitest";
 import { configureFileKinds, isRemoteUrl, remoteContentAllowed } from "../api";
 
 describe("remote content", () => {
-  it("is on until a host says otherwise", () => {
-    expect(remoteContentAllowed()).toBe(true);
-    configureFileKinds({ readFile: async () => ({ content: "", mime: "text/plain" }) as never, remoteContent: false });
+  it("is off until a host turns it on", () => {
     expect(remoteContentAllowed()).toBe(false);
     configureFileKinds({ readFile: async () => ({ content: "", mime: "text/plain" }) as never, remoteContent: true });
     expect(remoteContentAllowed()).toBe(true);
+    configureFileKinds({ readFile: async () => ({ content: "", mime: "text/plain" }) as never, remoteContent: false });
+    expect(remoteContentAllowed()).toBe(false);
   });
 
   it("a remote URL is http(s) to anything but this machine", () => {

@@ -280,9 +280,9 @@ class StudioEditorProvider {
     // Every script, style and font is the bundle's own; the only network the webview may open is the
     // suite's ask worker on this machine. `img-src https:` is for a `.collection`'s item images, which
     // live where the listing does — the host that serves one sees the request, as any image viewer's
-    // would — and the directions map is a Google frame; the setting `studio.remoteContent` turns both
-    // off, in the policy and in the page (a <meta> the renderer reads).
-    const remote = vscode.workspace.getConfiguration("studio").get("remoteContent", true);
+    // would — and the directions map is a Google frame; both are off unless the setting
+    // `studio.remoteContent` turns them on, in the policy and in the page (a <meta> the renderer reads).
+    const remote = vscode.workspace.getConfiguration("studio").get("remoteContent", false) === true;
     const csp = [
       "default-src 'none'",
       `img-src ${webview.cspSource} ${remote ? "https: " : ""}data: blob:`,

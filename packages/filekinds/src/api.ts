@@ -90,7 +90,7 @@ export function configureFileKinds(opts: {
   ask?: AskApi;
   /** Whether a document's REMOTE content — an `https:` image a `.collection` item or a markdown body
    *  names, the directions map — is fetched. Off, a placeholder stands where it would load and nothing
-   *  a document names reaches the network; links still open by hand. Default on. */
+   *  a document names reaches the network; links still open by hand. OFF unless the host turns it on. */
   remoteContent?: boolean;
 }): void {
   slot.__filekindsReader = opts.readFile;
@@ -107,8 +107,8 @@ export function configureFileKinds(opts: {
   if (opts.remoteContent !== undefined) slot.__filekindsRemoteContent = opts.remoteContent;
 }
 
-/** Whether remote content a document names is fetched — the host's `remoteContent` setting, default on. */
-export const remoteContentAllowed = (): boolean => slot.__filekindsRemoteContent !== false;
+/** Whether remote content a document names is fetched — only when the host turned it on. */
+export const remoteContentAllowed = (): boolean => slot.__filekindsRemoteContent === true;
 /** A URL that would leave the machine: http(s) to anything but this machine. */
 export const isRemoteUrl = (url: string): boolean => /^https?:\/\//i.test(url) && !/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/i.test(url);
 

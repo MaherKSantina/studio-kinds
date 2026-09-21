@@ -24,8 +24,8 @@
       "properties": {
         "studio.remoteContent": {
           "type": "boolean",
-          "default": true,
-          "description": "Fetch the remote content a document names: an https image a .collection item or a markdown body points at, the directions map. Off, a placeholder stands where it would load, the webview's Content-Security-Policy allows no remote image or frame at all, and nothing a document names reaches the network; links still open by hand. Reopen the document after changing it."
+          "default": false,
+          "description": "Fetch the remote content a document names: an https image a .collection item or a markdown body points at, the directions map. Off (the default), a placeholder stands where it would load, the webview's Content-Security-Policy allows no remote image or frame at all, and nothing a document names reaches the network; links still open by hand. Reopen the document after changing it."
         }
       }
     },

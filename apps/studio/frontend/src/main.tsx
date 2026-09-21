@@ -39,8 +39,8 @@ configureFileKinds({
     return r.json();
   },
   ask,
-  // VITE_STUDIO_REMOTE_CONTENT=off at build or dev time: remote images and the map are held back.
-  remoteContent: import.meta.env.VITE_STUDIO_REMOTE_CONTENT !== "off",
+  // Remote images and the map are held back unless VITE_STUDIO_REMOTE_CONTENT=on at build or dev time.
+  remoteContent: import.meta.env.VITE_STUDIO_REMOTE_CONTENT === "on",
 });
 
 const drive: StudioStore = {

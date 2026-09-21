@@ -139,15 +139,15 @@ Two things reach out, and only when a document or you name something remote:
   yours never may.
 - **Remote content a document names** — an `https:` image in a `.collection` item or in any markdown
   body (a brief's section, a task's body, a `.md`), and the directions map a `.collection` can open.
-  Showing one is a request to wherever it lives. Every host has a switch that turns this off, after
-  which a placeholder stands where the image would load and nothing a document names reaches the
-  network (links still open by hand):
+  Showing one is a request to wherever it lives, so **every host holds it back by default**: a
+  placeholder stands where the image would load and nothing a document names reaches the network
+  (links still open by hand). Each host has a switch that turns it on:
 
-  | host | switch | enforced where |
+  | host | to turn it on | enforced where, while off |
   |---|---|---|
-  | VS Code | setting `studio.remoteContent: false` | the webview's CSP drops `https:` from `img-src` and the map from `frame-src`; the page holds the images |
-  | desktop app | `STUDIO_REMOTE_CONTENT=off` in the environment | every request off this machine is refused in the main process (`webRequest`), whatever the page asks; the page holds the images |
-  | web Studio / page | `VITE_STUDIO_REMOTE_CONTENT=off` at build or dev time | the page holds the images; a `Content-Security-Policy` header on your server enforces it |
+  | VS Code | setting `studio.remoteContent: true` | the webview's CSP has no `https:` in `img-src` and no map in `frame-src`; the page holds the images |
+  | desktop app | `STUDIO_REMOTE_CONTENT=on` in the environment | every request off this machine is refused in the main process (`webRequest`), whatever the page asks; the page holds the images |
+  | web Studio / page | `VITE_STUDIO_REMOTE_CONTENT=on` at build or dev time | the page holds the images; a `Content-Security-Policy` header on your server enforces it |
 
   A document written as plain YAML with no URL in it makes no request in any host, switch or no switch.
 

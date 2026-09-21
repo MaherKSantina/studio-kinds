@@ -34,8 +34,8 @@ configureFileKinds({
   indexFiles: (from) => rpc("index", from),
   // The suite's ask worker, when it runs on this machine; the panels say so when it does not.
   ask: askApi("http://127.0.0.1:9250"),
-  // The extension's `studio.remoteContent` setting, written into the page as a <meta> beside the CSP that enforces it.
-  remoteContent: document.querySelector('meta[name="studio-remote-content"]')?.getAttribute("content") !== "off",
+  // The extension's `studio.remoteContent` setting, written into the page as a <meta> beside the CSP that enforces it; off unless it says on.
+  remoteContent: document.querySelector('meta[name="studio-remote-content"]')?.getAttribute("content") === "on",
 });
 
 // The catalog page pulls the whole journey engine — loaded when it is opened, not with every document.
