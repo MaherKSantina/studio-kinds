@@ -84,9 +84,11 @@ jobs:
       - name: Digest every file
         shell: pwsh
         run: |
-          Get-ChildItem release -File | Where-Object Name -ne SHA256SUMS | ForEach-Object {
+          # LF line endings, so `sha256sum -c SHA256SUMS` reads it on every platform.
+          $lines = Get-ChildItem release -File | Where-Object Name -ne SHA256SUMS | ForEach-Object {
             "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
-          } | Set-Content -Path release/SHA256SUMS -Encoding ascii
+          }
+          [IO.File]::WriteAllText((Join-Path (Get-Location) "release/SHA256SUMS"), (($lines -join "`n") + "`n"))
           Get-Content release/SHA256SUMS
 
       - name: Attest build provenance
