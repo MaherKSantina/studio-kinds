@@ -12,6 +12,8 @@ const on = (channel, cb) => {
 };
 
 contextBridge.exposeInMainWorld("studioDesktop", {
+  /** False when the app runs with STUDIO_REMOTE_CONTENT=off: the main process refuses every request off this machine, and the page holds remote images back. */
+  remoteContent: !process.argv.includes("--studio-remote-content=off"),
   getRoot: () => ipcRenderer.invoke("root:get"),
   chooseFolder: () => ipcRenderer.invoke("root:choose"),
   onRoot: (cb) => on("root:changed", cb),

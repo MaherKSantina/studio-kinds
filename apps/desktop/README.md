@@ -22,6 +22,11 @@ pnpm --filter studio-desktop start -- --folder "C:\Github\Neogrids"
 
 A file given on the command line opens its folder and then the file — which is
 what a file association delivers. `STUDIO_FOLDER=<path>` works as well.
+`STUDIO_REMOTE_CONTENT=off` makes the app fetch nothing a document names from
+off this machine: the main process refuses every request that is not the app's
+own files or the suite's ask worker on `127.0.0.1` (`webRequest.onBeforeRequest`),
+and the page shows a placeholder where a `.collection`'s picture or a markdown
+body's remote image would load. Links still open in the browser by hand.
 
 A folder opens on its **root memory**: the first `.memory` file sitting in the
 root. A folder without one gets an empty `<folder>.memory` made for it on

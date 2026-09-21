@@ -279,19 +279,22 @@ class StudioEditorProvider {
     html = html.replace(/<script /g, `<script nonce="${nonce}" `);
     // Every script, style and font is the bundle's own; the only network the webview may open is the
     // suite's ask worker on this machine. `img-src https:` is for a `.collection`'s item images, which
-    // live where the listing does — the host that serves one sees the request, as any image viewer's would.
+    // live where the listing does — the host that serves one sees the request, as any image viewer's
+    // would — and the directions map is a Google frame; the setting `studio.remoteContent` turns both
+    // off, in the policy and in the page (a <meta> the renderer reads).
+    const remote = vscode.workspace.getConfiguration("studio").get("remoteContent", true);
     const csp = [
       "default-src 'none'",
-      `img-src ${webview.cspSource} https: data: blob:`,
+      `img-src ${webview.cspSource} ${remote ? "https: " : ""}data: blob:`,
       `style-src ${webview.cspSource} 'unsafe-inline'`,
       `font-src ${webview.cspSource} data:`,
       `script-src 'nonce-${nonce}' ${webview.cspSource}`,
       `connect-src ${webview.cspSource} http://127.0.0.1:9250 http://localhost:9250`,
       "worker-src blob:",
       "child-src blob:",
-      "frame-src blob: https://maps.google.com https://www.google.com",
+      `frame-src blob:${remote ? " https://maps.google.com https://www.google.com" : ""}`,
     ].join("; ");
-    html = html.replace("<head>", `<head>\n    <meta http-equiv="Content-Security-Policy" content="${csp}">`);
+    html = html.replace("<head>", `<head>\n    <meta http-equiv="Content-Security-Policy" content="${csp}">\n    <meta name="studio-remote-content" content="${remote ? "on" : "off"}">`);
     return html;
   }
 }

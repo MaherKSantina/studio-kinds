@@ -72,6 +72,7 @@ const slot = globalThis as {
   __filekindsRenamer?: FileRenamer;
   __filekindsRemover?: FileRemover;
   __filekindsAsk?: AskApi;
+  __filekindsRemoteContent?: boolean;
 };
 
 export function configureFileKinds(opts: {
@@ -87,6 +88,10 @@ export function configureFileKinds(opts: {
   removeFile?: FileRemover;
   /** The suite's ask worker, through the host's proxy — views with an Ask panel show it only when this is set. */
   ask?: AskApi;
+  /** Whether a document's REMOTE content — an `https:` image a `.collection` item or a markdown body
+   *  names, the directions map — is fetched. Off, a placeholder stands where it would load and nothing
+   *  a document names reaches the network; links still open by hand. Default on. */
+  remoteContent?: boolean;
 }): void {
   slot.__filekindsReader = opts.readFile;
   if (opts.rawFileUrl) slot.__filekindsRawUrl = opts.rawFileUrl;
@@ -99,7 +104,13 @@ export function configureFileKinds(opts: {
   if (opts.renameFile) slot.__filekindsRenamer = opts.renameFile;
   if (opts.removeFile) slot.__filekindsRemover = opts.removeFile;
   if (opts.ask) slot.__filekindsAsk = opts.ask;
+  if (opts.remoteContent !== undefined) slot.__filekindsRemoteContent = opts.remoteContent;
 }
+
+/** Whether remote content a document names is fetched — the host's `remoteContent` setting, default on. */
+export const remoteContentAllowed = (): boolean => slot.__filekindsRemoteContent !== false;
+/** A URL that would leave the machine: http(s) to anything but this machine. */
+export const isRemoteUrl = (url: string): boolean => /^https?:\/\//i.test(url) && !/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/i.test(url);
 
 export const configuredMkdir = (): FolderMaker | null => slot.__filekindsMkdir ?? null;
 export const configuredRenamer = (): FileRenamer | null => slot.__filekindsRenamer ?? null;

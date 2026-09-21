@@ -44,9 +44,13 @@ A Studio tab has an **Open Source (text)** button to bring the YAML back beside 
   root. The webview's CSP allows no script, style or font from anywhere but the
   bundle; the one network it may open is the suite's ask worker at
   `127.0.0.1:9250` when it runs. `img-src https:` is for a `.collection`'s item
-  images, which live where the listing does — the host serving an image sees the
-  request, as with any image viewer; a document that references no remote image
-  makes no request.
+  images and the images a markdown body names, which live where they were
+  written — the host serving one sees the request, as with any image viewer —
+  and `frame-src` admits the collection's directions map. The setting
+  **`studio.remoteContent: false`** removes both from the policy and tells the
+  page (a `<meta name="studio-remote-content">` beside it) to hold a placeholder
+  where each would load; reopen the document after changing it. A document that
+  names no remote image makes no request either way.
 
 ## Development
 

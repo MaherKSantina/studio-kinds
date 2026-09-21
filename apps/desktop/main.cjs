@@ -170,6 +170,9 @@ async function chooseFolder() {
   return root;
 }
 
+/** STUDIO_REMOTE_CONTENT=off: the app fetches nothing a document names from off this machine. */
+const REMOTE_CONTENT = (process.env.STUDIO_REMOTE_CONTENT ?? "on").toLowerCase() !== "off";
+
 /** `--folder <dir>`, `--folder=<dir>`, a bare folder, or a bare file (its folder opens, then it). */
 async function targetFromArgs(argv) {
   const args = argv.slice(app.isPackaged ? 1 : 2).filter((a) => !a.startsWith("--remote-debugging") && !a.startsWith("--inspect"));
@@ -197,8 +200,22 @@ function createWindow() {
     // The Studio's own icon (scripts/make-icon.mjs) — in dev the window would otherwise carry Electron's.
     icon: path.join(__dirname, "build", "icon.ico"),
     backgroundColor: "#fafafa",
-    webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, nodeIntegration: false, sandbox: true },
+    webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, nodeIntegration: false, sandbox: true,
+      // The page reads this off its argv (preload) and holds remote images back; the session below refuses them anyway.
+      additionalArguments: REMOTE_CONTENT ? [] : ["--studio-remote-content=off"],
+    },
   });
+  if (!REMOTE_CONTENT) {
+    // STUDIO_REMOTE_CONTENT=off: nothing a document names leaves this machine. The renderer's own files
+    // (file:, studio-local:, the dev server) and the suite's ask worker on this machine pass; every other
+    // http(s) request is refused at the network layer, whatever the page asked for.
+    win.webContents.session.webRequest.onBeforeRequest((details, cb) => {
+      const local = /^(file|studio-local|devtools|data|blob):/.test(details.url)
+        || /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/i.test(details.url);
+      cb({ cancel: !local });
+    });
+  }
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) void shell.openExternal(url);
     return { action: "deny" };

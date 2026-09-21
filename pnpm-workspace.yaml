@@ -6,6 +6,7 @@ packages:
 # workerd is the local runtime wrangler uses for the endpoint). pnpm 11 reads `allowBuilds`;
 # `onlyBuiltDependencies` is the pnpm 10 spelling, kept for older installs.
 allowBuilds:
+  '@vscode/vsce-sign': false   # the packager's optional signing helper: no install script runs, and nothing is signed
   electron: true
   esbuild: true
   workerd: true

@@ -20,13 +20,26 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ArrowBigDown, ArrowBigUp, ChevronLeft, ChevronRight, EyeOff, GalleryHorizontal, Navigation, Rows3, RotateCcw, Star, Undo2 } from "lucide-react";
 import { Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Input, cn } from "crosscut";
 import { ViewerProps } from "../../lib/filePreviews";
-import { configuredWriter } from "../../api";
+import { configuredWriter, isRemoteUrl, remoteContentAllowed } from "../../api";
 import {
   collectionSummary, dumpCollection, featuredOf, orderedItems, originOf, parseCollection, parseFieldInput, setItemField,
   type CollectionDecision, type CollectionDoc, type CollectionOp, type ItemState,
 } from "../../lib/collectionDoc";
 import { cellText, valueAt, type DataRow } from "../../lib/dataRows";
 import { CopyButton, LinkText, isUrl } from "../data/cells";
+
+/** An item's picture: fetched when the host allows remote content, a held placeholder otherwise —
+ *  the pictures of a `.collection` live where the listing does, so showing one is a request there. */
+function ItemImage({ src, className, eager }: { src: string; className?: string; eager?: boolean }) {
+  if (isRemoteUrl(src) && !remoteContentAllowed()) {
+    return (
+      <span className={cn("flex items-center justify-center bg-muted p-2 text-center text-[12px] text-muted-foreground", className)} title={src}>
+        Picture not fetched — remote content is off
+      </span>
+    );
+  }
+  return <img src={src} alt="" loading={eager ? undefined : "lazy"} referrerPolicy="no-referrer" className={className} />;
+}
 
 /** The item's pictures: `images`, `photos`, or one `image`. */
 export function imagesOf(item: DataRow): string[] {
@@ -249,7 +262,7 @@ export default function CollectionView({ content, path, agentId, height = "100%"
                 return (
                   <div key={s.item.id} className={cn("flex flex-col overflow-hidden rounded-lg border bg-background", s.hidden && "opacity-60")}>
                     <button type="button" onClick={() => { setPos(i); setMode("flow"); }} className="relative block aspect-[4/3] w-full bg-muted" title="Open in the flow">
-                      {pic ? <img src={pic} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : <span className="flex h-full items-center justify-center text-muted-foreground">No picture</span>}
+                      {pic ? <ItemImage src={pic} className="h-full w-full object-cover" /> : <span className="flex h-full items-center justify-center text-muted-foreground">No picture</span>}
                       <RankBadge s={s} index={i} className="absolute left-2 top-2 rounded bg-background/90 px-1.5 text-[12px] font-medium" />
                     </button>
                     <div className="flex flex-1 flex-col gap-2 p-2">
@@ -280,7 +293,7 @@ export default function CollectionView({ content, path, agentId, height = "100%"
                     className={cn("flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-accent/40", i === at && "bg-accent/60")}>
                     <RankBadge s={s} index={i} className="w-7 shrink-0 text-[11px]" />
                     <span className="h-9 w-12 shrink-0 overflow-hidden rounded bg-muted">
-                      {pic && <img src={pic} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-full w-full object-cover" />}
+                      {pic && <ItemImage src={pic} className="h-full w-full object-cover" />}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{titleOf(s.item, draft.fields)}</span>
@@ -298,7 +311,7 @@ export default function CollectionView({ content, path, agentId, height = "100%"
               <div className="relative shrink-0 bg-muted" style={{ height: "42%", minHeight: 220 }}>
                 {images.length ? (
                   <>
-                    <img src={shownImg} alt="" referrerPolicy="no-referrer" className="h-full w-full object-contain" />
+                    <ItemImage src={shownImg} className="h-full w-full object-contain" eager />
                     {images.length > 1 && (
                       <>
                         <button type="button" onClick={() => setImg((i) => (i - 1 + images.length) % images.length)} aria-label="Previous image"
@@ -381,7 +394,9 @@ export default function CollectionView({ content, path, agentId, height = "100%"
             <DialogTitle className="text-[15px]">{item ? titleOf(item, draft.fields) : ""} → {to || "…"}</DialogTitle>
             <DialogDescription className="sr-only">Directions from the item to the collection's destination</DialogDescription>
           </DialogHeader>
-          {to ? (
+          {to && !remoteContentAllowed() ? (
+            <p className="text-muted-foreground">Remote content is off in this Studio — the map is not embedded. "Open in Google Maps" opens the directions in your browser.</p>
+          ) : to ? (
             <iframe title="Directions" src={embed} className="min-h-0 w-full flex-1 rounded border" referrerPolicy="no-referrer-when-downgrade" />
           ) : (
             <p className="text-muted-foreground">Type the destination in the <code>to</code> field above first.</p>

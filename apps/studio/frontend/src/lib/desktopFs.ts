@@ -7,6 +7,8 @@
 import type { FileSystemAdapter, FsEntry } from "crosscut";
 
 export interface DesktopBridge {
+  /** False when the app runs with STUDIO_REMOTE_CONTENT=off — the main process refuses every request off this machine. */
+  remoteContent?: boolean;
   getRoot(): Promise<string | null>;
   chooseFolder(): Promise<string | null>;
   onRoot(cb: (root: string | null) => void): () => void;

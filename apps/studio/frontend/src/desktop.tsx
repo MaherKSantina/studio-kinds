@@ -37,6 +37,8 @@ configureFileKinds({
   indexFiles: (from) => b.fs.index(from),
   // The suite's ask worker, when it runs on this machine; the panels say so when it does not.
   ask: askApi("http://127.0.0.1:9250"),
+  // STUDIO_REMOTE_CONTENT=off on the app: the main process refuses every request off this machine too.
+  remoteContent: b.remoteContent !== false,
 });
 
 const folderStore = (root: string, homeMemory: HomeMemory): StudioStore => ({

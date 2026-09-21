@@ -16,9 +16,19 @@
   "main": "./extension.js",
   "icon": "icon.png",
   "scripts": {
-    "package": "npx --yes @vscode/vsce package --no-dependencies --allow-missing-repository"
+    "package": "vsce package --no-dependencies --allow-missing-repository"
   },
   "contributes": {
+    "configuration": {
+      "title": "Studio",
+      "properties": {
+        "studio.remoteContent": {
+          "type": "boolean",
+          "default": true,
+          "description": "Fetch the remote content a document names: an https image a .collection item or a markdown body points at, the directions map. Off, a placeholder stands where it would load, the webview's Content-Security-Policy allows no remote image or frame at all, and nothing a document names reaches the network; links still open by hand. Reopen the document after changing it."
+        }
+      }
+    },
     "customEditors": [
       {
         "viewType": "studio.document",
@@ -143,5 +153,8 @@
         }
       ]
     }
+  },
+  "devDependencies": {
+    "@vscode/vsce": "4.0.0"
   }
 }

@@ -129,11 +129,27 @@ rather build than download: every artifact comes from `pnpm release:build` on a 
 
 Nothing, by default. The checker, the desktop app and the VS Code extension are offline — no
 telemetry, no update check, no install hooks in any package. The VS Code webview's CSP allows no
-script, style or font from outside the bundle. Two things reach out only when you point them at
-something remote: the endpoint above (a document you POST), and the images a `.collection` lists
-(fetched from wherever the listing keeps them). The `studio-files` skill mentions the endpoint as the
-option for a machine without the checker, for documents that may leave it; edit that line out of your
-copy if your documents never may.
+script, style or font from outside the bundle. The release is built by GitHub from the tag's source
+and is packaged with a pinned `@vscode/vsce`, never `npx`'s latest.
+
+Two things reach out, and only when a document or you name something remote:
+
+- **The endpoint above** — a document you POST. The `studio-files` skill mentions it as the option for
+  a machine without the checker, for documents that may leave it; edit that line out of your copy if
+  yours never may.
+- **Remote content a document names** — an `https:` image in a `.collection` item or in any markdown
+  body (a brief's section, a task's body, a `.md`), and the directions map a `.collection` can open.
+  Showing one is a request to wherever it lives. Every host has a switch that turns this off, after
+  which a placeholder stands where the image would load and nothing a document names reaches the
+  network (links still open by hand):
+
+  | host | switch | enforced where |
+  |---|---|---|
+  | VS Code | setting `studio.remoteContent: false` | the webview's CSP drops `https:` from `img-src` and the map from `frame-src`; the page holds the images |
+  | desktop app | `STUDIO_REMOTE_CONTENT=off` in the environment | every request off this machine is refused in the main process (`webRequest`), whatever the page asks; the page holds the images |
+  | web Studio / page | `VITE_STUDIO_REMOTE_CONTENT=off` at build or dev time | the page holds the images; a `Content-Security-Policy` header on your server enforces it |
+
+  A document written as plain YAML with no URL in it makes no request in any host, switch or no switch.
 
 ## License
 

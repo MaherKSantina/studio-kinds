@@ -1,7 +1,7 @@
 /* filekinds — the suite's file-kind registry and read-only viewers.
  * crosscut (shell, fs, decision engine) ← filekinds (kinds) ← tools. */
 
-export { configureFileKinds, configuredAsk, configuredFs, configuredReader, readVirtualDirectoryFile } from "./api";
+export { configureFileKinds, configuredAsk, configuredFs, configuredReader, isRemoteUrl, readVirtualDirectoryFile, remoteContentAllowed } from "./api";
 export type { FileReader, DirFileContent } from "./api";
 export * from "./lib/filePreviews";
 export * from "./openWith";

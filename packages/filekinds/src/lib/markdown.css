@@ -24,3 +24,6 @@
 /* In a table, code never breaks: the table keeps its natural width and scrolls in its own box. */
 .md-body th code, .md-body td code { white-space: nowrap; }
 .md-body table { display: block; max-width: 100%; overflow-x: auto; }
+
+/* A remote image held back when the host allows no remote content: its URL, not a request. */
+.md-body .md-held-image { display: inline-block; padding: 2px 6px; border: 1px dashed currentColor; border-radius: 4px; opacity: 0.7; font-size: 12px; }
