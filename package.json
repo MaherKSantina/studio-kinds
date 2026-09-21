@@ -20,7 +20,7 @@
     "check": "node apps/cli/dist/check.cjs",
     "desktop:dist": "pnpm --filter studio-frontend build:desktop && pnpm --filter studio-desktop dist",
     "release:build": "pnpm vscode:vsix && pnpm desktop:dist && pnpm cli:pack",
-    "cli:pack": "pnpm cli:build && node -e \"require('fs').mkdirSync('apps/cli/out',{recursive:true})\" && npm pack ./apps/cli --pack-destination apps/cli/out"
+    "cli:pack": "pnpm cli:build && node scripts/cli-pack.mjs && node -e \"require('fs').mkdirSync('apps/cli/out',{recursive:true})\" && npm pack ./apps/cli --pack-destination apps/cli/out"
   },
   "engines": {
     "node": ">=20"

@@ -35,9 +35,9 @@ import { parseGuide } from "../../../packages/filekinds/src/lib/guideDoc";
 import { briefProblems, parseBrief, writtenSections } from "../../../packages/filekinds/src/lib/briefDoc";
 import type { FeatureNode } from "../../../packages/filekinds/src/lib/featureTree";
 import { parseDocList } from "../../../packages/filekinds/src/lib/listDoc";
-import { parseKanban } from "../../../packages/filekinds/src/lib/kanbanDoc";
+import { kanbanProblems, kanbanSummary, parseKanban } from "../../../packages/filekinds/src/lib/kanbanDoc";
 import { parsePoints } from "../../../packages/filekinds/src/lib/pointsDoc";
-import { parsePolicyFile } from "../../../packages/filekinds/src/lib/policyDoc";
+import { parsePolicyFile, policyProblems, policySummary } from "../../../packages/filekinds/src/lib/policyDoc";
 import { parseDefinitionFile } from "../../../packages/filekinds/src/lib/definitionDoc";
 import { parseMemory } from "../../../packages/filekinds/src/lib/memoryDoc";
 import { parseProject } from "../../../packages/filekinds/src/lib/projectDoc";
@@ -79,12 +79,17 @@ const toAbs = (folder: string, ref: string) => resolve(folder, ref);
 /** The newest version of each kind; a kind not listed is at version 1. Every version has a book. */
 const LATEST: Record<string, number> = { playbook: PLAYBOOK_LATEST };
 const latestOf = (ext: string): number => LATEST[ext] ?? 1;
-/** The repository root — this file runs from apps/cli/dist (or apps/cli/src under a bundler). */
+/** Where the books, the field tables and the engine headers are read from. In a checkout this file
+ *  runs from apps/cli/dist and they are the repository's own `kinds/` and `packages/filekinds/src/lib`;
+ *  installed from a release (`npm install -g studio-cli-<v>.tgz`) the package carries copies beside
+ *  `dist/` — `kinds/` and `specs/` (each engine's header, cut by scripts/cli-pack.mjs). */
+const PACKAGE_ROOT = resolve(__dirname, "..");
 const REPO_ROOT = resolve(__dirname, "..", "..", "..");
+const KINDS_DIR = existsSync(resolve(REPO_ROOT, "kinds")) ? resolve(REPO_ROOT, "kinds") : resolve(PACKAGE_ROOT, "kinds");
 /** The kind's book: `kinds/<ext>/v<N>.playbook` — a playbook, in the version-2 form, about the kind at that version. */
-const bookPath = (ext: string, version: number): string => resolve(REPO_ROOT, "kinds", ext, `v${version}.playbook`);
+const bookPath = (ext: string, version: number): string => resolve(KINDS_DIR, ext, `v${version}.playbook`);
 /** The kind's field table: `kinds/<ext>/v<N>.fields.yaml` — the schema as a table, field by field. */
-const fieldsPath = (ext: string, version: number): string => resolve(REPO_ROOT, "kinds", ext, `v${version}.fields.yaml`);
+const fieldsPath = (ext: string, version: number): string => resolve(KINDS_DIR, ext, `v${version}.fields.yaml`);
 
 const yamlError = (text: string): string | null => {
   try { loadYaml(text); return null; } catch (e) { return `YAML: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`; }
@@ -187,8 +192,28 @@ const KINDS: Record<string, Kind> = {
     },
   },
   list: { label: "List", spec: "listDoc.ts", check: via("list", parseDocList, (d: ReturnType<typeof parseDocList>) => `${d.items.length} items`) },
-  kanban: { label: "Kanban", spec: "kanbanDoc.ts", check: via("kanban", parseKanban) },
-  calendar: { label: "Calendar", spec: "calendarDoc.ts", check: via("calendar", parseCalendarLens) },
+  // The parser is lenient so a half-written board renders; the engine's own problems are the check.
+  kanban: {
+    label: "Kanban", spec: "kanbanDoc.ts",
+    check: (text) => {
+      const y = yamlError(text);
+      if (y) return { problems: [y] };
+      return { problems: kanbanProblems(text), summary: kanbanSummary(parseKanban(text)) };
+    },
+  },
+  // A lens over one board: the board must be named, and on disk it must be there.
+  calendar: {
+    label: "Calendar", spec: "calendarDoc.ts",
+    check: (text, file) => {
+      const y = yamlError(text);
+      if (y) return { problems: [y] };
+      const d = parseCalendarLens(text);
+      const problems: string[] = [];
+      if (!d.board) problems.push("no `board` — the `.kanban` this calendar is a lens over, a ref resolved against this file's folder");
+      else if (file && !existsSync(toAbs(dirname(file), d.board))) problems.push(`board ${d.board}: not found beside this file`);
+      return { problems, summary: d.board ? `over ${d.board}${d.due ? `, due ${d.due}` : ""}` : undefined };
+    },
+  },
   points: { label: "Points", spec: "pointsDoc.ts", check: via("points", parsePoints) },
   // A .policy plays a role: the bucket machine (the default), tags, order, run — or TABLE (rules over rows).
   policy: {
@@ -203,7 +228,9 @@ const KINDS: Record<string, Kind> = {
         if (d.role !== "table") return { problems: ["not a table policy"] };
         return { problems: d.problems, summary: `table policy: ${d.where.length} filters, ${d.sort.length} sort keys${d.columns ? `, ${d.columns.length} columns` : ""}${d.limit ? `, first ${d.limit}` : ""}` };
       }
-      return via("policy", parsePolicyFile)(text);
+      // The chain's tags and order roles have their own parser; the bucket machine and a run are checked by the engine's own problems.
+      if (role === "tags" || role === "decisions" || role === "order") return via("policy", parsePolicyKindFile, (d: ReturnType<typeof parsePolicyKindFile>) => `${d.role} policy`)(text);
+      return { problems: policyProblems(text), summary: policySummary(parsePolicyFile(text)) };
     },
   },
   definition: { label: "Definition", spec: "definitionDoc.ts", also: ["journeyStages.ts"], check: via("definition", parseDefinitionFile) },
@@ -307,10 +334,16 @@ const loadSongFromDisk = (text: string, file: string) =>
   loadSong(parseSong(text), file, (abs) => Promise.resolve(readFileSync(abs, "utf8")), (from, ref) => toAbs(dirname(from), ref));
 
 
-const LIB = resolve(__dirname, "../../../packages/filekinds/src/lib");
+const LIB = resolve(REPO_ROOT, "packages", "filekinds", "src", "lib");
+const SPECS = resolve(PACKAGE_ROOT, "specs");
 
-/** The leading comment of an engine file — its specification, as the kit keeps it. */
+/** The leading comment of an engine file — its specification, as the kit keeps it; from the
+ *  package's `specs/` copy where there is no checkout. */
 function headerOf(file: string): string {
+  if (!existsSync(join(LIB, file))) {
+    const copy = join(SPECS, `${file}.txt`);
+    return existsSync(copy) ? readFileSync(copy, "utf8").trim() : `(no spec on this machine — ${file} is in packages/filekinds/src/lib of the studio-kinds repository)`;
+  }
   const src = readFileSync(join(LIB, file), "utf8");
   if (src.startsWith("/**")) {
     const end = src.indexOf("*/");

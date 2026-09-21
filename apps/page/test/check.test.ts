@@ -136,6 +136,20 @@ events:
     expect(check("md", "# hi\n").ok).toBe(true);
   });
 
+  it("kanban and policy: `ok` means the engine runs the file as written, not just that it is YAML", () => {
+    const board = check("kanban", "title: t\ncolumns: [To do, Done]\ntasks:\n  - {key: a, title: A, needs: [ghost]}\n");
+    expect(board.ok).toBe(false);
+    expect(board.problems.map((p) => p.message)).toEqual(["task a: needs `ghost` — no task has that key"]);
+    expect(board.summary).toBe("1 task in 1 row, 2 columns");
+    expect(check("kanban", "title: t\ncolumns: [To do]\ntasks: []\n").ok).toBe(true);
+    const policy = check("policy", "title: t\nparams: [{key: n, type: number}]\nbuckets: [{key: a}]\ncases:\n  - when: [{param: n, op: bigger_then, value: 1}]\n    bucket: a\n");
+    expect(policy.ok).toBe(false);
+    expect(policy.problems[0].message).toMatch(/^case 1, clause 1: op `bigger_then` is not one/);
+    expect(policy.summary).toBe("1 param, 1 case, 1 bucket");
+    expect(check("policy", "role: table\nwhere: [{field: x, op: gt, value: 1}]\n").ok).toBe(true);
+    expect(check("policy", "role: tags\ntitle: t\ntags: []\n").ok).toBe(true);
+  });
+
   it("an unknown kind is refused, and a file name picks its kind", () => {
     const r = check("frame", "x: 1");
     expect(r.ok).toBe(false);

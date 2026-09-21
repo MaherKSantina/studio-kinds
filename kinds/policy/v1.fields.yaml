@@ -13,7 +13,17 @@ fields:
     description: One line under the title.
   - field: params
     type: list of param
-    description: "Bucket and tags roles: the typed inputs an item carries — `{key, label?, type}`."
+    description: "Bucket and tags roles: the typed inputs an item carries — `{key, label?, type}`. Every param a clause names is declared here."
+  - field: params[].key
+    type: string
+    required: true
+    description: The name a clause's `param` refers to; unique.
+  - field: params[].label
+    type: string
+    description: What the input pane shows for it.
+  - field: params[].type
+    type: string | number | boolean
+    description: How the value is read; omitted, string.
   - field: cases
     type: list of case
     description: "Bucket role: an ordered switch; the first case whose clauses all hold wins."
@@ -23,17 +33,41 @@ fields:
   - field: cases[].when
     type: list of clause
     required: true
-    description: Clauses over the params, all of which must hold — `{param, op, value?}`.
+    description: "Clauses over the params, all of which must hold — `{param, op, value?}`. `when: []` holds for every item — the catch-all, written on purpose."
+  - field: cases[].when[].param
+    type: param key
+    required: true
+    description: The declared param the clause reads.
+  - field: cases[].when[].op
+    type: equals | not_equals | contains | not_contains | starts_with | ends_with | matches | gt | gte | lt | lte | between | in | not_in | is_empty | not_empty | is_true | is_false
+    required: true
+    description: "The comparison. Text ops compare case-insensitively; `matches` is a regular expression. An op outside this list is a problem to the checker — the engine would drop the clause and the case would match everything."
+  - field: cases[].when[].value
+    type: string | number | list
+    description: "What the op compares against. A text op takes one value or a list (any of them; none of them for `not_contains`/`not_in`); `gt`/`gte`/`lt`/`lte` a number; `between` `[low, high]`, inclusive; `in`/`not_in` a list; `is_empty`/`not_empty`/`is_true`/`is_false` none."
   - field: cases[].bucket
     type: bucket key
     required: true
-    description: The bucket the case assigns.
+    description: The bucket the case assigns — one declared under `buckets` when any is.
   - field: buckets
     type: list of bucket
-    description: "Bucket role: the declared outputs — `{key, label?, start?, end?}`."
+    description: "Bucket role: the declared outputs — `{key, label?, start?, end?}`, in the order the grouping shows them."
+  - field: buckets[].key
+    type: string
+    required: true
+    description: The name cases and `default` refer to; unique.
+  - field: buckets[].label
+    type: string
+    description: What the grouping shows for it.
+  - field: buckets[].start
+    type: time
+    description: "`HH:MM` — with `end`, the timeslot a run fans items onto a day with."
+  - field: buckets[].end
+    type: time
+    description: "`HH:MM`, after `start`."
   - field: default
     type: bucket key
-    description: "Bucket role: the bucket for items no case claims; omitted, the built-in unmatched bucket."
+    description: "Bucket role: the bucket for items no case claims — one declared under `buckets`; omitted, the built-in unmatched bucket."
   - field: tags
     type: list of dimension | path
     description: "Tags role: the dimensions the policy tags along, each with ordered `derive` rules (clauses → value) or `from` rules (refs over dimensions above → value), `hidden` for plumbing. Order role: the path of the tags policy it consumes."

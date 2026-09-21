@@ -45,8 +45,9 @@ events:
               | `columns` | the statuses in order — a string, or `{title, color}` (`label` reads as `title`) |
               | `tasks` | the cards |
 
-              Refs resolve against the board's own folder. A bare `2026-09-09` is read as a date by
-              YAML and kept as the day written.
+              Refs resolve against the board's own folder. A date is `YYYY-MM-DD`: a bare
+              `2026-09-09` is read as a date by YAML and kept as the day written; quoted, it is the
+              same day. A column's `color` is any CSS colour (`"#3b82f6"`, `tomato`).
           - title: A task
             body: |
               ```yaml
@@ -60,7 +61,7 @@ events:
                   body: |                    # the task's own markdown — the dialog's main content
                     What doing this means, in this task's words.
                   needs: [order-badges]      # prerequisites, by key
-                  duration: 2                # working days (default 1)
+                  duration: 2                # calendar days (default 1) — a weekend inside a task is part of it
                   due: 2026-09-08            # a cap tighter than the board's
               ```
 
@@ -283,7 +284,7 @@ events:
     label: studio-check runs on it
     trigger: imposed
     domain: Writing
-    detail: One file in, one verdict out — the parser never refuses, so only YAML fails.
+    detail: One file in, one verdict out — the parser never refuses, so the checker names everything it silently dropped or defaulted.
     content:
       key: checker
       label: What the checker does
@@ -295,14 +296,20 @@ events:
           - title: In order
             body: |
               1. Parse the YAML — a parse error is the only problem reported.
-              2. `parseKanban` — it never throws. No summary line: `ok <name>  Kanban`.
+              2. `kanbanProblems` — the field table's required rows, and every fallback the lenient
+                 parser takes: no `title`, no `columns` (or an empty list, or a column without a
+                 title), no `tasks` (`tasks: []` is an empty board and passes), a task with no `key`
+                 or no `title`, a second task with a key already used, a `needs` entry naming no
+                 task or the task itself, a `status` that is not a column title, a `duration` that
+                 is not a positive number, a `due` (on the board or a task) that is not a date, and
+                 a cycle. Each is one line, naming the task.
+              3. The summary line: `ok <name>  Kanban  5 tasks in 4 rows, 3 columns, due 2026-11-13`
+                 — what the board shows, so a file that parsed to nothing is visible at once.
           - title: Not checked
             body: |
-              A `needs` naming a key that does not exist (ignored). A `status` that is not a column
-              (the first column). A second task with a key already used (dropped). A cycle (a final
-              row). A `due` that is not a date (dropped). A `file` that is not there (the dialog
-              shows no preview). A `source` that cannot be read (the board's own tasks). None of it
-              is a problem to the checker; all of it is visible on the board.
+              A `file` that is not there (the dialog shows no preview) and a `source` that cannot be
+              read (the board's own tasks) — both are on disk beside the board, and the page's
+              endpoint has no folder; the checker on a machine sees the board alone too.
   - key: authored
     label: A board is written
     trigger: chosen
@@ -322,9 +329,21 @@ events:
 
               ```yaml
               title: new
+              due: 2026-12-31
               columns: [To do, Doing, Done]
-              tasks: []
+              tasks:
+                - key: first
+                  title: The first thing
+                  status: Doing
+                  duration: 2
+                - key: second
+                  title: What follows it
+                  needs: [first]
+                  due: 2026-12-24
               ```
+
+              Two tasks and one edge, so the rows, the schedule and a `.calendar` over it have
+              something to show; replace them.
           - key: tasks
             label: Write the tasks with keys
             after: [template]
@@ -354,6 +373,6 @@ events:
             label: Check it
             after: [dates, source]
             detail: |
-              `studio-check new.kanban` — only YAML can fail. Open it: a task in the wrong column
-              has a `status` that is not a column title; a task in the last row on its own has a
-              cycle.
+              `studio-check new.kanban` — a `needs` to no task, a `status` that is no column, a
+              duplicate key, a cycle, a date or duration that is not one: each is a line naming the
+              task, and the summary line counts the tasks, rows and columns the board shows.

@@ -22,14 +22,14 @@ import type { FeatureNode } from "filekinds/src/lib/featureTree.ts";
 import { parseFlowFile } from "filekinds/src/lib/flowEngine.ts";
 import { validateFlowFile } from "filekinds/src/lib/flowOps.ts";
 import { parseGuide } from "filekinds/src/lib/guideDoc.ts";
-import { parseKanban } from "filekinds/src/lib/kanbanDoc.ts";
+import { kanbanProblems, kanbanSummary, parseKanban } from "filekinds/src/lib/kanbanDoc.ts";
 import { parseMiddleware } from "filekinds/src/lib/middlewareDoc.ts";
 import {
   PLAYBOOK_LATEST, byEntries, contentEntries, docText, inlineEntries, inlineProblems, legacyProblems,
   parsePlaybook, variationProblems, variationsOf, versionProblems, writtenDocs,
 } from "filekinds/src/lib/playbookDoc.ts";
 import { parsePolicyKindFile } from "filekinds/src/lib/policyChain.ts";
-import { parsePolicyFile } from "filekinds/src/lib/policyDoc.ts";
+import { parsePolicyFile, policyProblems, policySummary } from "filekinds/src/lib/policyDoc.ts";
 import { parseSong } from "filekinds/src/lib/songDoc.ts";
 
 export interface Problem {
@@ -162,8 +162,26 @@ export const KINDS: Record<string, KindDef> = {
       return result("playbook", problems, { version: doc.version, summary, notes });
     },
   },
-  kanban: { label: "Kanban", extension: "kanban", offered: true, check: via("kanban", parseKanban) },
-  calendar: { label: "Calendar", extension: "calendar", offered: true, check: via("calendar", parseCalendarLens) },
+  // The parser is lenient so a half-written board renders; the engine's own problems are the check.
+  kanban: {
+    label: "Kanban", extension: "kanban", offered: true,
+    check: (text) => {
+      const y = yamlProblem(text);
+      if (y) return result("kanban", [y]);
+      return result("kanban", asProblems(kanbanProblems(text)), { summary: kanbanSummary(parseKanban(text)) });
+    },
+  },
+  // A lens over one board: the board must be named; it is a file beside the calendar, so here it is only noted.
+  calendar: {
+    label: "Calendar", extension: "calendar", offered: true,
+    check: (text) => {
+      const y = yamlProblem(text);
+      if (y) return result("calendar", [y]);
+      const d = parseCalendarLens(text);
+      if (!d.board) return result("calendar", [{ message: "no `board` — the `.kanban` this calendar is a lens over, a ref resolved against this file's folder" }]);
+      return result("calendar", [], { summary: `over ${d.board}${d.due ? `, due ${d.due}` : ""}`, notes: [`board not read — this check has no folder: ${d.board}`] });
+    },
+  },
   // A .policy plays a role: the bucket machine (the default), tags, order, run — or TABLE (rules over rows).
   policy: {
     label: "Policy", extension: "policy", offered: true,
@@ -177,7 +195,9 @@ export const KINDS: Record<string, KindDef> = {
         if (d.role !== "table") return result("policy", [{ message: "not a table policy" }]);
         return result("policy", asProblems(d.problems), { summary: `table policy: ${d.where.length} filters, ${d.sort.length} sort keys${d.columns ? `, ${d.columns.length} columns` : ""}${d.limit ? `, first ${d.limit}` : ""}` });
       }
-      return via("policy", parsePolicyFile)(text);
+      // The chain's tags and order roles have their own parser; the bucket machine and a run are checked by the engine's own problems.
+      if (role === "tags" || role === "decisions" || role === "order") return via("policy", parsePolicyKindFile, (d) => `${d.role} policy`)(text);
+      return result("policy", asProblems(policyProblems(text)), { summary: policySummary(parsePolicyFile(text)) });
     },
   },
   flow: {

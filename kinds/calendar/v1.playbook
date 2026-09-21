@@ -132,7 +132,7 @@ events:
     label: studio-check runs on it
     trigger: imposed
     domain: Writing
-    detail: One file in, one verdict out — the board is not read.
+    detail: One file in, one verdict out — the board must be named; on disk it must be there, and it is not read.
     content:
       key: checker
       label: What the checker does
@@ -144,12 +144,16 @@ events:
           - title: In order
             body: |
               1. Parse the YAML — a parse error is the only problem reported.
-              2. `parseCalendarLens` — it never throws. No summary line: `ok <name>  Calendar`.
+              2. `parseCalendarLens` — it never throws. No `board` is a problem: a calendar is a
+                 lens over one board. On disk, a `board` ref that resolves to no file beside the
+                 calendar is a problem; the page and the endpoint have no folder and note the ref
+                 instead.
+              3. The summary line: `ok <name>  Calendar  over launch.kanban, due 2026-11-13`.
           - title: Not checked
             body: |
-              That `board` is present, exists, or is a kanban — the view says "No `board:` ref" or
-              "could not read". That `due` was a date (a bad one is dropped, silently). Neither the
-              command line nor the page reads the board.
+              That the board is a kanban the schedule can read — the view says "could not read".
+              That `due` was a date (a bad one is dropped, silently). Neither the command line nor
+              the page reads the board.
   - key: authored
     label: A calendar is written
     trigger: chosen
@@ -186,5 +190,6 @@ events:
             label: Check it, then open it
             after: [template]
             detail: |
-              `studio-check new.calendar` — only YAML can fail. Open it: a task listed under
-              "Unscheduled" has no due date anywhere downstream, or sits in a cycle.
+              `studio-check new.calendar` — YAML, the `board` ref, and on disk whether the board
+              is there. Open it: a task listed under "Unscheduled" has no due date anywhere
+              downstream, or sits in a cycle.

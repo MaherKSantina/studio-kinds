@@ -18,8 +18,11 @@ what it knows. On a PC without this repository, and in **Claude.ai chat** and **
 read `CLAUDE.md` or this book on their own, the same text travels as a skill: a release ships
 `studio-files-skill.zip`, exported from this event by `pnpm skill:export` in this repository (`skills/studio-files/SKILL.md`), to unzip into
 `~/.claude/skills` or upload under Settings › Skills. Cowork given the folder DOES read the `CLAUDE.md`
-in it and follows it. Neither runs the checker — validate what they write with `studio-check` from
-Claude Code or by opening it in the Studio.
+in it and follows it. Neither runs the checker; what they write is validated with `studio-check` from
+Claude Code, by opening it in the Studio, or — from anywhere with HTTP — by POSTing it to the
+endpoint: `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>`
+answers `{ok, summary, problems: [{message}], notes}` from the same engines (it sees the one
+document only; a file it names is a note, not read).
 
 ## 0 · Which kind for what
 
@@ -154,9 +157,14 @@ are `.md`.
   (a cycle is refused). No
   `library:`, no topic `variants:`, no `compare:` — the checker names them if a file still has
   them. Never author steps as events — a procedure is markdown.
-- **`.policy`**: `params` → `cases` in order, the FIRST matching case wins → buckets. With
+- **`.policy`**: `params` → `cases` in order, the FIRST matching case wins → buckets. Every param a
+  clause names is declared under `params`, every bucket a case names under `buckets`, and `op` is one
+  of the vocabulary in the kinds table — the checker names a misspelled one, because the engine
+  would drop the clause and the case would match everything. With
   `role: table` it is the rules a data view applies — see the kinds table.
-- **`.kanban`** `columns` + `tasks` (`needs:` for dependencies, `duration:`, `due:`); **`.brief`**
+- **`.kanban`** `columns` + `tasks` (`needs:` for dependencies — keys of tasks in the same board;
+  `duration:` in calendar days; `due:` as `YYYY-MM-DD`; `status:` spelled as a column title). The
+  checker names a `needs` to no task, a status that is no column, a duplicate key, a cycle. **`.brief`**
   `sections: [{title, description?, body?, children?}]`.
 - **`.clip` / `.song`** count in BEATS (quarter notes) and BARS from 0, whatever the time signature
   (a bar of 6/8 is 3 beats). Pitch names are scientific — `C4` = 60, a GM kick is `C2` = 36 — unless the
@@ -188,7 +196,9 @@ are `.md`.
   a checkout of this repository's `apps/cli` (`npm ls -g studio-cli` prints which; `pnpm cli:build` there refreshes it); on any other
   machine it comes from a GitHub Release of this repository — `npm install -g
   studio-cli-<version>.tgz`, or `install-studio.ps1` from the release, which also installs the desktop
-  app, the VS Code extension and this guide as a skill. If `studio-check` is not on the PATH, say so and install it
+  app, the VS Code extension and this guide as a skill; the package carries every kind's book, field table
+  and spec, so `--book`, `--fields` and `--spec` answer without a checkout. If `studio-check` is not on the PATH, say so and install it
   before editing documents.
-- Samples: `C:\Github\studio-demo` (a git repo with a README) — playbooks, a kanban and its calendar,
+- Samples: `examples/` in this repository — a brief, a playbook, a kanban with its calendar, a policy —
+  every one passing the checker; and `C:\Github\studio-demo` (a git repo with a README) — playbooks, a kanban and its calendar,
   and `Music/` (four `.clip` files — drums as lanes, bass, chords, a lead — under `demo.song`).

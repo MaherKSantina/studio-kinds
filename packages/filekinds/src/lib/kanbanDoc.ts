@@ -36,7 +36,7 @@
  *         - what doing this actually means # the dialog's main content, with the
  *         - in this task's own words       # file/section slice below as provenance
  *       needs: [other-key, …]             # prerequisites (keys)
- *       duration: 2                       # working days this task takes (default 1)
+ *       duration: 2                       # calendar days this task takes (default 1)
  *       due: 2026-09-08                   # per-task cap, tighter than the board's
  *
  * Rows are computed, not stored, because dependency depth is a FACT about
@@ -48,7 +48,18 @@
  * `scheduleTasks` chains backward from the due date — a task ends the day
  * before its earliest dependent starts (or at its own cap), and starts
  * `duration` days earlier — so the calendar is always exactly what the
- * edges and durations imply, never a copy that can drift.
+ * edges and durations imply, never a copy that can drift. Days are CALENDAR
+ * days: a `duration: 5` ending on a Friday starts on the Monday, and a
+ * weekend inside a task is simply part of it; there is no holiday calendar.
+ * Dates are `YYYY-MM-DD`, bare or quoted.
+ *
+ * The parser is lenient so a half-written board still renders; the CHECKER
+ * is strict. `kanbanProblems` names what the parser silently dropped or
+ * defaulted — a missing title, columns or tasks, a task with no key, a
+ * duplicate key, a `needs` edge to no task, a status that is not a column,
+ * a duration that is not a positive number, a due that is not a date, and
+ * tasks caught in a cycle — so `ok` from `studio-check` means the file says
+ * what the board shows.
  */
 import yaml from "js-yaml";
 import { joinPath, resolveRef } from "crosscut";
@@ -81,7 +92,7 @@ export interface KanbanTask {
   body?: string;
   /** Keys of prerequisite tasks. */
   needs: string[];
-  /** Working days this task takes (default 1, floored at 1). */
+  /** Calendar days this task takes (default 1, floored at 1). */
   duration?: number;
   /** ISO date this task must be done by — a cap tighter than the board's. */
   due?: string;
@@ -157,6 +168,66 @@ export function parseKanban(content: string): KanbanBoardDoc {
     ...(asStr(raw.source) ? { source: asStr(raw.source) } : {}),
     columns, tasks,
   };
+}
+
+/**
+ * What the lenient parser dropped or defaulted, as the checker reports it —
+ * the field table's `required` rows enforced, and every silent fallback
+ * named. Empty for a board the Studio shows exactly as written.
+ */
+export function kanbanProblems(content: string): string[] {
+  let raw: unknown;
+  try { raw = yaml.load(content); } catch { return []; }
+  const out: string[] = [];
+  if (!isObj(raw)) return ["not a mapping — a board is `title`, `columns` and `tasks`"];
+  if (!asStr(raw.title)) out.push("no `title` — the board's heading");
+  if (raw.due !== undefined && !asDate(raw.due)) out.push(`\`due\` is not a date — write \`YYYY-MM-DD\`, bare or quoted (got ${JSON.stringify(raw.due)})`);
+  if (!Array.isArray(raw.columns)) out.push("no `columns` — the statuses in order, a string or `{title, color?}` each");
+  else {
+    raw.columns.forEach((c, i) => {
+      if (typeof c === "string" ? !c : !isObj(c) || !(asStr(c.title) || asStr(c.label))) out.push(`column ${i + 1}: no title — a string, or \`{title, color?}\``);
+    });
+    if (!raw.columns.length) out.push("`columns` is empty — a board needs at least one status");
+  }
+  const columns = parseKanban(content).columns.map((c) => c.title.toLowerCase());
+  if (!Array.isArray(raw.tasks)) { out.push("no `tasks` — the cards; `tasks: []` is an empty board"); return out; }
+  const keys = new Set<string>();
+  const tasks = raw.tasks.map((t, i) => {
+    const where = `task ${i + 1}`;
+    if (!isObj(t)) { out.push(`${where}: not a mapping — write \`key\`, \`title\` and the rest`); return null; }
+    const key = asStr(t.key) || asStr(t.title);
+    const name = key ? `task ${key}` : where;
+    if (!asStr(t.key)) out.push(`${name}: no \`key\` — the stable key \`needs\` edges point at`);
+    if (!asStr(t.title)) out.push(`${name}: no \`title\` — the card's heading`);
+    if (!key) return null;
+    if (keys.has(key)) out.push(`${name}: duplicate key — every edge to it would fork; keys are identity`);
+    keys.add(key);
+    if (t.needs !== undefined && !Array.isArray(t.needs)) out.push(`${name}: \`needs\` is not a list — the keys of its prerequisites`);
+    if (t.duration !== undefined && !(Number.isFinite(Number(t.duration)) && Number(t.duration) > 0)) out.push(`${name}: \`duration\` is not a positive number of days (got ${JSON.stringify(t.duration)})`);
+    if (t.due !== undefined && !asDate(t.due)) out.push(`${name}: \`due\` is not a date — write \`YYYY-MM-DD\` (got ${JSON.stringify(t.due)})`);
+    const status = asStr(t.status);
+    if (status && columns.length && !columns.includes(status.toLowerCase())) out.push(`${name}: status \`${status}\` is not a column — it would land in the first column; columns are ${parseKanban(content).columns.map((c) => c.title).join(", ")}`);
+    return { key, needs: (Array.isArray(t.needs) ? t.needs : []).map(asStr) };
+  });
+  for (const t of tasks) {
+    if (!t) continue;
+    for (const n of t.needs) {
+      if (!n) out.push(`task ${t.key}: a \`needs\` entry is not a key`);
+      else if (n === t.key) out.push(`task ${t.key}: needs itself`);
+      else if (!keys.has(n)) out.push(`task ${t.key}: needs \`${n}\` — no task has that key`);
+    }
+  }
+  const doc = parseKanban(content);
+  const layer = layersOf(doc.tasks);
+  const cyclic = doc.tasks.filter((t) => !layer.has(t.key)).map((t) => t.key);
+  if (cyclic.length) out.push(`cycle: ${cyclic.join(" → ")} — tasks that need each other cannot be rowed or scheduled`);
+  return out;
+}
+
+/** One line for the checker: what the board holds. */
+export function kanbanSummary(doc: KanbanBoardDoc): string {
+  const rows = dependencyRows(doc.tasks).length;
+  return `${doc.tasks.length} task${doc.tasks.length === 1 ? "" : "s"} in ${rows} row${rows === 1 ? "" : "s"}, ${doc.columns.length} column${doc.columns.length === 1 ? "" : "s"}${doc.due ? `, due ${doc.due}` : ""}${doc.source ? `, from ${doc.source}` : ""}`;
 }
 
 /* ── sourcing tasks from a points stream ───────────────────────────────── */

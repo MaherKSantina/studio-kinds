@@ -10,14 +10,14 @@ fields:
     description: One line under the title.
   - field: due
     type: date
-    description: The day everything must be done by — the anchor backward scheduling chains from.
+    description: The day everything must be done by — the anchor backward scheduling chains from. `YYYY-MM-DD`, bare or quoted.
   - field: source
     type: path
     description: Where the tasks come from — a folder of `.node`s or a `.points` ref; the board then authors only its own domains and merges them by key.
   - field: columns
     type: list of string | column
     required: true
-    description: The statuses, in order; a string, or `{title, color?}`.
+    description: The statuses, in order; a string, or `{title, color?}` — `color` any CSS colour. A task's `status` must spell one of these.
   - field: tasks
     type: list of task
     required: true
@@ -32,7 +32,7 @@ fields:
     description: The card's heading.
   - field: tasks[].status
     type: column title
-    description: The column; unset or unknown lands in the first column.
+    description: The column, matched case-insensitively; unset lands in the first column, and a title that is no column is a problem to the checker.
   - field: tasks[].file
     type: path
     description: A document resolved against the board's folder, opened in the card dialog by its own kind.
@@ -47,10 +47,10 @@ fields:
     description: The task's own prose — the dialog's main content.
   - field: tasks[].needs
     type: list of task key
-    description: Prerequisites; the board layers tasks by longest chain.
+    description: Prerequisites, each the `key` of another task in this board; the board layers tasks by longest chain. A key no task has, the task itself, or a cycle is a problem to the checker.
   - field: tasks[].duration
     type: number
-    description: Working days the task takes (default 1).
+    description: Calendar days the task takes (default 1) — weekends are days too; there is no holiday calendar.
   - field: tasks[].due
     type: date
-    description: A per-task cap, tighter than the board's.
+    description: A per-task cap, tighter than the board's. `YYYY-MM-DD`, bare or quoted.

@@ -48,8 +48,9 @@ events:
               3. `policy:` and `items:` both present → a run (`parsePolicyFile`).
               4. Anything else → the bucket machine (`parsePolicy`).
 
-              The checker takes only the `role: table` branch apart; every other text goes through
-              `parsePolicyFile`, which never throws.
+              The parser never throws in any branch. The checker takes the table branch apart
+              through its own problem list, and the bucket machine and a run through
+              `policyProblems`; a tags or order policy passes whenever its parser does.
           - title: The bucket machine
             body: |
               ```yaml
@@ -447,7 +448,7 @@ events:
     label: studio-check runs on it
     trigger: imposed
     domain: Writing
-    detail: One file in, one verdict out — only the table role has a problem list.
+    detail: One file in, one verdict out — the table role, the bucket machine and a run each have a problem list; a tags or order policy passes when its parser does.
     content:
       key: checker
       label: What the checker does
@@ -461,15 +462,31 @@ events:
               1. Parse the YAML — a parse error is the only problem reported.
               2. `role: table` → `parsePolicyKindFile` and its problems; summary `table policy: N
                  filters, N sort keys, N columns, first N`.
-              3. Anything else → `parsePolicyFile`, which never throws: `ok <name>  Policy` with no
-                 summary. The page does the same.
+              3. `role: tags` or `role: order` → `parsePolicyKindFile`; summary `tags policy` /
+                 `order policy`.
+              4. Anything else → `policyProblems`: the field table's required rows and every
+                 fallback the lenient parser takes. For the bucket machine: no `title`; a param with
+                 no `key`, a duplicate key, or a `type` outside string / number / boolean; a bucket
+                 with no `key`, a duplicate, or a `start`/`end` that is not `HH:MM`; a `default`
+                 that is no declared bucket; no `cases`; a case with no `bucket`, a bucket no
+                 `buckets:` entry declares (when any is), no `when` (write `when: []` to say
+                 "always"); a clause with no `param`, a param `params:` does not declare (when any
+                 is), no `op`, an `op` outside the vocabulary — each of these drops the clause, and
+                 a case with no clauses left matches EVERYTHING, so the line says so — or a `value`
+                 the op cannot use: `gt`/`gte`/`lt`/`lte` without a number, `between` without
+                 `[low, high]`, `in`/`not_in` without a list, `is_*`/`*_empty` with one, a text op
+                 without one. For a run: a `map` entry that is not a field name or a list of them,
+                 a `date` that is not `YYYY-MM-DD`. `policy:` without `items:` (or the reverse) is
+                 named as a run missing half of itself.
+              5. The summary line: `N params, N cases, N buckets, default x` for the bucket
+                 machine, `run: <policy> over <items>, N params mapped` for a run. The page and
+                 the endpoint do the same.
           - title: Not checked
             body: |
-              A case naming a bucket never declared (it is appended to the order). A clause with an
-              unknown op in a case (dropped — the case then matches MORE). A derive rule's unknown
-              op (the clause is dropped). A run's or a ranking's `items`, a run's `policy`, an
-              order's `tags` — none is read. A group's ref naming a decision or a value that does
-              not exist (it never holds). Whether the roles chain to each other.
+              A run's or a ranking's `items`, a run's `policy`, an order's `tags` — none is read;
+              they are files beside the policy. A derive rule's unknown op in a tags policy (the
+              clause is dropped). A group's ref naming a decision or a value that does not exist
+              (it never holds). Whether the roles chain to each other.
   - key: authored
     label: A policy is written
     trigger: chosen
@@ -530,6 +547,8 @@ events:
             label: Check it
             after: [switch, run, table]
             detail: |
-              `studio-check new.policy` — a table policy prints its problems and summary; the
-              others pass whenever the YAML does, so open them and apply an input, pick a
-              combination, or click a row.
+              `studio-check new.policy` — a bucket policy, a run and a table policy each print
+              their problems and a summary line; a misspelled `op`, an undeclared param or bucket,
+              a case without a bucket are each one line naming the case and clause. A tags or
+              order policy passes whenever the YAML does, so open it and pick a combination or
+              click a row.

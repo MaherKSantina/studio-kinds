@@ -103,6 +103,21 @@ points:
     note: Identity before shape — type it and key it once the literature says what it is.
 `;
 
+/** Two tasks and one edge, so the rows, the schedule and a `.calendar` over the board have something to show. */
+const kanbanText = (stem: string) => `title: ${stem}
+due: 2026-12-31
+columns: [To do, Doing, Done]
+tasks:
+  - key: first
+    title: The first thing
+    status: Doing
+    duration: 2
+  - key: second
+    title: What follows it
+    needs: [first]
+    due: 2026-12-24
+`;
+
 const policyText = (stem: string) => `title: ${stem}
 description: Input in, bucket out — the switch runs in order and stops at the first match.
 params:
@@ -332,7 +347,7 @@ export function fileTemplate(path: string, title?: string, content?: string): st
     case "list": return `title: ${stem}\nitems: []\n`;
     case "frame": return dumpFrame(newFrameDoc(stem));
     case "flow": return ITEM_FILE_TEMPLATES.flow.replace("title: My flow", `title: ${stem}`);
-    case "kanban": return `title: ${stem}\ncolumns: [To do, Doing, Done]\ntasks: []\n`;
+    case "kanban": return kanbanText(stem);
     case "policy": return policyText(stem);
     case "playbook": return playbookText(stem);
     case "plan": return planText(stem);
