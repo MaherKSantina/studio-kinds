@@ -1,15 +1,15 @@
 ---
 name: studio-files
-description: Author and edit Studio documents on DISK — every kind of Maher's Digital Symphony suite (.brief, .playbook, .kanban, .calendar, .policy, .flow, .jsonl, .middleware, .collection, .clip, .song, and .md for anything else) — in any folder the Studio opens. Use whenever a task touches one of these files by extension, asks to create, change or validate one, mentions the Studio, the desktop app or the VS Code preview, or asks WHICH file type to use for something.
+description: Author and edit Studio documents on DISK — every kind of the Digital Symphony suite (.brief, .playbook, .kanban, .calendar, .policy, .flow, .jsonl, .middleware, .collection, .clip, .song, and .md for anything else) — in any folder the Studio opens. Use whenever a task touches one of these files by extension, asks to create, change or validate one, mentions the Studio, the desktop app or the VS Code preview, or asks WHICH file type to use for something.
 ---
 # Studio documents on disk — how to edit them safely
 
 **The load-bearing fact:** a Studio document is a YAML file whose EXTENSION picks its engine. The
-engine (`packages/filekinds/src/lib/<kind>Doc.ts` in this repository, `C:\Github\studio-kinds`) is the specification; the same
+engine (`packages/filekinds/src/lib/<kind>Doc.ts` in this repository) is the specification; the same
 engine renders the file in the web Studio, the desktop app and the VS Code extension. Edit the text
 directly — no API, no worker — and let the engine judge the result.
 
-**Where this applies.** This event is the whole guide for a Studio document. `C:\Github\CLAUDE.md`,
+**Where this applies.** This event is the whole guide for a Studio document. A `CLAUDE.md` above the documents' folder,
 read by every Claude Code session in any folder under it, and the `CLAUDE.md` the Studio's "Prepare for
 Claude Code" button writes both point here, so a session opens this event before touching a document —
 in the VS Code extension, the terminal, or the Code tab of the Claude desktop app. A session started
@@ -23,7 +23,7 @@ Claude Code, by opening it in the Studio, or — for a document that MAY leave t
 POSTing it to the endpoint: `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>`
 answers `{ok, summary, problems: [{message}], notes}` from the same engines (stateless, nothing
 kept; it sees the one document only; a file it names is a note, not read). A document that is
-private to Maher or to a client never goes there: install the checker, or open it in the Studio.
+private to the owner or to a client never goes there: install the checker, or open it in the Studio.
 
 ## 0 · Which kind for what
 
@@ -76,11 +76,11 @@ are `.md`.
    silently dropped on the next UI save.
 2. **Start new files from the template** — every kind has one — then edit:
    ```bash
-   studio-check --template playbook > "C:/Github/Neogrids/new.playbook"
+   studio-check --template playbook > new.playbook
    ```
 3. **Write only what the engine needs.** No informational text in a document: no `description:` prose
    restating the rules, no `note:` explanations, no comment trails — a file is its rules or its
-   data, and a `title:` only where the view needs a heading. Maher reads the files; explanation
+   data, and a `title:` only where the view needs a heading. The owner reads the files; explanation
    belongs in the spec (`--spec`), not in his documents.
 4. **Edit with the smallest change** — targeted line edits, never a rewrite of the whole file. Ids
    are identity (`id:` on screens and views; `key:` on decisions and events): keep them stable, add
@@ -88,8 +88,8 @@ are `.md`.
    Studio UI (parse→dump), so anything that must persist goes in a field, not a comment.
 5. **Check after every edit** — always, before reporting done:
    ```bash
-   studio-check "C:/Github/Neogrids/org-structure.flow"
-   studio-check C:/Github/Neogrids          # the whole folder
+   studio-check org-structure.flow
+   studio-check .                      # the whole folder
    ```
    Exit 1 = problems, printed per file. Fix them; a document that fails here fails in the Studio.
    Without the checker (another PC, Claude.ai, Cowork), POST the file to the same engines:
@@ -189,7 +189,7 @@ are `.md`.
 
 ## 5 · Where things are
 
-- Engines / specs: `packages/filekinds/src/lib/` in this repository, `C:\Github\studio-kinds` (`briefDoc.ts`,
+- Engines / specs: `packages/filekinds/src/lib/` in this repository (`briefDoc.ts`,
   `playbookDoc.ts`, `kanbanDoc.ts`, `policyDoc.ts`, `flowOps.ts` for flows, …); editors:
   `packages/filekinds/src/components`.
 - The checker is the global command `studio-check` (`--spec <ext>`, `--template <ext>`,
@@ -201,5 +201,4 @@ are `.md`.
   and spec, so `--book`, `--fields` and `--spec` answer without a checkout. If `studio-check` is not on the PATH, say so and install it
   before editing documents.
 - Samples: `examples/` in this repository — a brief, a playbook, a kanban with its calendar, a policy —
-  every one passing the checker; and `C:\Github\studio-demo` (a git repo with a README) — playbooks, a kanban and its calendar,
-  and `Music/` (four `.clip` files — drums as lanes, bass, chords, a lead — under `demo.song`).
+  every one passing the checker.

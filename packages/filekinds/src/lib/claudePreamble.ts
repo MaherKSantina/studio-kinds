@@ -23,11 +23,12 @@ export function claudePreamble(folder: string): string {
 
 Every file in this folder and below is a Studio document picked by its extension — \`.brief\`,
 \`.playbook\`, \`.kanban\`, \`.calendar\`, \`.policy\`, \`.flow\`, \`.jsonl\`, \`.middleware\`, \`.collection\`,
-\`.clip\`, \`.song\` — and \`.md\` for anything else. The folder shows in the suite's Studio
-(the front door over C:\\Github, the desktop app, VS Code's Studio editor).
+\`.clip\`, \`.song\` — and \`.md\` for anything else. The folder shows in the Studio (the web
+front door over a folder, the desktop app, VS Code's Studio editor).
 
-For anything touching these files, open the event **Maher asks for a Studio document** in
-\`C:\\Github\\studio-kinds\\claude\\claude.playbook\` and follow its document — including the question
+For anything touching these files, open the \`studio-files\` skill — the event **A Studio document is
+asked for** in \`claude/claude.playbook\` of the studio-kinds repository, exported to
+\`skills/studio-files/SKILL.md\` and shipped with every release — and follow it, including the question
 "which file type should this be?": its "Which kind for what" table is the answer (a hierarchy of content → \`.brief\`;
 event-based content under decision answers → \`.playbook\`; workflows tracked through one process →
 \`.kanban\` + \`.calendar\`; rules that sort and filter → \`.policy\`; data rows → \`.jsonl\`; nothing fits → \`.md\`).

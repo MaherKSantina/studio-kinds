@@ -2,7 +2,7 @@
  * REMOTE CONTROL, FROM THE FRONT DOOR — a chip in a corner of the folder's
  * start page. `claude rc` (Claude Code's Remote Control) is the server that
  * lets claude.ai/code and the Claude mobile app open sessions on this PC;
- * when its link drops while Maher is out, the PC is unreachable from the app
+ * when its link drops while the owner is out, the PC is unreachable from the app
  * — but this page still answers through the tunnel. The chip shows how many
  * servers are alive, and its dialog restarts them: the folder worker
  * (`POST api/remote-control/restart`, remote-control.ps1 behind it) ends

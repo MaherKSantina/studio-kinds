@@ -79,13 +79,13 @@ describe("version numbers and labels", () => {
 
 describe("pin tells", () => {
   it("a path inside a versioned folder is pinned to that folder", () => {
-    expect(versionedParentOf("/Party DJ/context-maher.md/01 initial.md")).toBe(
-      "/Party DJ/context-maher.md",
+    expect(versionedParentOf("/Party DJ/context-host.md/01 initial.md")).toBe(
+      "/Party DJ/context-host.md",
     );
-    expect(isVersionPath("/Party DJ/context-maher.md/01 initial.md")).toBe(true);
+    expect(isVersionPath("/Party DJ/context-host.md/01 initial.md")).toBe(true);
   });
   it("ordinary paths are not pinned", () => {
-    expect(versionedParentOf("/Party DJ/context-maher.md")).toBeNull();
+    expect(versionedParentOf("/Party DJ/context-host.md")).toBeNull();
     expect(versionedParentOf("/notes.md")).toBeNull();
     expect(isVersionPath("/Party DJ/ideas.list")).toBe(false);
   });
@@ -94,12 +94,12 @@ describe("pin tells", () => {
     expect(versionedParentOf("/Job Hunt/applications.node/content.list")).toBeNull();
   });
   it("pinnedRefOf hands a UI the folder, version and label", () => {
-    expect(pinnedRefOf("/Party DJ/context-maher.md/02 after reply.md")).toEqual({
-      folder: "/Party DJ/context-maher.md",
+    expect(pinnedRefOf("/Party DJ/context-host.md/02 after reply.md")).toEqual({
+      folder: "/Party DJ/context-host.md",
       version: "02 after reply.md",
       label: "02 after reply",
     });
-    expect(pinnedRefOf("/Party DJ/context-maher.md")).toBeNull();
+    expect(pinnedRefOf("/Party DJ/context-host.md")).toBeNull();
   });
   it("versionsMetaPathOf composes the changelog path", () => {
     expect(versionsMetaPathOf(FOLDER)).toBe(`${FOLDER}/${VERSIONS_META}`);

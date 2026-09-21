@@ -31,7 +31,7 @@ describe("the folder entry's start", () => {
   it("names a virtual memory after the folder, and keeps it per folder in this browser", () => {
     expect(folderStem("C:\\Github\\Neogrids")).toBe("Neogrids");
     expect(folderStem("C:\\Github")).toBe("Github");
-    expect(folderStem("/home/maher/notes/")).toBe("notes");
+    expect(folderStem("/home/sam/notes/")).toBe("notes");
     expect(folderStem("C:\\")).toBe("folder");
     expect(defaultMemoryPath("C:\\Github")).toBe("/Github.memory");
     expect(homeStorageKey("C:\\Github")).toBe("studio:home-memory:C:\\Github");

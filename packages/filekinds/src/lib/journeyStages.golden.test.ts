@@ -262,24 +262,24 @@ stages:
   - key: context
     label: Context
     lanes:
-      - {label: Maher, out: context-maher.md}
-      - {label: "Maher & HH", out: context-maher-hh.md}
+      - {label: Host, out: context-host.md}
+      - {label: "Host & HH", out: context-host-hh.md}
   - key: trigger
     steps:
-      - {key: invite, label: "Invitation", file: context-maher.md, hint: "same name, step spelling"}
+      - {key: invite, label: "Invitation", file: context-host.md, hint: "same name, step spelling"}
 `;
 
   it("pins one ref after out: and file: without touching near-miss names", () => {
-    const next = rewriteRef(YAML, "context-maher.md", "context-maher.md/01 initial.md");
-    expect(next).toContain("out: context-maher.md/01 initial.md}");
-    expect(next).toContain("file: context-maher.md/01 initial.md,"); // the step spelling too
-    expect(next).toContain("out: context-maher-hh.md}"); // the longer sibling name is untouched
+    const next = rewriteRef(YAML, "context-host.md", "context-host.md/01 initial.md");
+    expect(next).toContain("out: context-host.md/01 initial.md}");
+    expect(next).toContain("file: context-host.md/01 initial.md,"); // the step spelling too
+    expect(next).toContain("out: context-host-hh.md}"); // the longer sibling name is untouched
   });
 
   it("updates a pinned ref to a newer version", () => {
-    const pinned = rewriteRef(YAML, "context-maher.md", "context-maher.md/01 initial.md");
-    const updated = rewriteRef(pinned, "context-maher.md/01 initial.md", "context-maher.md/03 later.md");
-    expect(updated).toContain("out: context-maher.md/03 later.md}");
+    const pinned = rewriteRef(YAML, "context-host.md", "context-host.md/01 initial.md");
+    const updated = rewriteRef(pinned, "context-host.md/01 initial.md", "context-host.md/03 later.md");
+    expect(updated).toContain("out: context-host.md/03 later.md}");
     expect(updated).not.toContain("01 initial");
   });
 
@@ -291,8 +291,8 @@ stages:
   });
 
   it("pinnedRefFor grows an unpinned ref and swaps a pinned one", () => {
-    expect(pinnedRefFor("context-maher.md", "02 b.md", false)).toBe("context-maher.md/02 b.md");
-    expect(pinnedRefFor("context-maher.md/01 a.md", "02 b.md", true)).toBe("context-maher.md/02 b.md");
+    expect(pinnedRefFor("context-host.md", "02 b.md", false)).toBe("context-host.md/02 b.md");
+    expect(pinnedRefFor("context-host.md/01 a.md", "02 b.md", true)).toBe("context-host.md/02 b.md");
     expect(pinnedRefFor("sub/notes.md", "01 a.md", false)).toBe("sub/notes.md/01 a.md");
   });
 });

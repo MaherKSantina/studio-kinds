@@ -192,7 +192,7 @@ events:
       doc: |
         The button writes `CLAUDE.md` in the memory's folder with the preamble the suite carries
         — what every file under the folder is (a Studio document picked by its extension), where
-        the event "Maher asks for a Studio document" lives, the check-after-every-edit rule, and
+        the event "A Studio document is asked for" lives, the check-after-every-edit rule, and
         that documents refresh from disk by themselves. Once the file exists the button stands
         down; Claude Code loads the CLAUDE.md of every parent folder, so every folder under here
         reads it.

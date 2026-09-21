@@ -78,7 +78,7 @@ export interface PressureCtx {
 }
 
 /** Roll a snapshot up at the FOCUS level (the first answer-path segment) —
- *  the granularity Maher's pressure operates at. */
+ *  the granularity the author's pressure operates at. */
 export function pressureAt(snapshot: Snapshot, focusRef: string): PressureCtx {
   const ctx: PressureCtx = { files: 0, kb: 0, nodes: 0, structured: 0, prose: 0 };
   for (const m of snapshot.mapping) {

@@ -3,7 +3,7 @@
   "displayName": "Studio",
   "description": "The Studio's document editors (frames, flows, playbooks, projects and every other kind) as a VS Code custom editor and side preview.",
   "version": "0.1.0",
-  "publisher": "maher",
+  "publisher": "studio-kinds",
   "private": true,
   "license": "MIT",
   "engines": {

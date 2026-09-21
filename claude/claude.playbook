@@ -1,6 +1,6 @@
 version: 2
 title: What Claude does when something happens in the Studio's repository
-description: The events that happen while Claude works in studio-kinds — the kinds and their engines, the checker, the page, the desktop app, the VS Code extension, the skill, the kits — and, for each, the checklist to act on; every document written in this file. The child books' questions have no standing answer; Claude asks in chat and Maher answers there.
+description: The events that happen while Claude works in studio-kinds — the kinds and their engines, the checker, the page, the desktop app, the VS Code extension, the skill, the kits — and, for each, the checklist to act on; every document written in this file. The child books' questions have no standing answer; Claude asks in chat and the owner answers there.
 decisions: []
 events:
   - key: content-updated
@@ -20,9 +20,9 @@ events:
         - [ ] This holds for every document: a playbook, a brief, a guide, a spec header, a README, the skill, a comment in code, a checker message
         - [ ] A brief's **Why** says why the thing is as it is, never what it replaced
         - [ ] The change itself goes in the report and the commit message, nowhere else
-        - [ ] Verify before reporting done: `studio-check <file>` — exit 1 means the Studio refuses it too. On a machine without the checker, the same engines answer at https://studio-kinds.pages.dev/api/check — `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>` — every kind the page offers; the document travels to that server (stateless, nothing kept, but it leaves the machine), so only for a document that may, and never one Maher or a client keeps private; it cannot see files beside the document, so the checker is the verdict where one is installed
+        - [ ] Verify before reporting done: `studio-check <file>` — exit 1 means the Studio refuses it too. On a machine without the checker, the same engines answer at https://studio-kinds.pages.dev/api/check — `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>` — every kind the page offers; the document travels to that server (stateless, nothing kept, but it leaves the machine), so only for a document that may, and never one the owner or a client keeps private; it cannot see files beside the document, so the checker is the verdict where one is installed
   - key: tildes
-    label: Maher's message holds text between tildes
+    label: The message holds text between tildes
     trigger: imposed
     domain: Working
     content:
@@ -32,12 +32,12 @@ events:
       doc: |
         # Text between tildes
 
-        - [ ] `~like this~` in Maher's message is context for the current task only
+        - [ ] `~like this~` in the owner's message is context for the current task only
         - [ ] Use it for the task, and write neither it nor anything derived from it into `memory.brief` or this playbook — a yes to "Commit to memory?" does not cover it
         - [ ] Leave it out of the write shown under "Something should be committed to memory"
         - [ ] Never restate it in the report as a fact to keep
   - key: studio-document
-    label: Maher asks for a Studio document
+    label: A Studio document is asked for
     trigger: imposed
     domain: Working
     content:
@@ -48,11 +48,11 @@ events:
         # Studio documents on disk — how to edit them safely
 
         **The load-bearing fact:** a Studio document is a YAML file whose EXTENSION picks its engine. The
-        engine (`packages/filekinds/src/lib/<kind>Doc.ts` in this repository, `C:\Github\studio-kinds`) is the specification; the same
+        engine (`packages/filekinds/src/lib/<kind>Doc.ts` in this repository) is the specification; the same
         engine renders the file in the web Studio, the desktop app and the VS Code extension. Edit the text
         directly — no API, no worker — and let the engine judge the result.
 
-        **Where this applies.** This event is the whole guide for a Studio document. `C:\Github\CLAUDE.md`,
+        **Where this applies.** This event is the whole guide for a Studio document. A `CLAUDE.md` above the documents' folder,
         read by every Claude Code session in any folder under it, and the `CLAUDE.md` the Studio's "Prepare for
         Claude Code" button writes both point here, so a session opens this event before touching a document —
         in the VS Code extension, the terminal, or the Code tab of the Claude desktop app. A session started
@@ -66,7 +66,7 @@ events:
         POSTing it to the endpoint: `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>`
         answers `{ok, summary, problems: [{message}], notes}` from the same engines (stateless, nothing
         kept; it sees the one document only; a file it names is a note, not read). A document that is
-        private to Maher or to a client never goes there: install the checker, or open it in the Studio.
+        private to the owner or to a client never goes there: install the checker, or open it in the Studio.
 
         ## 0 · Which kind for what
 
@@ -119,11 +119,11 @@ events:
            silently dropped on the next UI save.
         2. **Start new files from the template** — every kind has one — then edit:
            ```bash
-           studio-check --template playbook > "C:/Github/Neogrids/new.playbook"
+           studio-check --template playbook > new.playbook
            ```
         3. **Write only what the engine needs.** No informational text in a document: no `description:` prose
            restating the rules, no `note:` explanations, no comment trails — a file is its rules or its
-           data, and a `title:` only where the view needs a heading. Maher reads the files; explanation
+           data, and a `title:` only where the view needs a heading. The owner reads the files; explanation
            belongs in the spec (`--spec`), not in his documents.
         4. **Edit with the smallest change** — targeted line edits, never a rewrite of the whole file. Ids
            are identity (`id:` on screens and views; `key:` on decisions and events): keep them stable, add
@@ -131,8 +131,8 @@ events:
            Studio UI (parse→dump), so anything that must persist goes in a field, not a comment.
         5. **Check after every edit** — always, before reporting done:
            ```bash
-           studio-check "C:/Github/Neogrids/org-structure.flow"
-           studio-check C:/Github/Neogrids          # the whole folder
+           studio-check org-structure.flow
+           studio-check .                      # the whole folder
            ```
            Exit 1 = problems, printed per file. Fix them; a document that fails here fails in the Studio.
            Without the checker (another PC, Claude.ai, Cowork), POST the file to the same engines:
@@ -232,7 +232,7 @@ events:
 
         ## 5 · Where things are
 
-        - Engines / specs: `packages/filekinds/src/lib/` in this repository, `C:\Github\studio-kinds` (`briefDoc.ts`,
+        - Engines / specs: `packages/filekinds/src/lib/` in this repository (`briefDoc.ts`,
           `playbookDoc.ts`, `kanbanDoc.ts`, `policyDoc.ts`, `flowOps.ts` for flows, …); editors:
           `packages/filekinds/src/components`.
         - The checker is the global command `studio-check` (`--spec <ext>`, `--template <ext>`,
@@ -244,8 +244,7 @@ events:
           and spec, so `--book`, `--fields` and `--spec` answer without a checkout. If `studio-check` is not on the PATH, say so and install it
           before editing documents.
         - Samples: `examples/` in this repository — a brief, a playbook, a kanban with its calendar, a policy —
-          every one passing the checker; and `C:\Github\studio-demo` (a git repo with a README) — playbooks, a kanban and its calendar,
-          and `Music/` (four `.clip` files — drums as lanes, bass, chords, a lead — under `demo.song`).
+          every one passing the checker.
   - key: guide-changed
     label: The Studio-documents guide in this book is edited
     trigger: imposed
@@ -257,8 +256,8 @@ events:
       doc: |
         # The guide is the skill's source
 
-        - [ ] The event "Maher asks for a Studio document" in this book is the one text; `skills/studio-files/SKILL.md` is generated from it — `pnpm skill:export` rewrites it, and `node scripts/export-skill.mjs --check` (run by CI) fails while the two differ
-        - [ ] The "Which kind for what" table names the same kinds as a prepared folder's `CLAUDE.md` (`packages/filekinds/src/lib/claudePreamble.ts`, and `C:\Github\CLAUDE.md`, hand-written from the same text)
+        - [ ] The event "A Studio document is asked for" in this book is the one text; `skills/studio-files/SKILL.md` is generated from it — `pnpm skill:export` rewrites it, and `node scripts/export-skill.mjs --check` (run by CI) fails while the two differ
+        - [ ] The "Which kind for what" table names the same kinds as a prepared folder's `CLAUDE.md` (`packages/filekinds/src/lib/claudePreamble.ts`)
         - [ ] `studio-check claude/claude.playbook` — the guide is an `md` document of a version-2 playbook and is checked as one
         - [ ] The release zips the skill (`.github/workflows/studio-release.yml`); a machine that installed it from a release keeps its copy until the next install — say so in the report when the change matters there
   - key: file-kind-changed
@@ -275,12 +274,12 @@ events:
         - [ ] `studio-check --spec <ext>` reads the engine header — update the header so the spec says what the format is now
         - [ ] The kind's book, `kinds/<ext>/v<N>.playbook` (`studio-check --book <ext>` prints it) — a changed shape means the book describes the new shape; a new version means a new book: `node scripts/kind-books.mjs` writes the skeleton and `--check` (run by CI) refuses a missing one
         - [ ] The kind's field table, `kinds/<ext>/v<N>.fields.yaml` (`studio-check --fields <ext>` prints it) — a field added, removed or renamed is a row changed; a new version is a new table
-        - [ ] The event "Maher asks for a Studio document" in this book — the kind's bullet in "Which kind for what" and any convention it states; then the event "The Studio-documents guide in this book is edited" regenerates the skill from it
+        - [ ] The event "A Studio document is asked for" in this book — the kind's bullet in "Which kind for what" and any convention it states; then the event "The Studio-documents guide in this book is edited" regenerates the skill from it
         - [ ] `packages/filekinds/src/lib/fileTemplates.ts` — the template a new file starts from
         - [ ] `packages/filekinds/README.md` and the app READMEs that name the kind
         - [ ] Rebuild the checker: `pnpm cli:build` — the global `studio-check` links to a checkout of `apps/cli` (`npm ls -g studio-cli` prints which); that checkout rebuilds once it carries the change
         - [ ] Rebuild what bundles the renderer: `pnpm vscode:vsix`, `pnpm desktop:renderer`, then `code --install-extension apps/vscode/studio-vscode-*.vsix --force`
-        - [ ] Migrate every file of that kind on disk under `C:\Github` and run `studio-check` over all of them
+        - [ ] Migrate every file of that kind in the owner's document folders and run `studio-check` over all of them
         - [ ] Story fixtures in `packages/filekinds/stories/fixtures.ts`
         - [ ] Golden tests for the engine and the registry
         - [ ] The page's check (`apps/page/src/check.ts`) if the kind is one the page offers, and this repository's README if the format changed
@@ -297,8 +296,7 @@ events:
       doc: |
         # A change touches what the demo folders show
 
-        - [ ] `C:\Github\studio-demo` — the file of that kind, and the README row that names it
-        - [ ] `C:\Github\Neogrids-samples\Demo` — the same
+        - [ ] The owner's demo folders, outside this repository — the file of that kind, and the README row that names it
         - [ ] `studio-check` every file touched
         - [ ] Open it in the Studio if the Studio is running; otherwise say it was not opened
   - key: change-done
@@ -325,7 +323,7 @@ events:
           - key: always
             label: Always
             trigger: imposed
-            hint: Ask Maher whether to push this change to origin and whether to cut a Studio release. Do nothing until he answers.
+            hint: Ask the owner whether to push this change to origin and whether to cut a Studio release. Do nothing until they answer.
             content:
               key: steps
               label: What to do
@@ -338,7 +336,7 @@ events:
                   sections:
                     - title: Commit
                       body: |
-                        Stage only what the task changed; leave Maher's parallel edits unstaged. `claude/memory.brief` is never staged: this repository is public and the memory is his private notes — `.gitignore` keeps it out.
+                        Stage only what the task changed; leave the owner's parallel edits unstaged. `claude/memory.brief` is never staged: this repository is public and the memory is the owner's private notes — `.gitignore` keeps it out.
                         Message: what changed and why, then `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
                         The working branch is `master`, and a push to it deploys the page — commit there unless he says otherwise.
                     - title: Push
@@ -352,7 +350,7 @@ events:
                         Report the tag and the Actions run.
                     - title: The suite's pointer
                       body: |
-                        `C:\Github\orchestration` embeds this repository at `suite/studio-kinds`. Moving that pointer to the new commit is the suite's own event, not this book's — say in the report that it is behind.
+                        The suite that embeds this repository as a submodule keeps a pointer at a commit of it. Moving that pointer to the new commit is the suite's own event, not this book's — say in the report that it is behind.
                 push=no:
                   title: Nothing leaves the machine
                   sections:
@@ -370,7 +368,7 @@ events:
       doc: |
         # A step needs a server that is not running
 
-        Every server is Maher's to start and stop. Finish everything that does not depend on it, then stop and ask him to start it — name, port, command — and continue once he says it is up.
+        Every server is the owner's to start and stop. Finish everything that does not depend on it, then stop and ask them to start it — name, port, command — and continue once they say it is up.
 
         | server | port | command |
         |---|---|---|
@@ -384,15 +382,15 @@ events:
         - [ ] A throwaway instance for a check — a headless Chrome, an Electron on its own `STUDIO_USER_DATA` profile, a VS Code with its own `--user-data-dir` — is not a server: start it and close it yourself
         - [ ] Ask for the server by its row above, then continue the step exactly where it stopped
   - key: test-touched-real-file
-    label: A test or harness wrote into one of Maher's documents
+    label: A test or harness wrote into one of the owner's documents
     trigger: imposed
     domain: Working
     content:
       key: test-touched-real-file
-      label: A test or harness wrote into one of Maher's documents
+      label: A test or harness wrote into one of the owner's documents
       kind: md
       doc: |
-        # A test or harness wrote into one of Maher's documents
+        # A test or harness wrote into one of the owner's documents
 
         - [ ] Copy the file aside before any harness click that can autosave (a version-1 decision pill writes `view:`)
         - [ ] Restore from the copy afterwards; if there was no copy, restore the changed keys by hand
@@ -423,9 +421,9 @@ events:
             label: Always
             trigger: imposed
             hint: |
-              Show what would be written: name the area (its top section in `claude/memory.brief`, this repository's), whether it is a new fact or an amendment, and quote the fact as it would be written — title, one-line description, body with **Why** and **How to apply**. A new area also means a new top section in `memory.brief`; say so. A fact about the suite around the Studio — its apps, servers, drive, data, or Maher's own areas — is not this book's: name it as belonging to `C:\Github\orchestration\claude\memory.playbook` and leave it for that book's own event.
+              Show what would be written: name the area (its top section in `claude/memory.brief`, this repository's), whether it is a new fact or an amendment, and quote the fact as it would be written — title, one-line description, body with **Why** and **How to apply**. A new area also means a new top section in `memory.brief`; say so. A fact about the suite around the Studio — its apps, servers, drive, data, or the owner's own areas — is not this book's: name it as belonging to the suite's own memory and leave it for that book's own event.
 
-              Then ask Maher whether to commit it. Write nothing to either book until he answers yes. A no, or no answer, means it is not written.
+              Then ask the owner whether to commit it. Write nothing to either book until they answer yes. A no, or no answer, means it is not written.
             content:
               key: steps
               label: What to do
@@ -438,7 +436,7 @@ events:
                   sections:
                     - title: Find the area
                       body: |
-                        The top section of `claude/memory.brief` the fact belongs to; its children are the area's facts. A new area = a new top section in `memory.brief` (`{title, children: [...]}`). A fact about the suite goes to `C:\Github\orchestration\claude\memory.playbook` through that book's own event, never here.
+                        The top section of `claude/memory.brief` the fact belongs to; its children are the area's facts. A new area = a new top section in `memory.brief` (`{title, children: [...]}`). A fact about the suite goes to the suite's own memory through that book's own event, never here.
                     - title: Amend before adding
                       body: |
                         Look for a section that already covers it and change that one — never add a twin. Delete a section that turned out wrong. Do not record what the repo, git history or CLAUDE.md already say.
@@ -486,9 +484,9 @@ events:
             label: How far the change reaches
             trigger: imposed
             hint: |
-              Map first: before changing anything, find every place the old behaviour lives — search this repository by its names (types, functions, YAML keys): the engine, the viewers and editors, the checker, the templates, the field tables, the kind books, the guide and the skill, the READMEs, the stories and fixtures, the golden tests, the page's check, and the documents on disk under C:\Github.
+              Map first: before changing anything, find every place the old behaviour lives — search this repository by its names (types, functions, YAML keys): the engine, the viewers and editors, the checker, the templates, the field tables, the kind books, the guide and the skill, the READMEs, the stories and fixtures, the golden tests, the page's check, and the documents in the owner's folders on disk.
 
-              Then list the touch points found, say which ones the request reaches on its own and which it does not, and ask Maher which to apply. Do nothing beyond the asked scope until he answers; a no, or no answer, means only the asked scope.
+              Then list the touch points found, say which ones the request reaches on its own and which it does not, and ask the owner which to apply. Do nothing beyond the asked scope until they answer; a no, or no answer, means only the asked scope.
             content:
               key: touchpoints
               label: The touch points
@@ -501,13 +499,13 @@ events:
                   sections:
                     - title: Find them all
                       body: |
-                        Search this repository by the old behaviour's names (types, functions, YAML keys): the engine, the viewers and editors, the checker, the templates, the field tables, the kind books, the guide and the skill, the READMEs, the stories and fixtures, the golden tests, the page's check, and the documents on disk under C:\Github. Assert the count before a bulk edit.
+                        Search this repository by the old behaviour's names (types, functions, YAML keys): the engine, the viewers and editors, the checker, the templates, the field tables, the kind books, the guide and the skill, the READMEs, the stories and fixtures, the golden tests, the page's check, and the documents in the owner's folders on disk. Assert the count before a bulk edit.
                     - title: Change them all
                       body: |
                         Apply the change at every touch point, so nothing still carries the old shape. Where a file on disk could still carry it, the checker names the old shape as legacy and says what replaced it. Rebuild what bundles the change.
                     - title: Say what was left
                       body: |
-                        A touch point deliberately left alone (a legacy copy in the suite's own app, a document of Maher's) is named in the report with the reason. Nothing is left silently.
+                        A touch point deliberately left alone (a legacy copy in the suite's own app, a document of the owner's) is named in the report with the reason. Nothing is left silently.
                 touchpoints=no:
                   title: Only what was asked
                   sections:
@@ -521,7 +519,7 @@ events:
             label: How memory takes the change
             trigger: imposed
             hint: |
-              Search every area of `claude/memory.brief` for the old behaviour's names, not only the area being worked on. For each hit, propose one of: amend the sentence, delete the section, or keep a one-line note that the thing is gone and what names it now. Ask Maher which. The write itself still goes through "Something should be committed to memory" and its answer.
+              Search every area of `claude/memory.brief` for the old behaviour's names, not only the area being worked on. For each hit, propose one of: amend the sentence, delete the section, or keep a one-line note that the thing is gone and what names it now. Ask the owner which. The write itself still goes through "Something should be committed to memory" and its answer.
             content:
               key: memory
               label: Memory after a refactor

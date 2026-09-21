@@ -1,5 +1,0 @@
-# The answers currently taken. Written by the memory view — keep last.
-locks: []
-journal:
-  - {at: "2026-09-18T13:23:52.293Z", locks: [folder=apps]}
-  - {at: "2026-09-18T13:23:53.758Z", locks: []}

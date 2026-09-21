@@ -9,24 +9,20 @@ content, a checklist or a child playbook, is written in the file itself. Consult
 - whenever one of its events happens, open that event's content in the book and do every item;
 - when the content is a child playbook (After a change lands, Committing to memory, After a
   refactor), its decisions have NO standing answer: a version-2 walk is session-only and nothing
-  clicked in the Studio is ever saved. Ask Maher each question in chat and act on the answer he
-  gives there: the event's content follows his answer (`docs`, one document per answer), and
-  until he answers the event's own `hint` says what to do.
+  clicked in the Studio is ever saved. Ask the repository's owner each question in chat and act on
+  the answer given there: the event's content follows the answer (`docs`, one document per
+  answer), and until it is answered the event's own `hint` says what to do.
 
-Maher adds events and content in the Studio; Claude keeps the checklists true to how the Studio
-actually works. After every edit to these files: `studio-check <file>`.
+The owner adds events and content in the Studio; Claude keeps the checklists true to how the
+Studio actually works. After every edit to these files: `studio-check <file>`.
 
-Memory is IN a brief: `claude/memory.brief` (one file). Its top sections are the areas, each
-holding one child section per remembered fact. Take an area's section and read its facts before
-working there. Writing to `memory.brief` or to `claude.playbook` happens only
-through the master's event "Something should be committed to memory": show the write, ask, write
-only on a yes, and show every write in full in the report. Never write to
-`~/.claude/projects/*/memory` — auto-memory is off for this repo. `memory.brief` is listed in
-`.gitignore`: this repository is public and the memory is Maher's private notes, so it never
-leaves the machine.
+Memory is IN a brief: `claude/memory.brief` (one file, listed in `.gitignore` — this repository is
+public and the memory is the owner's private notes, so it never leaves the machine). Its top
+sections are the areas, each holding one child section per remembered fact. Take an area's
+section and read its facts before working there. Writing to `memory.brief` or to
+`claude.playbook` happens only through the master's event "Something should be committed to
+memory": show the write, ask, write only on a yes, and show every write in full in the report.
+Never write to `~/.claude/projects/*/memory` — auto-memory is off for this repo.
 
-The suite around the Studio — `C:\Github\orchestration`, which embeds this repository as the
-submodule `suite/studio-kinds` — has its own pair of books under `claude/` there. What is the
-suite's (its apps, servers, drive, data, Maher's own areas) lives in those; the suite's master reads
-this one where a Studio matter comes up, and this one never depends on the suite's. A fact about
-the suite learned here belongs to its memory, not this one.
+A suite may embed this repository as a submodule and keep its own books; what is the suite's (its
+apps, servers, drive, data) lives in those, and this book never depends on them.
