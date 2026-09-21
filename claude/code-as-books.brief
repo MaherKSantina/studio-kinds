@@ -1,0 +1,300 @@
+title: Turning a script into a brief and an unhappy playbook
+description: An algorithm run by hand over a source file, in two steps. The first reads the source once and builds a structure — the steps of the happy path, the functions, the failures. The second writes that structure into a brief and an unhappy playbook.
+sections:
+  - title: 1 · Read the source into a structure
+    body: |
+      Nothing is written to a book in this step. Set up the state, then move a cursor over the
+      source; what the cursor meets says which section below to take.
+
+      1. Set up the state:
+         - `steps` ← an empty list — the happy path, one entry per top-level step.
+         - `functions` ← an empty list — one entry per function met.
+         - `failures` ← an empty list — one entry per way the run can fail.
+         - `step` ← 1 — the number the next top-level step takes.
+         - `cursor` ← the first line of the source.
+      2. Read what is at `cursor` and take the section for it: a comment, a piece of a
+         function, a statement. Do its steps in order, then move `cursor` to the next thing.
+      3. Repeat until the end of the source is reached, then take "The end of the source is
+         reached".
+    children:
+      - title: The structure
+        body: |
+          What this step builds. Every entry describes the file's code and nothing else — not
+          how the script is invoked, who runs it, what the caller does with its output, or the
+          platform it runs on.
+
+          An entry of `steps`:
+          - `number` — 1, 2, 3 …; inside a fork's side, after the fork's number: 9a, 9b.
+          - `title` — what the step defines or produces: "Define `mode`", "Load the master".
+          - `sentence` — one sentence, in the reader's terms, saying what it does; a paragraph
+            where the shape it describes needs one. The argument the script receives, the
+            files it reads and what it writes are the file's business; who passes the
+            argument, who runs it and who reads the output are not.
+          - `children` — optional: one entry per name, when several bindings belong together.
+          - `shape` — optional: a fenced block — one item of a loop's result, or the whole
+            artifact of an output.
+          - `fork` — optional: the question the code asks, one answer per value it compares
+            against, and one list of steps per answer.
+
+          An entry of `functions`: the name, the parameters by name, and one sentence a caller
+          can use, saying what it does.
+
+          An entry of `failures`:
+          - `condition` — in the world's terms, not the code's: "the master playbook is
+            missing", not "existsSync returns false".
+          - `step` — the number of the top-level step it interrupts; empty until known; a
+            function's name or a folded statement's name stands in until then.
+          - `then` — what the script does under it: the output it writes, in full, when the
+            brief will not show it; how the run ends ("exit 0, nothing after this step runs"),
+            or, when the run goes on, which names end up empty and which block of the output
+            appears or disappears.
+          - `by` — optional: a fork's question, when the behaviour under this failure differs
+            by the answer, and `then` per answer.
+      - title: A comment is met
+        body: |
+          A comment can do more than one of these; take each part of it separately.
+
+          1. The part that says what the script never does, or what a broken file yields:
+             append what it says to `failures` with no step yet. At the end of the source it
+             is merged into the guard's entry that names the same condition.
+          2. The part that says how the script is wired or who runs it: record nothing.
+          3. The rest is intent: use it as a step's title, as the sentence a step needs, or —
+             above a definition — as the function's sentence. Copy no failure word from it.
+      - title: A piece of a function is met
+        body: |
+          A definition or a call. Take the child for the piece the cursor is on. A statement
+          that holds a call also raises "A statement is met": do both, the statement's steps
+          first.
+        children:
+          - title: A definition — a function or a closure is defined
+            body: |
+              1. Add no step: the happy path never shows a definition.
+              2. Append to `functions`: the function's name, its parameters by name, and one
+                 sentence a caller can use, saying what it does. The comment above the
+                 definition is that sentence when there is one, in the reader's terms — "the
+                 one entry of a version-2 event, each entry of a version-1 event's list", not
+                 "the list as it is, or the mapping as a one-item list".
+              3. For each guard, catch or early exit in its body, and for each shape it
+                 assumes with no guard: append to `failures` its condition and its `then`,
+                 with the function's name in place of a step.
+              4. Move `cursor` past the definition. Its body is not walked as steps.
+          - title: A call — a function is called
+            body: |
+              1. Find the function in `functions`.
+              2. In the sentence of the step the call belongs to, write what the function does
+                 at this place, with the arguments it was given, in the reader's terms: not
+                 "define `doc` to be `load` of `MASTER`" but "read the file at `MASTER` as
+                 text and define `doc` to be that text parsed as one YAML document".
+              3. Write it in full at every call, never "as in step 4". Duplication is what
+                 makes each step readable on its own.
+              4. For each entry of `failures` marked with this function's name: add this
+                 step's number to it. A function called at two steps fails at both.
+      - title: A statement is met
+        body: |
+          What the statement does decides what is recorded. Test the children top to bottom,
+          take the first that holds, and do its steps in order: a guard before a fork, a fork
+          before a loop, a loop before an output, an output before a binding, a binding before
+          language-only. A require that binds a name a later step uses is a binding. A
+          conditional expression inside a binding is not a fork; it is the binding's sentence.
+
+          Whichever child is taken, then also:
+
+          1. If the statement does something to a value that crashes when the value is not
+             the shape assumed — a list mapped over, a method called on it — with no guard:
+             append to `failures` that shape not holding, with this step's number, and as
+             `then` "the run crashes: exit 1, nothing on stdout, the error on stderr". One
+             entry per step, naming every shape that crashes it; not one per shape. A key
+             read off a mapping that is not there does not crash — it is an empty value
+             inside a line, whether the code writes a fallback for it or lets it print as
+             nothing, and an empty value inside a line is never an entry.
+          2. If the statement holds a call, take "A call — a function is called" as well.
+          3. A binding whose value is a function or a closure is a definition: take "A piece
+             of a function is met" and not the binding child.
+        children:
+          - title: It guards, catches or exits early — one side of it is a failure
+            body: |
+              1. Take the side where nothing is wrong. It is the guard's own block when it
+                 has one; for a guard that only exits or throws, it is the one statement the
+                 guard protects — the next one. Move `cursor` to its first statement; the
+                 statements there raise their own sections and share this step — a guard met
+                 inside that side shares it too, and adds its own entry to `failures`. The
+                 guard adds no step and does not move `step`; the statements on its side do,
+                 and what follows the side is its own step.
+              2. Begin that step's sentence with the check when there is one, and write the
+                 rest as if it always succeeds: "Check that a file exists at `MASTER`, then
+                 define `doc` to be …". A try has no check: write what it tries as if it
+                 always succeeds.
+              3. Record nothing of the other side in `steps`: no "throws", no "cannot", no
+                 note.
+              4. Read the other side and append to `failures`: the condition in the world's
+                 terms, this step's number, and `then` — the output it writes in full, how the
+                 run ends, or, when the run goes on, which names end up empty. A catch that
+                 covers two conditions the script cannot tell apart is one entry naming both.
+          - title: It branches where neither side is a failure
+            body: |
+              1. Append one step, numbered `step`, whose sentence says only that what runs next
+                 follows the answer: "What runs last follows `mode`."
+              2. Give it a `fork`: the question the code asks, one answer per value the code
+                 compares against, and one more for the other side when the code has one —
+                 "`session`, anything else, or nothing". If a fork on the same question was
+                 already recorded, reuse its question and answers.
+              3. For each answer: set `cursor` to the first statement of its side and run this
+                 step's sections over the side into the answer's own list of steps, numbering
+                 them after the step — 9a, 9b.
+              4. While walking a side, if an entry of `failures` behaves differently under this
+                 answer than under another — the run crashes here and survives there, or takes
+                 another branch — set its `by` to this fork's question and record `then` per
+                 answer. That the outputs differ is no reason, and a block written under one
+                 answer and not the other is an output difference: one `then`, saying so.
+              5. Move `cursor` past the fork. `step` ← `step` + 1.
+          - title: It loops over a collection
+            body: |
+              1. Append one step, numbered `step`, for the whole collection; its sentence
+                 describes the result and not the iteration: "Define `lines` to be one line
+                 per event of `working`: …".
+              2. Set its `shape` to a fenced block showing one item.
+              3. For each condition inside the loop: if it skips an item, write it into the
+                 sentence as part of which items count; if it fails the run, append it to
+                 `failures` with this step's number and its `then`.
+              4. If the collection can be empty rather than wrong — a list that is missing, a
+                 file with no entries — and the name it reads is not already in `failures` as
+                 possibly empty: append that to `failures` with this step's number, and as
+                 `then` which block of the output appears or disappears, or how the run ends
+                 differently. A fallback that replaces a whole line or block — `- (no child
+                 book carries a decision)` — is such a block. A fallback inside a line — `(no
+                 content yet)`, `(untitled)`, a key standing in for a label — is no failure;
+                 it goes into the output's sentence.
+              5. Move `cursor` past the loop; its body is not walked as steps. `step` ← `step`
+                 + 1.
+          - title: It produces an output — a write to stdout, a file written, a value returned to the caller
+            body: |
+              1. Append one step, numbered `step`, and set its `shape` to the artifact in full
+                 as it leaves the script, in a fenced block, with every variable the happy path
+                 fills as a placeholder in angle brackets — `<MASTER>`, `<event labels>`.
+              2. Write its sentence as one sentence per placeholder saying how it is filled. If
+                 a line has a fallback — `(no content yet)`, a key standing in for a label —
+                 write it into that sentence.
+              3. If the artifact wraps a multi-line text in one serialised string: show the
+                 wrapper with one placeholder for the text, then the text with its line breaks
+                 written out, and say that is what was done. The reader sees what comes out,
+                 not the code that assembles it.
+              4. `step` ← `step` + 1.
+          - title: It binds a name a later step uses
+            body: |
+              1. If the name is empty on the happy path and only a failure fills it: add no
+                 step and stop. The failure that fills it says where it lands, in its `then`.
+              2. Append one step, numbered `step`, titled by the name: "Define `name`".
+              3. Write its sentence saying what the name holds, in intent: "Define `mode` to be
+                 the argument the script was run with, `session` when there is none". A
+                 conditional expression inside the binding goes into that sentence —
+                 "`UserPromptSubmit` when `mode` is `prompt`, `SessionStart` otherwise" — and
+                 opens no fork.
+              4. While the statements that follow bind names that belong with this one: take
+                 each into this step as one child per name, and move `cursor` past it. The
+                 step is then titled by all the names — "Define `DIR`, `MASTER` and `MEMORY`"
+                 — and its sentence moves into the children. A name defined on the happy path
+                 that only a failure reads still gets its step.
+              5. If the value can be empty rather than wrong: append that to `failures` with
+                 this step's number, and as `then` which block of the output appears or
+                 disappears, or how the run ends differently; a fallback that replaces a whole
+                 line or block counts, a fallback inside a line does not. A later step that
+                 reads this name adds no second entry.
+              6. For each entry of `failures` marked with this name: set its step to this
+                 step's number.
+              7. `step` ← `step` + 1.
+          - title: It only serves the language and binds no name a later step uses — an import, a require, a coercion, a path joined or an argument read that only the language needs
+            body: |
+              1. Add no step. The same expression binding a name a later step uses — `MASTER`
+                 from a path joined, `mode` from an argument read — is a binding, not this.
+              2. Note what the statement provides, so the step that uses it can say it in the
+                 reader's terms: not "join `DIR` with the file name" but "define `MASTER` to be
+                 `claude.playbook` in `DIR`".
+              3. If it can fail: append to `failures` the condition, marked with the name it
+                 provides in place of a step, and as `then` what the rest of the run does
+                 without the thing — which names end up empty, and what the output looks like
+                 as a result. The step that uses the name fills the number in.
+      - title: The end of the source is reached
+        body: |
+          1. Merge `failures`: two entries naming the same condition at the same step are
+             one — a guard's own entry and the same condition carried in from a function's
+             body, say. Two entries the script's output cannot tell apart — an empty file at
+             step 5 and a file with no `events` list at step 7 — are one, named by the wider
+             condition and anchored at the step where the script first differs. An entry that came from a comment merges into every entry naming its
+             condition, keeping the guard's step and `then` and any wording of the comment
+             that says it better; a comment the code contradicts is dropped, and said so in
+             the report. A comment entry that matches nothing gets the step that uses what it
+             guards.
+          2. For each entry of `failures` with no step number: set it to the step that uses
+             what the entry guards.
+          3. For each entry of `steps`: check that its sentence names what it defines or
+             produces, that it depends on no function `functions` does not explain, and that
+             nothing in it is about the world outside the file. Rewrite any that fails.
+          4. Search every sentence in `steps` for "throws", "cannot", "missing", "error",
+             "fails", "catch". For each hit: rewrite the sentence without it, and append what
+             it said to `failures` with that step's number.
+          5. Take "Write the structure into the two books".
+  - title: 2 · Write the structure into the two books
+    body: |
+      1. Make two files beside each other, from the templates:
+
+         ```
+         studio-check --template brief > <name>.brief
+         studio-check --template playbook > <name>-unhappy.playbook
+         ```
+
+      2. Set the brief's title to what the script is, and its description to say it is the
+         happy path and name the unhappy playbook. Set the playbook's description to say each
+         event is something that can go wrong at a step of the brief.
+      3. Write `steps` into the brief — "The happy-path brief".
+      4. Write `failures` into the playbook — "The unhappy playbook".
+      5. Take "Check both books".
+    children:
+      - title: The happy-path brief
+        body: |
+          1. For each entry of `steps`, in order, append one top-level section: title
+             "`number` · `title`", body the sentence. A section is a title and a body — no
+             description, and no sentence that restates the structure ("three names, one child
+             each").
+          2. If the entry has `children`: write one child section per name, title "Define
+             `name`", body its sentence — and no body on the parent section, which is its
+             title alone.
+          3. If the entry has a `shape`: write the fenced block into the body after the
+             sentence, and for an output the placeholder sentences after the block.
+          4. If the entry has a `fork`: give the section a `content` of `kind: playbook` — one
+             decision, the fork's question, with its answers as values; one event per answer,
+             labelled by the answer ("The mode is prompt"), `when` that answer, whose content
+             is `kind: brief` holding that answer's steps written by these same rules,
+             numbered 9a, 9b. Two forks on the same question share one decision.
+          5. No word of failure goes in: nothing from `failures` is written here.
+      - title: The unhappy playbook
+        body: |
+          1. For each entry of `failures`, append one event. Its label is the condition, in
+             the world's terms. Its `detail` is the top-level step it interrupts: "Step 4."; a
+             child of that step is named in the document's text, not in `detail`.
+          2. Write its document from `then`, `kind: md`, as numbered steps in the same voice
+             as the brief, ending with how the run ends: "Exit 0. Nothing after step 4 runs."
+             Where `then` holds an output the brief does not show, show it in full, as an
+             output step would.
+          3. Where the run goes on, say which names end up empty and which block of the
+             output goes. When the output is the same as for another event, say so instead of
+             repeating it: "the same text written as for a missing memory".
+          4. If the entry has `by`: add to the playbook the same decision as the brief's fork,
+             with the same answers, unless it is already there, and write the event's content
+             `by` that decision, one document per answer. Otherwise one document, naming the
+             effect on the names the brief defines; the brief's fork shows the outputs.
+      - title: Check both books
+        body: |
+          1. Read the brief alone, top to bottom, as a stranger: every step names what it
+             defines or produces, no step depends on a function the brief never explains,
+             nothing in it is about the world outside the file. Search it for "throws",
+             "cannot", "missing", "error", "fails", "catch"; a hit is a sentence to rewrite.
+          2. Check that every event's `detail` in the playbook names a top-level step that
+             exists in the brief, and that every entry of `failures` became an event.
+          3. `studio-check` both files; fix until they pass.
+          4. If the script can be run: for each event, build one fixture — a folder of its own
+             outside the script's folder, holding a copy of the script with what the event
+             needs arranged around it: the file missing, a file that does not parse, a book
+             with no list. Nothing is placed in the script's own folder. Run the copy once per
+             fixture and the script once on the happy path. Compare what each writes with what
+             the books say, and fix the books where they differ.
+          5. Delete the structure and the fixtures.
