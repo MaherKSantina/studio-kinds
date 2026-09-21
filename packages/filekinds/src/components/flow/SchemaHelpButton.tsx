@@ -1,7 +1,7 @@
 /**
- * A small "Schema" button that opens a Monaco dialog showing a copyable YAML template (the
- * "schema shape") for a structured file type. Read-only — the user copies it and pastes into
- * their own file. Ported from the legacy app (its InspectableDialog is a plain MUI Dialog here).
+ * A small "Schema" button that opens a dialog showing a copyable YAML template (the "schema
+ * shape") for a structured file type. Read-only text — the user copies it and pastes into their
+ * own file.
  */
 import { useState } from "react";
 import {
@@ -10,13 +10,11 @@ import {
 import DataObjectIcon from "@mui/icons-material/DataObject";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
-import { Editor } from "@monaco-editor/react";
 
 export default function SchemaHelpButton({
   template,
   label = "Schema",
   typeLabel,
-  language = "yaml",
 }: {
   /** The copyable template body shown in the dialog. */
   template: string;
@@ -24,7 +22,7 @@ export default function SchemaHelpButton({
   label?: string;
   /** Friendly type name for the dialog title (e.g. "Matrix"). */
   typeLabel?: string;
-  /** Monaco language for highlighting (defaults to yaml). */
+  /** Kept for the callers' sake; the template shows as plain text whatever the language. */
   language?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -37,7 +35,7 @@ export default function SchemaHelpButton({
       setTimeout(() => setCopied(false), 1500);
     } catch {
       // Clipboard may be unavailable (e.g. insecure context) — the user can
-      // still select the text in the editor manually.
+      // still select the text manually.
     }
   };
 
@@ -69,22 +67,11 @@ export default function SchemaHelpButton({
           </Button>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 0 }}>
-          <Box sx={{ height: 440 }}>
-            <Editor
-              className="nokey"
-              height="100%"
-              language={language}
-              value={template}
-              theme="light"
-              options={{
-                readOnly: true,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                fontSize: 12,
-                wordWrap: "on",
-                automaticLayout: true,
-              }}
-            />
+          <Box
+            component="pre"
+            sx={{ m: 0, p: 1.5, height: 440, overflow: "auto", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", fontSize: 12, lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+          >
+            {template}
           </Box>
         </DialogContent>
         <DialogActions>

@@ -277,15 +277,17 @@ class StudioEditorProvider {
     const nonce = Array.from({ length: 24 }, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join("");
     html = html.replace(/(src|href)="\.\/(assets\/[^"]+)"/g, (_m, attr, rel) => `${attr}="${base}/${rel}"`);
     html = html.replace(/<script /g, `<script nonce="${nonce}" `);
-    // Monaco (the flow's raw pane) loads itself from jsdelivr; the Ask panels talk to the ask worker on this machine.
+    // Every script, style and font is the bundle's own; the only network the webview may open is the
+    // suite's ask worker on this machine. `img-src https:` is for a `.collection`'s item images, which
+    // live where the listing does — the host that serves one sees the request, as any image viewer's would.
     const csp = [
       "default-src 'none'",
       `img-src ${webview.cspSource} https: data: blob:`,
-      `style-src ${webview.cspSource} 'unsafe-inline' https://cdn.jsdelivr.net`,
-      `font-src ${webview.cspSource} data: https://cdn.jsdelivr.net`,
-      `script-src 'nonce-${nonce}' ${webview.cspSource} https://cdn.jsdelivr.net`,
-      `connect-src ${webview.cspSource} http://127.0.0.1:9250 http://localhost:9250 https://cdn.jsdelivr.net`,
-      "worker-src blob: https://cdn.jsdelivr.net",
+      `style-src ${webview.cspSource} 'unsafe-inline'`,
+      `font-src ${webview.cspSource} data:`,
+      `script-src 'nonce-${nonce}' ${webview.cspSource}`,
+      `connect-src ${webview.cspSource} http://127.0.0.1:9250 http://localhost:9250`,
+      "worker-src blob:",
       "child-src blob:",
       "frame-src blob: https://maps.google.com https://www.google.com",
     ].join("; ");

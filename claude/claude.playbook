@@ -20,7 +20,7 @@ events:
         - [ ] This holds for every document: a playbook, a brief, a guide, a spec header, a README, the skill, a comment in code, a checker message
         - [ ] A brief's **Why** says why the thing is as it is, never what it replaced
         - [ ] The change itself goes in the report and the commit message, nowhere else
-        - [ ] Verify before reporting done: `studio-check <file>` — exit 1 means the Studio refuses it too. On a machine without the checker, the same engines answer at https://studio-kinds.pages.dev/api/check — `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>` — every kind the page offers; it cannot see files beside the document, so the checker is the verdict where one is installed
+        - [ ] Verify before reporting done: `studio-check <file>` — exit 1 means the Studio refuses it too. On a machine without the checker, the same engines answer at https://studio-kinds.pages.dev/api/check — `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>` — every kind the page offers; the document travels to that server (stateless, nothing kept, but it leaves the machine), so only for a document that may, and never one Maher or a client keeps private; it cannot see files beside the document, so the checker is the verdict where one is installed
   - key: tildes
     label: Maher's message holds text between tildes
     trigger: imposed
@@ -62,10 +62,11 @@ events:
         `studio-files-skill.zip`, exported from this event by `pnpm skill:export` in this repository (`skills/studio-files/SKILL.md`), to unzip into
         `~/.claude/skills` or upload under Settings › Skills. Cowork given the folder DOES read the `CLAUDE.md`
         in it and follows it. Neither runs the checker; what they write is validated with `studio-check` from
-        Claude Code, by opening it in the Studio, or — from anywhere with HTTP — by POSTing it to the
-        endpoint: `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>`
-        answers `{ok, summary, problems: [{message}], notes}` from the same engines (it sees the one
-        document only; a file it names is a note, not read).
+        Claude Code, by opening it in the Studio, or — for a document that MAY leave the machine — by
+        POSTing it to the endpoint: `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>`
+        answers `{ok, summary, problems: [{message}], notes}` from the same engines (stateless, nothing
+        kept; it sees the one document only; a file it names is a note, not read). A document that is
+        private to Maher or to a client never goes there: install the checker, or open it in the Studio.
 
         ## 0 · Which kind for what
 

@@ -1,6 +1,7 @@
 {
   "name": "studio-desktop",
   "private": true,
+  "license": "MIT",
   "version": "0.1.0",
   "description": "The Studio as a desktop app: the same editors over a real folder on disk.",
   "main": "main.cjs",

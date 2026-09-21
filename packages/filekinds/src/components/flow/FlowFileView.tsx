@@ -1,7 +1,7 @@
 /**
  * Host for a `.flow` file. Owns the Raw/Preview toggle and bridges the one combined blob to its
  * two halves:
- *  - Raw     → `FlowEditor`: two stacked Monaco panes (model + views), with validation problems
+ *  - Raw     → `FlowEditor`: two stacked text panes (model + views), with validation problems
  *              surfaced under the model pane.
  *  - Preview → `FlowPreview`: the parameter explorer. Its `onViewsChange` re-serializes only the
  *              views half, so exploring never touches the authored model.

@@ -48,9 +48,9 @@ export default defineConfig(({ mode }) => {
       // service ends up "running" where the router cannot find it.
       strictPort: true,
       host: true,
-      // Reached through suite-router behind the public hostname; Vite blocks
-      // unknown Host headers by default.
-      allowedHosts: ["orchestration-digitalsymphony.ngrok.pizza"],
+      // Vite blocks unknown Host headers by default; a dev server reached through a router behind a
+      // public hostname names it in STUDIO_DEV_HOSTS (comma-separated), which stays out of the repository.
+      allowedHosts: (process.env.STUDIO_DEV_HOSTS ?? "").split(",").map((h) => h.trim()).filter(Boolean),
       proxy: {
         // The suite's ask worker: /studio/ask-api/* -> :9250/*
         "/studio/ask-api": {

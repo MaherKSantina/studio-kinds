@@ -8,12 +8,15 @@ never knows which. It replaced the per-kind studios on 2026-09-12 — Playbook,
 Points, Frame, Flow, Policy and Journey Studio and the Projects app — which
 each carried a whole frontend stack for one editor.
 
-- frontend :9260 (`pnpm dev`, in the `C:Githubsuite` workspace), Vite base `/studio/`; **no worker of its own**
+- frontend :9260 (`pnpm dev`, in the suite's workspace), Vite base `/studio/`; **no worker of its own**
   — files through the nodes worker (`/studio/nodes-api` → :9111), the Ask
   panels through the suite's ask worker (`/studio/ask-api` → :9250), recents
   in the browser.
-- served at `http://localhost:9190/studio/` and publicly at
-  `https://orchestration-digitalsymphony.ngrok.pizza/studio/` (suite-router).
+- served at `http://localhost:9190/studio/` by the suite-router, which gates every
+  request behind a sign-in; the suite's own books say where it is reachable from.
+  A router in front of the dev server on a public hostname names it in
+  `STUDIO_DEV_HOSTS` (comma-separated) before `pnpm dev` — Vite refuses unknown
+  Host headers, and the hostname stays out of the repository.
   The retired prefixes (`/frame/`, `/flow/`, `/playbook/`, `/points/`,
   `/policy/`, `/journey/`, `/projects/`) redirect here with their query.
 - deep links: `/studio/?path=/Design/dashboard.frame`; a frame kept inside a
@@ -23,28 +26,25 @@ each carried a whole frontend stack for one editor.
 - **a folder on disk, in the browser — the front door**: `/studio/folder.html`
   (entry `src/folder.tsx`) is the same App over the folder worker
   (`apps/folder-worker`, `/studio/folder-api` → :9112), which serves ONE folder
-  — Mission Control starts it on `C:/Github` — and the router serves this page
-  as the domain root, so `https://orchestration-digitalsymphony.ngrok.pizza/`
-  IS it (`/?path=/x.flow` is a deep link into the folder; the same page reached
-  directly is `/studio/folder.html?path=…`). Its start page is the folder's
+  — Mission Control starts it on the suite's folder — and the router serves this page
+  as the domain root (`/?path=/x.flow` is a deep link into the folder; the same page
+  reached directly is `/studio/folder.html?path=…`). Its start page is the folder's
   ROOT MEMORY (`StudioStore.homeMemory`, `components/HomeMemory.tsx`): the
   first `.memory` in the root when there is one, else a virtual memory this
   browser keeps (`lib/folderHome.ts`, tested) — every sub-folder a focus, the
   files beside them Everything else, exactly what an empty `.memory` shows on
   the desktop and in VS Code, with nothing written into the folder unasked. It
   reads LAZILY: one listing of where you are, one more per folder pill taken,
-  nothing under the folders not taken (filekinds `memoryLoad.ts`) — over
-  `C:\Github` that is 50 pills and 9 files from one call, not a 13,000-row index.
+  nothing under the folders not taken (filekinds `memoryLoad.ts`) — over a
+  folder of fifty projects that is 50 pills and a few files from one call, not a
+  13,000-row index.
   A search field above the pills filters the foci by name. **Prepare for Claude
   Code** (a button on any memory whose host can write) writes a `CLAUDE.md` beside
   it — a pointer at the master playbook's guide, the which-kind-for-what answer, the checker — so a
   Claude Code session started in that folder, even an empty one, knows the Studio;
-  `C:\Github\CLAUDE.md` already covers every folder under it. **Remote control**
-  (a chip in the start page's corner, `components/RemoteControl.tsx`, mounted by
-  the folder entry alone as `StudioStore.homeActions`) shows the `claude rc`
-  servers alive on the PC and restarts them through the folder worker
-  (`api/remote-control`, `remote-control.ps1` at the checkout's root): the way
-  back in when the Claude app's link to the PC has dropped while Maher is out. A
+  a `CLAUDE.md` higher up already covers every folder under it. The start page
+  also mounts the host's own actions (`StudioStore.homeActions`, from the folder
+  entry alone) — what those are is the suite's, documented in its own books. A
   change on disk streams in as a server-sent event: the open document re-reads
   itself, the start page re-reads the store (a folder made in the file manager
   shows up as a focus), and a `.memory` made in the root takes over as the

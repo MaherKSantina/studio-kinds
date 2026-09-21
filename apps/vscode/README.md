@@ -41,8 +41,12 @@ A Studio tab has an **Open Source (text)** button to bring the YAML back beside 
   (so remote workspaces work too). Store paths look exactly as on the shared
   drive: `/sub/file.frame`.
 - Images and other bytes load through `webview.asWebviewUri` under the same
-  root; Monaco (the flow's raw pane) loads from jsdelivr; Ask panels reach the
-  suite's ask worker at `127.0.0.1:9250` when it runs.
+  root. The webview's CSP allows no script, style or font from anywhere but the
+  bundle; the one network it may open is the suite's ask worker at
+  `127.0.0.1:9250` when it runs. `img-src https:` is for a `.collection`'s item
+  images, which live where the listing does — the host serving an image sees the
+  request, as with any image viewer; a document that references no remote image
+  makes no request.
 
 ## Development
 

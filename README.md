@@ -28,12 +28,16 @@ pnpm install && pnpm cli:build      # builds apps/cli/dist/check.cjs
 pnpm check examples/                # from the repository root — or: node apps/cli/dist/check.cjs <files>
 ```
 
-Without a checkout, from the latest [GitHub Release](https://github.com/MaherKSantina/studio-kinds/releases):
+Without a checkout, from a [GitHub Release](https://github.com/MaherKSantina/studio-kinds/releases):
 `npm install -g studio-cli-<version>.tgz` puts `studio-check` on the PATH, with every kind's book,
-field table and spec inside the package. Or `install-studio.ps1` from the same release, which also
-installs the desktop app, the VS Code extension and the skill.
+field table and spec inside the package. Or `install-studio.ps1 -Tag studio-v<version>` from the same
+release, which also installs the desktop app, the VS Code extension and the skill — after verifying
+every download against the release's `SHA256SUMS` and, with the GitHub CLI, its build provenance
+(see Releases below).
 
-Without any install, the endpoint — the same engines, stateless, CORS-open, nothing logged:
+Without any install, the endpoint — the same engines, stateless, CORS-open, nothing logged. The
+document travels to that server, so use it for documents that may leave your machine; for the rest,
+the checker or the page built from a checkout (`pnpm page:build`) does the same offline:
 
 ```bash
 curl -X POST "https://studio-kinds.pages.dev/api/check?kind=kanban" --data-binary @launch.kanban
@@ -106,9 +110,32 @@ the same by hand).
 ## Releases
 
 `git tag studio-v<major>.<minor>.<patch> && git push origin studio-v<version>` runs the Studio release
-workflow on a Windows runner: the installer, the `.vsix`, the `studio-check` package and the skill zip are
-attached to a GitHub Release, with `install-studio.ps1`, which installs all four on a PC.
+workflow on a GitHub-hosted Windows runner, from the tag's own source with a frozen lockfile: the
+installer, the `.vsix`, the `studio-check` package and the skill zip are attached to a GitHub Release,
+with `install-studio.ps1`, which installs all four on a PC, and `SHA256SUMS`, the digest of each.
+Every file carries a [build provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations):
+
+```bash
+gh attestation verify Studio-Setup-0.2.5.exe --repo MaherKSantina/studio-kinds   # built by this workflow, at this tag's commit
+sha256sum -c SHA256SUMS                                                          # the file is the one the workflow produced
+```
+
+The installer does both before it runs anything, and takes a `-Tag` rather than "latest", so what
+lands on a PC is what one release's build log describes. The desktop installer is unsigned (no code-
+signing certificate); the attestation and the digest are its provenance. An organisation that would
+rather build than download: every artifact comes from `pnpm release:build` on a checkout at the tag.
+
+## What leaves your machine
+
+Nothing, by default. The checker, the desktop app and the VS Code extension are offline — no
+telemetry, no update check, no install hooks in any package. The VS Code webview's CSP allows no
+script, style or font from outside the bundle. Two things reach out only when you point them at
+something remote: the endpoint above (a document you POST), and the images a `.collection` lists
+(fetched from wherever the listing keeps them). The `studio-files` skill mentions the endpoint as the
+option for a machine without the checker, for documents that may leave it; edit that line out of your
+copy if your documents never may.
 
 ## License
 
-MIT.
+MIT — the whole workspace: the kits, the Studio, the desktop app, the VS Code extension, the checker,
+the page and the skill. Clone it, build it, redistribute what you build.

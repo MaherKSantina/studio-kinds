@@ -41,7 +41,7 @@ export { parseJourneyStages, parseJourneyVariants, embedStages } from "./lib/jou
 export type { JourneyStagesDoc, JourneyVariantsDoc, JStage as JourneyStage } from "./lib/journeyStages";
 // The frame and flow kinds — engines. Their canvases, viewers and editors are NOT exported here:
 // the registry lazy-loads them, and a host that needs one directly imports its file (or the
-// "filekinds/catalog" subpath), so importing the kit never pulls Monaco, xyflow or MUI eagerly.
+// "filekinds/catalog" subpath), so importing the kit never pulls xyflow or MUI eagerly.
 export * from "./lib/frameDoc";
 export * from "./lib/frameEdit";
 export * from "./lib/frameAsk";

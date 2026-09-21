@@ -1,5 +1,5 @@
 /**
- * The "Raw" surface of a `.flow` file: two vertically-stacked Monaco editors — a MODEL pane
+ * The "Raw" surface of a `.flow` file: two vertically-stacked text panes — a MODEL pane
  * (dimensions, screens with their variants, and edges) and a VIEWS pane (saved parameter sets).
  * Each is edited independently but both persist into the one file blob, joined by `---`.
  *

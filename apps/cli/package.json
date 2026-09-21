@@ -1,6 +1,7 @@
 {
   "name": "studio-cli",
   "private": true,
+  "license": "MIT",
   "version": "0.1.0",
   "description": "studio-check: the Studio's file kinds from the command line — validate documents, print a kind's spec or a fresh template. For people and for agents editing documents as text.",
   "bin": {
@@ -18,6 +19,7 @@
   },
   "files": [
     "dist/check.cjs",
+    "LICENSE",
     "kinds",
     "specs"
   ]

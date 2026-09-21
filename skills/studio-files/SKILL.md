@@ -19,10 +19,11 @@ read `CLAUDE.md` or this book on their own, the same text travels as a skill: a 
 `studio-files-skill.zip`, exported from this event by `pnpm skill:export` in this repository (`skills/studio-files/SKILL.md`), to unzip into
 `~/.claude/skills` or upload under Settings › Skills. Cowork given the folder DOES read the `CLAUDE.md`
 in it and follows it. Neither runs the checker; what they write is validated with `studio-check` from
-Claude Code, by opening it in the Studio, or — from anywhere with HTTP — by POSTing it to the
-endpoint: `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>`
-answers `{ok, summary, problems: [{message}], notes}` from the same engines (it sees the one
-document only; a file it names is a note, not read).
+Claude Code, by opening it in the Studio, or — for a document that MAY leave the machine — by
+POSTing it to the endpoint: `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>`
+answers `{ok, summary, problems: [{message}], notes}` from the same engines (stateless, nothing
+kept; it sees the one document only; a file it names is a note, not read). A document that is
+private to Maher or to a client never goes there: install the checker, or open it in the Studio.
 
 ## 0 · Which kind for what
 
