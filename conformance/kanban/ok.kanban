@@ -1,0 +1,24 @@
+title: Launch
+description: The board
+due: 2026-11-13
+columns:
+  - To do
+  - {title: Doing, color: orange}
+  - {label: Done}
+tasks:
+  - key: a
+    title: A
+    duration: 2
+    file: notes.md
+    section: Round 1
+    note: one line
+    body: |
+      words
+  - key: b
+    title: B
+    needs: [a]
+    status: doing
+    due: "2026-11-10"
+  - key: c
+    title: C
+    needs: [a, b]

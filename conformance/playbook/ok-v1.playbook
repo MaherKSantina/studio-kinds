@@ -1,0 +1,30 @@
+title: Old style
+decisions:
+  - key: push
+    label: Push?
+    values: [{key: yes, label: Yes}, {key: no, label: No}]
+events:
+  - key: e1
+    label: First
+    content:
+      - {file: steps.brief, label: Steps, by: [push]}
+      - {file: plain.md}
+topics:
+  - key: t1
+    label: Topic
+    when: [push=yes]
+    content:
+      - {file: topic.md}
+rules:
+  - event: e1
+    when: [push=yes]
+    status: ready
+    process: Do it
+    sets: [push=no]
+    every: 3
+    from: e1
+    offset: 10
+view:
+  locks: [push=yes]
+  history:
+    - {event: e1, from: [], locks: [push=yes]}

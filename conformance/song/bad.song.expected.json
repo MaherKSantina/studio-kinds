@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "problems": [
+    "tempo: fast is not a bpm",
+    "time: \"waltz\" is not a time signature like 4/4",
+    "tracks: must be a list"
+  ],
+  "summary": "0 tracks · 1 bar · 0 notes · 120 bpm · 4/4"
+}

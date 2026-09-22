@@ -1,6 +1,6 @@
 version: 2
 title: What Claude does when something happens in the Studio's repository
-description: The events that happen while Claude works in studio-kinds — the kinds and their engines, the checker, the page, the desktop app, the VS Code extension, the skill, the kits — and, for each, the checklist to act on; every document written in this file. The child books' questions have no standing answer; Claude asks in chat and the owner answers there.
+description: The events that happen while Claude works in studio-kinds — the kinds, their schemas and books, the checker (the Python package), the parked front end (the kits, the desktop app, the VS Code extension), the skill — and, for each, the checklist to act on; every document written in this file. The child books' questions have no standing answer; Claude asks in chat and the owner answers there.
 decisions: []
 events:
   - key: content-updated
@@ -20,7 +20,7 @@ events:
         - [ ] This holds for every document: a playbook, a brief, a guide, a spec header, a README, the skill, a comment in code, a checker message
         - [ ] A brief's **Why** says why the thing is as it is, never what it replaced
         - [ ] The change itself goes in the report and the commit message, nowhere else
-        - [ ] Verify before reporting done: `studio-check <file>` — exit 1 means the Studio refuses it too. On a machine without the checker, the same engines answer at https://studio-kinds.pages.dev/api/check — `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>` — every kind the page offers; the document travels to that server (stateless, nothing kept, but it leaves the machine), so only for a document that may, and never one the owner or a client keeps private; it cannot see files beside the document, so the checker is the verdict where one is installed
+        - [ ] Verify before reporting done: `studio-check <file>` — exit 1 means the Studio refuses it too. On a machine without the checker, `pip install studio-kinds` puts it there; nothing leaves the machine
   - key: tildes
     label: The message holds text between tildes
     trigger: imposed
@@ -48,9 +48,10 @@ events:
         # Studio documents on disk — how to edit them safely
 
         **The load-bearing fact:** a Studio document is a YAML file whose EXTENSION picks its engine. The
-        engine (`packages/filekinds/src/lib/<kind>Doc.ts` in this repository) is the specification; the same
-        engine renders the file in the web Studio, the desktop app and the VS Code extension. Edit the text
-        directly — no API, no worker — and let the engine judge the result.
+        engine — the check in `python/studio_kinds/kinds/<kind>.py` of this repository, the `studio-check`
+        command — is the specification, and beside it every kind has a JSON Schema (`studio-check --schema
+        <ext>`), a book and a field table. Edit the text directly — no API, no worker — and let the engine
+        judge the result.
 
         **Where this applies.** This event is the whole guide for a Studio document. A `CLAUDE.md` above the documents' folder,
         read by every Claude Code session in any folder under it, and the `CLAUDE.md` the Studio's "Prepare for
@@ -61,12 +62,11 @@ events:
         read `CLAUDE.md` or this book on their own, the same text travels as a skill: a release ships
         `studio-files-skill.zip`, exported from this event by `pnpm skill:export` in this repository (`skills/studio-files/SKILL.md`), to unzip into
         `~/.claude/skills` or upload under Settings › Skills. Cowork given the folder DOES read the `CLAUDE.md`
-        in it and follows it. Neither runs the checker; what they write is validated with `studio-check` from
-        Claude Code, by opening it in the Studio, or — for a document that MAY leave the machine — by
-        POSTing it to the endpoint: `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>`
-        answers `{ok, summary, problems: [{message}], notes}` from the same engines (stateless, nothing
-        kept; it sees the one document only; a file it names is a note, not read). A document that is
-        private to the owner or to a client never goes there: install the checker, or open it in the Studio.
+        in it and follows it. Neither runs the checker; what they write is validated with `studio-check`
+        (`pip install studio-kinds` puts it on any machine with Python — nothing leaves the machine) or by
+        opening it in the Studio. Without the checker, the kind's JSON Schema — `studio-check --schema <ext>`,
+        or the raw file `kinds/<ext>/v<N>.schema.json` on GitHub — says the shape; the references between
+        fields (a `needs` to a task key, a `status` to a column) are the checker's alone.
 
         ## 0 · Which kind for what
 
@@ -107,8 +107,10 @@ events:
            studio-check --books                # every kind and version, with its book
            ```
            The path is always `kinds/<ext>/v<N>.playbook` in this repository; open it and walk it. Beside it,
-           the kind's SCHEMA — every field, its type, whether it is required, what it is — as a table:
+           the kind's JSON SCHEMA — the shape, every field's type, what is required, a description on each —
+           and the same as a table, the FIELD TABLE:
            ```bash
+           studio-check --schema playbook      # prints kinds/playbook/v2.schema.json (draft 2020-12)
            studio-check --fields playbook      # prints kinds/playbook/v2.fields.yaml
            ```
            Then the spec, from the engine itself:
@@ -136,28 +138,27 @@ events:
            studio-check .                      # the whole folder
            ```
            Exit 1 = problems, printed per file. Fix them; a document that fails here fails in the Studio.
-           Without the checker (another PC, Claude.ai, Cowork), POST the file to the same engines:
-           `curl -X POST "https://studio-kinds.pages.dev/api/check?kind=<ext>" --data-binary @<file>` —
-           playbook, brief, guide and md; it cannot see files beside the document.
+           Without the checker (another PC, Claude.ai, Cowork), validate the shape against the kind's JSON
+           Schema; only the checker sees the references between fields and the files beside the document.
         6. **Refer to documents by path** in replies, exactly as on disk.
 
         ## 2 · The kinds
 
-        | ext | what it is | spec file (in `packages/filekinds/src/lib`) |
+        | ext | what it is | the check (in `python/studio_kinds/kinds`) |
         |---|---|---|
-        | `.brief` | a titled tree of sections with prose | `briefDoc.ts` |
-        | `.playbook` | decisions, and events on the table while their `when` holds, each with one document | `playbookDoc.ts` |
-        | `.kanban` | columns + tasks (`needs:` for dependencies) | `kanbanDoc.ts` |
-        | `.calendar` | a lens over one `.kanban`: its schedule, nothing stored | `calendarDoc.ts` |
-        | `.policy` | params → ordered cases (first match wins) → buckets | `policyDoc.ts` |
-        | `.policy` with `role: table` | a policy over ROWS — the rules a composed .jsonl applies, and NOTHING about the data (no source, no title for the rows, no header labels — the checker refuses `source:`/`rename:`): `where:` clauses (all must hold; `field` may be a dot path like `best_offer.price_total_aud`; ops equals/not_equals/contains/not_contains/starts_with/ends_with/matches/gt/gte/lt/lte/between `[lo, hi]`/in `[...]`/not_in/is_empty/not_empty/is_true/is_false; a text op takes one value or a LIST = any of them, e.g. `{field: name, op: contains, value: [caravan, truck]}`), `sort:` keys (first key first, `dir: asc\|desc`), `columns:` = the fields shown IN THAT ORDER (omitted = every column; `"*"` = every other column, after the named ones), `hide:`, `limit:`; `title:`/`description:` name the RULES ("within the band, cheapest first"). Its preview says the rules in words; the row dialog lists the columns first in that order, then the rest | `tablePolicy.ts` |
-        | `.flow` | a walkthrough of screens: states with variants and edges | `flowOps.ts` (two YAML docs: model `---` views) |
-        | `.jsonl` | data rows: one JSON object per line, shown as a paged table with the columns found, a search over every field, a sort per header, a row opened whole on click (links open in the browser, copy with a click). Written by whatever PRODUCES the data — a scrape, an export, a script you write — one `JSON.stringify(row)` per line, same keys per row where you can; not hand-edited row by row. COMPOSED: a line whose keys start with `$` is a directive, not a row — `{"$sources": ["accommodation.json#properties", "more.jsonl"], "$policy": "stays.policy"}` reads the rows from those files when the .jsonl opens (a .json array; a .json object, `#key` naming the list, else its longest list of objects; a .jsonl; a .csv), adds raw lines beside it, and passes them through the table policy; nothing is cached. Either key alone works. Everything said ABOUT the data lives here too, on further directive lines: `{"$title": "Stays by price", "$description": "…"}` and `{"$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)"}}` (header names by field) | `dataRows.ts` |
-        | `.middleware` | rows AMENDED on their way to a view: `source:` (a .json `#key`, .jsonl, .csv, or another .middleware — chains), `rules:` each `where:` clauses (all must hold; none = every row) + `set: {field: value}` (dot paths allowed; or `key:`/`value:` for one). The data file stays untouched; the amendment lives here. A `.jsonl` names the middleware among its `$sources` instead of the raw file. A rule matching NO row is a problem (the link changed, the row is gone) — the checker prints each rule's match count | `middlewareDoc.ts` |
-        | `.pipeline` | ONE curated list and its stages, in one file: `decisions:` (a playbook's — `{key, label, values: [{key, label}]}`), `labels:` (header names by field), `items:` (mappings, each with an `id` — a uuid, its identity, what a rule's `item:` names; mint one with `crypto.randomUUID()` when adding an item), `stages:` in order, each `key` + ONE verb — `rules:` (the middleware's rules: `item:` an id or a list and/or `where:` clauses → `set:` fields, a `note`; a rule matching no item is a problem), `filter:` (clauses every kept item holds; the rest dropped for the stages after and the output), `sort:` (`{field, dir}`, first key first) — with an optional `label:` and `when:`; `views:` the output shown, each `key`, `label`, `filter`/`sort`/`columns`/`hide`/`limit` (the table policy's rules over the output; a view's filter hides for that view only), `when:`. `when:` on a rule, a stage or a view = refs `decision=answer` into `decisions`, holding while no taken answer contradicts it: nothing taken, everything applies and a later rule wins; the pills are taken on the page for the session, never saved. A value a rule set carries its refs as a badge; one key set by two rules under different circumstances shows every value on the table in the cell (the row's, then the others muted) until an answer decides — write one rule per circumstance, never one rule with two values; the row dialog shows the id and every field's trail. Nothing cached, nothing written back. A `.jsonl`'s `$sources`, a `.middleware`'s `source` and `--collect` take `stays.pipeline` (the output), `#<stage>` or `#<view>` | `pipelineDoc.ts` |
-        | `.collection` | a SNAPSHOT of a `.jsonl` view's or a `.pipeline`'s rows to decide over: `source:`, `to:` (where directions go), `fields:`/`labels:` (copied from the view), `stats:` (the fields shown as big cards), `items:` (the rows, each with an `id`; `featured:` the picture chosen for it), `decisions:` a LOG of `{item, op: up\|down\|hide\|show, reason}` in the order taken — never applied to the items; the order shown is derived (rank = ups − downs, hidden out). An item's fields may be edited in place (no reason). Made by Collect on the `.jsonl` view, `studio-check --collect stays.jsonl` or `--collect stays.pipeline#<view>`; not hand-written. Read the reasons to write the policy/middleware that yields the same order | `collectionDoc.ts` |
-        | `.clip` | the NOTES of one MIDI clip: `tempo`, `time: 4/4`, `bars`, `channel`, `velocity`, `naming` (scientific = C4 is 60, the default; `ableton` = C3 is 60, what Live shows), `notes: [{pitch, start, length, velocity}]` (pitch = a name, a number, or a LIST for a chord; start/length in beats — quarter notes — from 0), `grid` (steps per bar, 16) + `lanes: [{name, pitch, steps: "x...X...o...", length?, velocity?}]` (`x` a hit, `X` accent 127, `o` ghost 50, `1`–`9` ninths of 127, `.`/`-` rest, `\|` and spaces ignored). Drawn as a piano roll (lanes coloured apart, a note past the clip's end shaded); Export .mid writes `<stem>.mid` beside it, or `studio-check --midi x.clip` | `clipDoc.ts` + `midiFile.ts` |
-        | `.song` | clips on tracks: `tempo`/`time` (default: the first clip's), `tracks: [{name, channel?, clips: [{file, at?, repeat?, transpose?}]}]` — `at` a BAR from 0 (default: right after the previous clip on the track), `repeat` back-to-back passes, `transpose` semitones; refs relative to the song's folder; a missing clip is a problem, the rest still renders. Drawn as an arrangement (blocks with note thumbnails; a block opens its clip; a track's name lays its notes on a roll); Export .mid = ONE format-1 MIDI file, a named track per song track, or `studio-check --midi x.song` — drop it on Ableton Live's Arrangement for one track per song track at the song's tempo | `songDoc.ts` + `clipDoc.ts` + `midiFile.ts` |
+        | `.brief` | a titled tree of sections with prose | `brief.py` |
+        | `.playbook` | decisions, and events on the table while their `when` holds, each with one document | `playbook.py` |
+        | `.kanban` | columns + tasks (`needs:` for dependencies) | `kanban.py` |
+        | `.calendar` | a lens over one `.kanban`: its schedule, nothing stored | `calendar.py` |
+        | `.policy` | params → ordered cases (first match wins) → buckets | `policy.py` |
+        | `.policy` with `role: table` | a policy over ROWS — the rules a composed .jsonl applies, and NOTHING about the data (no source, no title for the rows, no header labels — the checker refuses `source:`/`rename:`): `where:` clauses (all must hold; `field` may be a dot path like `best_offer.price_total_aud`; ops equals/not_equals/contains/not_contains/starts_with/ends_with/matches/gt/gte/lt/lte/between `[lo, hi]`/in `[...]`/not_in/is_empty/not_empty/is_true/is_false; a text op takes one value or a LIST = any of them, e.g. `{field: name, op: contains, value: [caravan, truck]}`), `sort:` keys (first key first, `dir: asc\|desc`), `columns:` = the fields shown IN THAT ORDER (omitted = every column; `"*"` = every other column, after the named ones), `hide:`, `limit:`; `title:`/`description:` name the RULES ("within the band, cheapest first"). Its preview says the rules in words; the row dialog lists the columns first in that order, then the rest | `policy.py` |
+        | `.flow` | a walkthrough of screens: states with variants and edges | `flow.py` (two YAML docs: model `---` views) |
+        | `.jsonl` | data rows: one JSON object per line, shown as a paged table with the columns found, a search over every field, a sort per header, a row opened whole on click (links open in the browser, copy with a click). Written by whatever PRODUCES the data — a scrape, an export, a script you write — one `JSON.stringify(row)` per line, same keys per row where you can; not hand-edited row by row. COMPOSED: a line whose keys start with `$` is a directive, not a row — `{"$sources": ["accommodation.json#properties", "more.jsonl"], "$policy": "stays.policy"}` reads the rows from those files when the .jsonl opens (a .json array; a .json object, `#key` naming the list, else its longest list of objects; a .jsonl; a .csv), adds raw lines beside it, and passes them through the table policy; nothing is cached. Either key alone works. Everything said ABOUT the data lives here too, on further directive lines: `{"$title": "Stays by price", "$description": "…"}` and `{"$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)"}}` (header names by field) | `jsonl.py` |
+        | `.middleware` | rows AMENDED on their way to a view: `source:` (a .json `#key`, .jsonl, .csv, or another .middleware — chains), `rules:` each `where:` clauses (all must hold; none = every row) + `set: {field: value}` (dot paths allowed; or `key:`/`value:` for one). The data file stays untouched; the amendment lives here. A `.jsonl` names the middleware among its `$sources` instead of the raw file. A rule matching NO row is a problem (the link changed, the row is gone) — the checker prints each rule's match count | `middleware.py` |
+        | `.pipeline` | ONE curated list and its stages, in one file: `decisions:` (a playbook's — `{key, label, values: [{key, label}]}`), `labels:` (header names by field), `items:` (mappings, each with an `id` — a uuid, its identity, what a rule's `item:` names; mint one with `crypto.randomUUID()` when adding an item), `stages:` in order, each `key` + ONE verb — `rules:` (the middleware's rules: `item:` an id or a list and/or `where:` clauses → `set:` fields, a `note`; a rule matching no item is a problem), `filter:` (clauses every kept item holds; the rest dropped for the stages after and the output), `sort:` (`{field, dir}`, first key first) — with an optional `label:` and `when:`; `views:` the output shown, each `key`, `label`, `filter`/`sort`/`columns`/`hide`/`limit` (the table policy's rules over the output; a view's filter hides for that view only), `when:`. `when:` on a rule, a stage or a view = refs `decision=answer` into `decisions`, holding while no taken answer contradicts it: nothing taken, everything applies and a later rule wins; the pills are taken on the page for the session, never saved. A value a rule set carries its refs as a badge; one key set by two rules under different circumstances shows every value on the table in the cell (the row's, then the others muted) until an answer decides — write one rule per circumstance, never one rule with two values; the row dialog shows the id and every field's trail. Nothing cached, nothing written back. A `.jsonl`'s `$sources`, a `.middleware`'s `source` and `--collect` take `stays.pipeline` (the output), `#<stage>` or `#<view>` | `pipeline.py` |
+        | `.collection` | a SNAPSHOT of a `.jsonl` view's or a `.pipeline`'s rows to decide over: `source:`, `to:` (where directions go), `fields:`/`labels:` (copied from the view), `stats:` (the fields shown as big cards), `items:` (the rows, each with an `id`; `featured:` the picture chosen for it), `decisions:` a LOG of `{item, op: up\|down\|hide\|show, reason}` in the order taken — never applied to the items; the order shown is derived (rank = ups − downs, hidden out). An item's fields may be edited in place (no reason). Made by Collect on the `.jsonl` view, `studio-check --collect stays.jsonl` or `--collect stays.pipeline#<view>`; not hand-written. Read the reasons to write the policy/middleware that yields the same order | `collection.py` |
+        | `.clip` | the NOTES of one MIDI clip: `tempo`, `time: 4/4`, `bars`, `channel`, `velocity`, `naming` (scientific = C4 is 60, the default; `ableton` = C3 is 60, what Live shows), `notes: [{pitch, start, length, velocity}]` (pitch = a name, a number, or a LIST for a chord; start/length in beats — quarter notes — from 0), `grid` (steps per bar, 16) + `lanes: [{name, pitch, steps: "x...X...o...", length?, velocity?}]` (`x` a hit, `X` accent 127, `o` ghost 50, `1`–`9` ninths of 127, `.`/`-` rest, `\|` and spaces ignored). Drawn as a piano roll (lanes coloured apart, a note past the clip's end shaded); Export .mid writes `<stem>.mid` beside it, or `studio-check --midi x.clip` | `clip.py` |
+        | `.song` | clips on tracks: `tempo`/`time` (default: the first clip's), `tracks: [{name, channel?, clips: [{file, at?, repeat?, transpose?}]}]` — `at` a BAR from 0 (default: right after the previous clip on the track), `repeat` back-to-back passes, `transpose` semitones; refs relative to the song's folder; a missing clip is a problem, the rest still renders. Drawn as an arrangement (blocks with note thumbnails; a block opens its clip; a track's name lays its notes on a roll); Export .mid = ONE format-1 MIDI file, a named track per song track, or `studio-check --midi x.song` — drop it on Ableton Live's Arrangement for one track per song track at the song's tempo | `song.py` |
         | `.md` | markdown — rendered, edited as text; the default when no kind fits | — |
 
         ## 3 · Conventions that bite
@@ -239,17 +240,18 @@ events:
 
         ## 5 · Where things are
 
-        - Engines / specs: `packages/filekinds/src/lib/` in this repository (`briefDoc.ts`,
-          `playbookDoc.ts`, `kanbanDoc.ts`, `policyDoc.ts`, `flowOps.ts` for flows, …); editors:
-          `packages/filekinds/src/components`.
-        - The checker is the global command `studio-check` (`--spec <ext>`, `--template <ext>`,
-          `--collect <file.jsonl|file.pipeline[#view]>`, `--midi <file.clip|file.song> [name.mid]`, `<files or folders>`). On the dev machine it links to
-          a checkout of this repository's `apps/cli` (`npm ls -g studio-cli` prints which; `pnpm cli:build` there refreshes it); on any other
-          machine it comes from a GitHub Release of this repository — `npm install -g
-          studio-cli-<version>.tgz`, or `install-studio.ps1` from the release, which also installs the desktop
-          app, the VS Code extension and this guide as a skill; the package carries every kind's book, field table
-          and spec, so `--book`, `--fields` and `--spec` answer without a checkout. If `studio-check` is not on the PATH, say so and install it
-          before editing documents.
+        - The checks: `python/studio_kinds/kinds/<kind>.py` in this repository — one module per kind, the
+          Python package `studio-kinds`. The schemas, books and field tables: `kinds/<ext>/v<N>.schema.json`,
+          `v<N>.playbook`, `v<N>.fields.yaml`, shipped inside the package as data. The Studio's own renderers
+          (parked): `packages/filekinds/src/lib/` and `src/components`.
+        - The checker is the global command `studio-check` (`--spec <ext>`, `--schema <ext>`, `--template <ext>`,
+          `--collect <file.jsonl|file.pipeline[#view]>`, `--midi <file.clip|file.song> [name.mid]`, `<files or folders>`).
+          On the dev machine it is `pip install -e python` from a checkout of this repository; on any other
+          machine `pip install studio-kinds`, the wheel from a GitHub Release of this repository, or
+          `install-studio.ps1` from the release, which also installs the desktop app, the VS Code extension and
+          this guide as a skill; the package carries every kind's schema, book, field table, spec and template,
+          so `--schema`, `--book`, `--fields`, `--spec` and `--template` answer without a checkout. If
+          `studio-check` is not on the PATH, say so and install it before editing documents.
         - Samples: `examples/` in this repository — a brief, a playbook, a kanban with its calendar, a policy —
           every one passing the checker.
   - key: guide-changed
@@ -263,7 +265,7 @@ events:
       doc: |
         # The guide is the skill's source
 
-        - [ ] The event "A Studio document is asked for" in this book is the one text; `skills/studio-files/SKILL.md` is generated from it — `pnpm skill:export` rewrites it, and `node scripts/export-skill.mjs --check` (run by CI) fails while the two differ
+        - [ ] The event "A Studio document is asked for" in this book is the one text; `skills/studio-files/SKILL.md` is generated from it — `python scripts/export_skill.py` (also `pnpm skill:export`) rewrites it, and `--check` (run by CI) fails while the two differ
         - [ ] The "Which kind for what" table names the same kinds as a prepared folder's `CLAUDE.md` (`packages/filekinds/src/lib/claudePreamble.ts`)
         - [ ] `studio-check claude/claude.playbook` — the guide is an `md` document of a version-2 playbook and is checked as one
         - [ ] The release zips the skill (`.github/workflows/studio-release.yml`); a machine that installed it from a release keeps its copy until the next install — say so in the report when the change matters there
@@ -278,20 +280,20 @@ events:
       doc: |
         # A file kind changed
 
-        - [ ] `studio-check --spec <ext>` reads the engine header — update the header so the spec says what the format is now
-        - [ ] The kind's book, `kinds/<ext>/v<N>.playbook` (`studio-check --book <ext>` prints it) — a changed shape means the book describes the new shape; a new version means a new book: `node scripts/kind-books.mjs` writes the skeleton and `--check` (run by CI) refuses a missing one
+        - [ ] The check, `python/studio_kinds/kinds/<ext>.py` — the engine; a changed rule is a changed problem line, and its wording is what an agent reads
+        - [ ] The conformance corpus, `conformance/<ext>/` — a case for every rule (a document and its `.expected.json`); `python -m pytest python/tests` runs it, and a rule without a case is a rule nothing proves
+        - [ ] The kind's JSON Schema, `kinds/<ext>/v<N>.schema.json` (`studio-check --schema <ext>` prints it) — the shape, every field described; a new version is a new schema; `tests/test_schemas.py` checks every ok document against it
         - [ ] The kind's field table, `kinds/<ext>/v<N>.fields.yaml` (`studio-check --fields <ext>` prints it) — a field added, removed or renamed is a row changed; a new version is a new table
+        - [ ] The kind's book, `kinds/<ext>/v<N>.playbook` (`studio-check --book <ext>` prints it) — a changed shape means the book describes the new shape; a new version means a new book: `python scripts/kind_books.py` writes the skeleton and `--check` (run by CI) refuses a missing one
+        - [ ] The spec, `python/studio_kinds/data/specs/<ext>.md` (`studio-check --spec <ext>` prints it) — the engine's account of the format; and the template, `python/studio_kinds/data/templates/untitled.<ext>` (`--template`)
+        - [ ] `python scripts/kind_books.py --sync` — the package's copies of the books, field tables and schemas are the repository's; `--check` refuses a stale copy
         - [ ] The event "A Studio document is asked for" in this book — the kind's bullet in "Which kind for what" and any convention it states; then the event "The Studio-documents guide in this book is edited" regenerates the skill from it
-        - [ ] `packages/filekinds/src/lib/fileTemplates.ts` — the template a new file starts from
-        - [ ] `packages/filekinds/README.md` and the app READMEs that name the kind
-        - [ ] Rebuild the checker: `pnpm cli:build` — the global `studio-check` links to a checkout of `apps/cli` (`npm ls -g studio-cli` prints which); that checkout rebuilds once it carries the change
-        - [ ] Rebuild what bundles the renderer: `pnpm vscode:vsix`, `pnpm desktop:renderer`, then `code --install-extension apps/vscode/studio-vscode-*.vsix --force`
+        - [ ] `pip install -e python` once on the dev machine makes `studio-check` the checkout's; nothing to rebuild after
         - [ ] Migrate every file of that kind in the owner's document folders and run `studio-check` over all of them
-        - [ ] Story fixtures in `packages/filekinds/stories/fixtures.ts`
-        - [ ] Golden tests for the engine and the registry
-        - [ ] The page's check (`apps/page/src/check.ts`) if the kind is one the page offers, and this repository's README if the format changed
+        - [ ] The parked front end, only if it is to keep rendering the kind: `packages/filekinds/src/lib/<kind>Doc.ts`, `fileTemplates.ts`, the story fixtures and golden tests, then `pnpm vscode:vsix` / `pnpm desktop:renderer`
+        - [ ] This repository's README if the format changed
         - [ ] The demo folders, when the change touches what they show — the event "A change touches what the demo folders show"
-        - [ ] Commit and push (`master` deploys the page; a `studio-v*` tag ships the installer, the extension, the checker and the skill); the suite that embeds this repository as a submodule moves its pointer on its own side
+        - [ ] Commit and push (a `studio-v*` tag ships the installer, the extension, the checker's wheel and the skill); the suite that embeds this repository as a submodule moves its pointer on its own side
   - key: demo-affected
     label: A change touches what the demo folders show
     trigger: imposed
@@ -345,15 +347,15 @@ events:
                       body: |
                         Stage only what the task changed; leave the owner's parallel edits unstaged. `claude/memory.brief` is never staged: this repository is public and the memory is the owner's private notes — `.gitignore` keeps it out.
                         Message: what changed and why, then `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
-                        The working branch is `master`, and a push to it deploys the page — commit there unless he says otherwise.
+                        The working branch is `master` — commit there unless he says otherwise.
                     - title: Push
                       body: |
-                        `git push origin master` — origin is github.com/MaherKSantina/studio-kinds. A push to `master` runs `ci.yml` and `deploy-page.yml` (the page and its endpoint to https://studio-kinds.pages.dev).
+                        `git push origin master` — origin is github.com/MaherKSantina/studio-kinds. A push to `master` runs `ci.yml` (the checker's tests and the corpus, the books and schemas in step, the skill in step; the parked front end still building).
                         Report the commit range and the Actions runs.
                     - title: Tag the Studio release
                       body: |
                         Next `studio-v<major>.<minor>.<patch>` above `git tag --list 'studio-v*'`.
-                        `git tag studio-v<version> && git push origin studio-v<version>` — `.github/workflows/studio-release.yml` builds the installer, the `.vsix`, the `studio-check` package and the skill zip, with `install-studio.ps1`, and attaches them to a GitHub Release.
+                        `git tag studio-v<version> && git push origin studio-v<version>` — `.github/workflows/studio-release.yml` builds the installer, the `.vsix`, the `studio-kinds` wheel (the `studio-check` command) and the skill zip, with `install-studio.ps1`, and attaches them to a GitHub Release.
                         Report the tag and the Actions run.
                     - title: The suite's pointer
                       body: |
@@ -380,8 +382,6 @@ events:
         | server | port | command |
         |---|---|---|
         | the Studio (web, over the drive or a folder worker) | 9260 | `pnpm --filter studio-frontend dev` — on the dev machine the suite starts it from its own checkout of this repository |
-        | the paste-and-check page | 5173 | `pnpm page:dev` |
-        | the endpoint, locally | 8788 | `pnpm page:build`, then `npx wrangler pages dev dist` in `apps/page` |
         | crosscut Storybook | 9130 | `pnpm --filter crosscut storybook` |
         | filekinds Storybook | 9140 | `pnpm --filter filekinds storybook` |
 

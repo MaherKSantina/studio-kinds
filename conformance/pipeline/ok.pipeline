@@ -1,0 +1,31 @@
+title: Stays
+decisions:
+  - key: method
+    label: Method
+    values: [{key: measured, label: Measured}, {key: anecdotal, label: Anecdotal}]
+labels: {price: "Total (AUD)"}
+items:
+  - {id: a1, name: Family Room, price: 900, sleeps: 4}
+  - {id: b2, name: Beach Cabin, price: 1200, sleeps: 4}
+  - {id: c3, name: Big House, price: 3000, sleeps: 8}
+stages:
+  - key: corrections
+    rules:
+      - item: a1
+        set: {price: 850}
+        when: [method=anecdotal]
+      - where: [{field: name, op: contains, value: cabin}]
+        set: {type: Cabin}
+  - key: band
+    filter: [{field: price, op: lte, value: 2000}]
+  - key: cheapest
+    sort: [{field: price, dir: asc}]
+views:
+  - key: by-price
+    label: By price
+    columns: [name, sleeps, price, "*"]
+  - key: groups
+    label: Sleeps 6+
+    filter: [{field: sleeps, op: gte, value: 6}]
+    sort: [{field: price, dir: asc}]
+    when: {method: measured}

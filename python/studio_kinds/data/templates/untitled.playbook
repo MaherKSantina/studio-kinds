@@ -1,0 +1,20 @@
+version: 2
+title: untitled
+description: The questions, the events, and what each event shows — every document in this file; answers are session-only.
+decisions:
+  - key: example
+    label: An example decision
+    values:
+      - { key: not-yet, label: Not yet }
+      - { key: done, label: Done }
+events:
+  - key: example
+    label: An example event
+    trigger: imposed
+    hint: Ask which.
+    content:
+      kind: md
+      by: [example]
+      docs:
+        example=not-yet: ""
+        example=done: ""

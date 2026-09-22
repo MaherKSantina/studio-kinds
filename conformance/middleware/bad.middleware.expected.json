@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "problems": [
+    "source: not a file ref",
+    "rules: must be a list",
+    "no source"
+  ],
+  "summary": "0 rules, no source"
+}

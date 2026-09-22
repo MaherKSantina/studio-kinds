@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "problems": [
+    "map amount: a field name or a list of them",
+    "map sector: a field name or a list of them",
+    "`date` is not `YYYY-MM-DD`"
+  ],
+  "summary": "run: pitches.policy over pitches.list, 1 params mapped"
+}

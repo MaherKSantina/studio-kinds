@@ -1,0 +1,84 @@
+version: 2
+title: A tiny venture
+description: What we are, what can happen, and what each event shows. Everything this book shows is in it — paste it anywhere; answers taken are session-only.
+decisions:
+  - key: entity
+    label: What are we?
+    values:
+      - { key: company, label: A company }
+      - { key: partnership, label: A partnership }
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Setting up
+    detail: What holds whatever happens.
+    content:
+      key: standing
+      label: Standing orders
+      kind: md
+      doc: |
+        **Nothing here is generated.** Every document this book shows was written when the book was.
+        File the annual return every twelve months from incorporation, once there is a company.
+  - key: incorporate
+    label: We incorporate
+    trigger: chosen
+    domain: Setting up
+    detail: Chosen — it happens when we say so. On the table only as a company.
+    when: [entity=company]
+    hint: Have the name and the director ready, then take it.
+    content:
+      key: paperwork
+      label: The paperwork
+      kind: brief
+      doc:
+        title: Incorporation paperwork
+        description: In the book itself.
+        sections:
+          - title: Reserve the name
+            body: Check the register, then hold the name for 60 days.
+          - title: Appoint a director
+            body: One is enough to start. Add the second when there is a second.
+  - key: paid
+    label: Somebody pays us
+    trigger: imposed
+    domain: Money
+    arity: many
+    rate: 5/mo
+    hint: Say what we are — the account differs.
+    content:
+      key: where-it-lands
+      label: Where the money lands
+      kind: md
+      by: [entity]
+      docs:
+        entity=company: |
+          Into the **company** account. Raise the invoice from the company first.
+        entity=partnership: |
+          Into the **joint** account. Both partners see it.
+  - key: audit
+    label: The tax office audits us
+    trigger: imposed
+    domain: Money
+    content:
+      key: what-they-ask
+      label: What they ask for
+      kind: playbook
+      doc:
+        version: 2
+        title: An audit, as a book of its own
+        events:
+          - key: letter
+            label: The letter arrives
+            trigger: imposed
+            content:
+              kind: md
+              doc: |
+                Ask for 30 days. Gather the bank statements first, then the invoices; send the
+                folder when it is one folder.
+          - key: visit
+            label: They visit
+            trigger: imposed
+            content:
+              kind: md
+              doc: Three letters, one visit, nothing owed — when the folder was ready.

@@ -1,0 +1,82 @@
+title: 5
+description: [x]
+start_mode: sideways
+sources:
+  - {name: dup, path: a}
+  - {name: dup, path: b}
+  - notobject
+default_source: ghost
+dimensions:
+  ok: [a, b]
+  empty: []
+  mixed: [a, {b: 1}]
+derived:
+  - notobject
+  - {values: [x]}
+  - {name: ok, values: [x]}
+  - name: d1
+    values: []
+    rules: 5
+  - name: d2
+    values: [p, q]
+    rules:
+      - {when: {ok: zz, ghost: a, empty: []}, value: p}
+      - {when: [], value: q}
+      - {when: [a], value: q}
+      - {when: 5, value: q}
+      - {when: {ok: [a, {x: 1}]}, value: "= nowhere"}
+      - {when: "*", value: {x: 1}}
+      - {when: "*", value: r}
+defaults: notmapping
+edges: []
+initial: ghost
+screens:
+  - notobject
+  - id: ""
+    title: ""
+  - id: s1
+    title: Same
+    locals: notmapping
+  - id: s1
+    title: Same
+    description: 5
+    screenshot: 5
+    screenshots: [1]
+    content: notarray
+    locals:
+      ok: [x]
+      empty: []
+      mixed: [a, [b]]
+    local_defaults: {mixed: zz, ghost: a}
+    variants: notarray
+  - id: s2
+    title: Panels
+    content:
+      - ""
+      - 5
+      - {file: a, screenshot: b}
+      - {label: x}
+      - {screenshot: k, label: 5, source: s, agent: a}
+      - {file: f, source: ghost, agent: 5}
+    variants:
+      - notobject
+      - {label: "", when: {ok: a}, content: [{file: f, source: ghost}]}
+    edges: notarray
+  - id: s3
+    title: Edges
+    edges:
+      - notobject
+      - {from: s1, id: "", event: ""}
+      - {id: e1, event: Go, description: 5, to: ghost, dispatch: [{when: "*", to: ghost}]}
+      - {id: e1, event: Go, dispatch: notarray}
+      - {id: e2, event: Dup, when: {ok: a}, to: s2}
+      - {id: e3, event: Dup, when: {ok: a}, to: s2}
+      - {id: e4, event: Sets, sets: {ghost: 1, ok: zz, mixed: 5}, dispatch: [{when: {ok: zz}, sets: {ok: 5}}]}
+entries: notarray
+version_name: 5
+versions: notarray
+---
+active: ghost
+views:
+  - {layout: {params: notmapping}}
+  - {id: v1, layout: {params: {ghost: 1}}}

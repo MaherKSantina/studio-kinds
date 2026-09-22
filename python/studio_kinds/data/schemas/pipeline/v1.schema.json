@@ -1,0 +1,561 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/pipeline/v1.schema.json",
+  "title": "pipeline",
+  "description": "One curated list, the stages that transform it, and the views that show the result, all in one file.",
+  "type": "object",
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {},
+          "label": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    }
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {},
+                    "label": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "description": "The circumstances values can be given under."
+    },
+    "labels": {
+      "type": "object",
+      "description": "Header names by field, for every view.",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The item's identity; unique.",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "description": "The list — every item has an `id`."
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/stage"
+      },
+      "description": "In order; each is `key` + ONE verb."
+    },
+    "views": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/view"
+      },
+      "description": "The output, shown; the first is what opens."
+    }
+  },
+  "$defs": {
+    "fieldClause": {
+      "type": "object",
+      "description": "One condition. All clauses of a list must hold (AND).",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "A key of the row, or a dot path into nested objects (`best_offer.price_total_aud`)."
+        },
+        "op": {
+          "enum": [
+            "equals",
+            "not_equals",
+            "contains",
+            "not_contains",
+            "starts_with",
+            "ends_with",
+            "matches",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "between",
+            "in",
+            "not_in",
+            "is_empty",
+            "not_empty",
+            "is_true",
+            "is_false"
+          ],
+          "description": "The comparison. Text ops compare case-insensitively and take one value or a list (any of them; none of them for the negated ops); numeric ops need a number and are never true for an empty field; `between` takes `[low, high]`; `in`/`not_in` take a list; `is_empty`, `not_empty`, `is_true`, `is_false` take no value."
+        },
+        "value": {
+          "description": "What the op compares against: a string, a number, or a list of those.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "param": {
+          "type": "string",
+          "description": "`param` is read as `field` too — the policy's word for it."
+        }
+      },
+      "required": [
+        "field",
+        "op"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "gt",
+                  "gte",
+                  "lt",
+                  "lte"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": [
+                  "number",
+                  "string"
+                ]
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "between"
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": [
+                    "number",
+                    "string"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "in",
+                  "not_in"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array"
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "is_empty",
+                  "not_empty",
+                  "is_true",
+                  "is_false"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "value"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "contains",
+                  "not_contains",
+                  "starts_with",
+                  "ends_with",
+                  "matches"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ]
+          }
+        }
+      ]
+    },
+    "stage": {
+      "type": "object",
+      "description": "One stage — exactly one of `rules`, `filter`, `sort`.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Unique across stages and views."
+        },
+        "label": {
+          "type": "string"
+        },
+        "when": {
+          "description": "The circumstance: refs `decision=answer` into `decisions` — a ref, a list of refs, or a mapping `{decision: answer}`.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "object"
+            }
+          ]
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "A middleware rule under a circumstance.",
+            "properties": {
+              "where": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/fieldClause"
+                },
+                "description": "Every clause must hold; none = every row."
+              },
+              "set": {
+                "type": "object",
+                "description": "Field → value set on each matched row; keys may be dot paths."
+              },
+              "key": {
+                "type": "string",
+                "description": "One field to set — with `value`, the short form of `set`."
+              },
+              "value": {
+                "description": "The value for `key`."
+              },
+              "note": {
+                "type": "string",
+                "description": "What you saw, for the reader."
+              },
+              "item": {
+                "description": "One id or a list — the short form of a clause on `id`.",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "string",
+                        "number"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "when": {
+                "description": "The circumstance: refs `decision=answer` into `decisions` — a ref, a list of refs, or a mapping `{decision: answer}`.",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "type": "object"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "filter": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fieldClause"
+          },
+          "description": "Every clause must hold; the rest are dropped for good."
+        },
+        "sort": {
+          "type": "array",
+          "items": {
+            "description": "A sort key: `{field, dir}` (`dir` asc, the default, or desc), or the field name alone.",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "A key of the row, or a dot path."
+                  },
+                  "dir": {
+                    "enum": [
+                      "asc",
+                      "desc"
+                    ]
+                  }
+                },
+                "required": [
+                  "field"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "rules"
+          ]
+        },
+        {
+          "required": [
+            "filter"
+          ]
+        },
+        {
+          "required": [
+            "sort"
+          ]
+        }
+      ]
+    },
+    "view": {
+      "type": "object",
+      "description": "One way of showing the output.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Unique."
+        },
+        "label": {
+          "type": "string"
+        },
+        "when": {
+          "description": "The circumstance: refs `decision=answer` into `decisions` — a ref, a list of refs, or a mapping `{decision: answer}`.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "object"
+            }
+          ]
+        },
+        "filter": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fieldClause"
+          }
+        },
+        "sort": {
+          "type": "array",
+          "items": {
+            "description": "A sort key: `{field, dir}` (`dir` asc, the default, or desc), or the field name alone.",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "A key of the row, or a dot path."
+                  },
+                  "dir": {
+                    "enum": [
+                      "asc",
+                      "desc"
+                    ]
+                  }
+                },
+                "required": [
+                  "field"
+                ]
+              }
+            ]
+          },
+          "description": "First key first; a later key breaks ties."
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The columns shown, in this order; omitted = every column the rows carry; `\"*\"` = every other column, after these."
+        },
+        "hide": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Subtracted from the columns shown."
+        },
+        "limit": {
+          "type": "number",
+          "description": "At most this many rows; a positive number.",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "key"
+      ]
+    }
+  }
+}

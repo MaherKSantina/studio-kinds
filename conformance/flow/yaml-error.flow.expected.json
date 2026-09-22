@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "problems": [
+    "model YAML parse error: unexpected end of the stream within a flow collection (2:1)\n\n 1 | title: [\n 2 | \n-----^"
+  ]
+}

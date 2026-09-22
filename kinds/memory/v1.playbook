@@ -68,7 +68,7 @@ events:
               comment is what `studio-check --spec memory` prints. The store is read by
               `components/memory/memoryLoad.ts` (`loadMemoryStore`, `memoryOver`, `loadUnits`);
               the view is `components/memory/MemoryView.tsx` with `pillFilter.ts`, the pills the
-              shared `DecisionPills`; the checker is `apps/cli/src/check.ts`.
+              shared `DecisionPills`; the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

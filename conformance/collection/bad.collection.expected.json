@@ -1,0 +1,13 @@
+{
+  "ok": false,
+  "problems": [
+    "item 2: id 1 is already used",
+    "decision 1: no item",
+    "decision 2: unknown op \"sideways\"",
+    "decision 3: unknown op \"\"",
+    "decision 4: item 9 is not in the collection",
+    "decision 5: no reason",
+    "decision 6: no reason"
+  ],
+  "summary": "4 items · 2 shown, 0 up, 0 down, 1 hidden · 3 decisions"
+}

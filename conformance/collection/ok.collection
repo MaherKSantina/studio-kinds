@@ -1,0 +1,14 @@
+source: stays.jsonl
+to: Narooma NSW
+fields: [name, price]
+stats: [price]
+labels: {price: "Total"}
+items:
+  - {id: 1, name: A, price: 900}
+  - {id: 2, name: B, price: 1200}
+  - {name: C, price: 100}
+decisions:
+  - {item: 2, op: down, reason: far}
+  - {item: 1, op: up, reason: near}
+  - {item: 3, op: hide, reason: shared bathroom}
+  - {item: 3, op: show}

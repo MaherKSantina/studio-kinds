@@ -1,0 +1,40 @@
+kind: song
+version: 1
+fields:
+  - field: title
+    type: string
+    description: The heading.
+  - field: tempo
+    type: number
+    description: Beats per minute; default the first clip's.
+  - field: time
+    type: string | [number, number]
+    description: Time signature; default the first clip's.
+  - field: tracks
+    type: list of track
+    required: true
+    description: The arrangement — one MIDI track each on export.
+  - field: tracks[].name
+    type: string
+    required: true
+    description: The track's name.
+  - field: tracks[].channel
+    type: number
+    description: MIDI channel; otherwise each clip's own.
+  - field: tracks[].clips
+    type: list of placement
+    required: true
+    description: The clips placed on the track.
+  - field: tracks[].clips[].file
+    type: path
+    required: true
+    description: A `.clip` relative to the song's folder.
+  - field: tracks[].clips[].at
+    type: number
+    description: The bar the placement begins; default right after the previous one on the track, or 0.
+  - field: tracks[].clips[].repeat
+    type: number
+    description: How many times the clip plays back to back (default 1).
+  - field: tracks[].clips[].transpose
+    type: number
+    description: Semitones added to every pitch (default 0).

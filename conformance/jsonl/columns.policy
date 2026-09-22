@@ -1,0 +1,4 @@
+role: table
+title: Columns nobody has
+columns: [name, ghost]
+sort: [{field: phantom, dir: desc}]

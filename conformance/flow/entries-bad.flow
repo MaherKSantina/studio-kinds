@@ -1,0 +1,13 @@
+title: Entries
+screens:
+  - {id: a, title: A}
+entries:
+  - notobject
+  - {id: "", event: ""}
+  - {id: n1, event: Start}
+  - {id: n1, event: Start, to: ghost}
+  - {id: n2, event: Other, to: a, dispatch: [{when: "*", to: a}]}
+  - {id: n3, event: Third, dispatch: [{when: "*"}]}
+versions:
+  - notobject
+  - {name: 5, screens: [{id: x, title: X, edges: [{id: e, event: E, to: nowhere}]}]}

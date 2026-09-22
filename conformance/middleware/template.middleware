@@ -1,0 +1,5 @@
+source: rows.jsonl
+rules:
+  - where:
+      - {field: url, op: equals, value: "https://example.test/item/1"}
+    set: {available: false}

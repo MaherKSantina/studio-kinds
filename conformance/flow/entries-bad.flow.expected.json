@@ -1,0 +1,19 @@
+{
+  "ok": false,
+  "problems": [
+    "entries[0] must be an object.",
+    "entries[1].id is required (a unique non-empty string).",
+    "entries[1].event is required (a non-empty string).",
+    "entries[1] needs either `to` (a screen id) or `dispatch` (a list of when/to branches).",
+    "entries[2] needs either `to` (a screen id) or `dispatch` (a list of when/to branches).",
+    "entries[3].id \"n1\" is duplicated.",
+    "entries[3] duplicates start event \"Start\".",
+    "entries[3].to \"ghost\" does not match any screen id.",
+    "entries[4] has both `to` and `dispatch` — use one. `to` is unconditional; `dispatch` branches on parameters.",
+    "entries[5].dispatch[0].to is required (a screen id).",
+    "versions[0] must be an object.",
+    "versions[1].name must be a string.",
+    "versions[1].screens[0].edges[0].to \"nowhere\" does not match any screen id."
+  ],
+  "summary": "1 screens, 0 states"
+}

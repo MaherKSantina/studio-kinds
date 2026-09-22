@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "policy bucket.policy: role is policy, not table"
+  ],
+  "summary": "composed: 3 of 3 rows from data.json#properties (3 rows) through bucket.policy"
+}

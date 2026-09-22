@@ -1,0 +1,34 @@
+title: Guest pitch triage
+description: Sorts an incoming guest pitch into accept, maybe or decline by audience size and topic fit.
+params:
+  - {key: audience, label: Audience size, type: number}
+  - {key: topic, label: Pitched topic, type: string}
+  - {key: proven, label: Has appeared on other shows, type: boolean}
+buckets:
+  - {key: accept, label: Accept}
+  - {key: maybe, label: Maybe}
+  - {key: decline, label: Decline}
+default: decline
+cases:
+  - label: Off-topic pitches are declined outright
+    when:
+      - {param: topic, op: not_contains, value: [podcast, audio, creator economy, indie media]}
+    bucket: decline
+  - label: Big audience, on topic
+    when:
+      - {param: audience, op: gte, value: 50000}
+    bucket: accept
+  - label: Mid audience, on topic, proven guest
+    when:
+      - {param: audience, op: between, value: [10000, 50000]}
+      - {param: proven, op: is_true}
+    bucket: accept
+  - label: Mid audience, on topic, unproven
+    when:
+      - {param: audience, op: between, value: [10000, 50000]}
+    bucket: maybe
+  - label: Small audience but a core topic
+    when:
+      - {param: audience, op: lt, value: 10000}
+      - {param: topic, op: contains, value: [podcast, audio]}
+    bucket: maybe

@@ -1,0 +1,29 @@
+policy: only-one-half.policy
+params:
+  - {label: no key}
+  - {key: p, type: number}
+  - {key: p}
+  - {key: q, type: date}
+buckets:
+  - {label: no key}
+  - {key: b1, start: "25:00", end: nine}
+  - {key: b1}
+default: 5
+cases:
+  - not a mapping
+  - label: No bucket
+    when: []
+  - bucket: nope
+    when: notalist
+  - label: Clauses
+    bucket: b1
+    when:
+      - {op: equals, value: x}
+      - {param: zz, op: equals, value: x}
+      - {param: p}
+      - {param: p, op: fancy}
+      - {param: p, op: gt, value: big}
+      - {param: p, op: between, value: [1]}
+      - {param: p, op: in, value: single}
+      - {param: p, op: is_empty, value: 1}
+      - {param: p, op: contains}

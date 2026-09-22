@@ -1,0 +1,5 @@
+naming: ableton
+time: [3, 4]
+notes:
+  - {pitch: C3, start: 0}
+  - {pitch: "61", start: 1}

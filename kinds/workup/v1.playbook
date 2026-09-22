@@ -81,7 +81,7 @@ events:
               `outputPathOf`, `sourcePathOf`, `analysesOf`, `exportedAnalyses`, `setStepStatus`,
               `instantiateWorkup`; its header comment is what `studio-check --spec workup` prints.
               The view is `components/workup/WorkupView.tsx` over the shared `PaneTrail` and
-              `components/points/FileContentDialog.tsx`; the checker is `apps/cli/src/check.ts`.
+              `components/points/FileContentDialog.tsx`; the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

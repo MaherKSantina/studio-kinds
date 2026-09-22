@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "problems": [
+    "naming: \"weird\" is neither scientific nor ableton",
+    "tempo: fast is not a bpm",
+    "time: \"5-4\" is not a time signature like 4/4",
+    "bars: 0 is not a length in bars",
+    "channel: 17 is not 1–16",
+    "velocity: velocity 200 is not 1–127",
+    "grid: 0 is not a number of steps per bar",
+    "notes: must be a list",
+    "lanes: must be a list"
+  ],
+  "summary": "0 notes · 1 bar · 120 bpm · 4/4 · channel 1"
+}

@@ -1,0 +1,27 @@
+due: soon
+columns:
+  - ""
+  - {color: red}
+  - 5
+  - Real
+tasks:
+  - not a mapping
+  - title: no key here
+  - key: dup
+    title: Dup 1
+  - key: dup
+    title: Dup 2
+  - key: needs-bad
+    needs: notalist
+    duration: -1
+    due: yesterday
+    status: Nowhere
+  - key: empty-need
+    title: Empty need
+    needs: ["", empty-need, missing]
+  - key: cyc1
+    title: Cyc 1
+    needs: [cyc2]
+  - key: cyc2
+    title: Cyc 2
+    needs: [cyc1]

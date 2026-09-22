@@ -1,0 +1,787 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/flow/v1.schema.json",
+  "title": "flow (model document)",
+  "description": "A walkthrough whose screens and edges are parameterised over `dimensions`. The FILE is two YAML documents separated by a line that is exactly `---`: this schema is the first (the model); the second (the views: `active`, `views[]`) is the Studio's own.",
+  "x-studio-file": "two YAML documents; this schema describes the first",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dimensions": {
+      "type": "object",
+      "description": "Name → non-empty list of scalar values: the closed parameter space.",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "description": "Dimension → the value the flow opens with.",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          }
+        ]
+      }
+    },
+    "derived": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "minItems": 1
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "when": {
+                  "description": "A condition: a mapping of dimension → value (a bare value equals, `[a, b]` one-of, `\"*\"` any, `\"!x\"` not-equal; keys AND together), the string `\"*\"` for always, or a LIST of such mappings — alternatives, any one matching is enough.",
+                  "oneOf": [
+                    {
+                      "const": "*"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "oneOf": [
+                          {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "array",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean"
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "const": "*"
+                          },
+                          {
+                            "type": "object"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "value": {
+                  "description": "A value of this dimension, or `= <dimension>` to copy one."
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "name",
+          "values"
+        ]
+      },
+      "description": "Dimensions computed by first-match-wins rules over declared literals."
+    },
+    "initial": {
+      "type": "string",
+      "description": "The screen id the flow opens on."
+    },
+    "start_mode": {
+      "enum": [
+        "screen",
+        "entries"
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "A start event; needs `to` or `dispatch`.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "event": {
+            "type": "string",
+            "description": "A start event; unique."
+          },
+          "to": {
+            "type": "string",
+            "description": "A screen id; omitted on a control means stay here in a different state."
+          },
+          "dispatch": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "One branch of a dispatch; first match wins.",
+              "properties": {
+                "when": {
+                  "description": "A condition: a mapping of dimension → value (a bare value equals, `[a, b]` one-of, `\"*\"` any, `\"!x\"` not-equal; keys AND together), the string `\"*\"` for always, or a LIST of such mappings — alternatives, any one matching is enough.",
+                  "oneOf": [
+                    {
+                      "const": "*"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "oneOf": [
+                          {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "array",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean"
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "const": "*"
+                          },
+                          {
+                            "type": "object"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "to": {
+                  "type": "string",
+                  "description": "A screen id."
+                },
+                "sets": {
+                  "type": "object",
+                  "description": "Dimension → value written when the edge is taken.",
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "description": "Precedence-ordered when/to branches."
+          },
+          "sets": {
+            "type": "object",
+            "description": "Dimension → value written when the edge is taken.",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "event"
+        ]
+      }
+    },
+    "sources": {
+      "description": "Named versions file panels read from: a list of `{name, path}` or a mapping of name → path.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "agent": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "default_source": {
+      "type": "string",
+      "description": "A declared source name."
+    },
+    "frames": {
+      "type": "object",
+      "description": "Frames kept inside the flow, by name.",
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "screens": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/screen"
+      }
+    },
+    "version_name": {
+      "type": "string"
+    },
+    "versions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Snapshots of the model, each the same shape."
+      }
+    }
+  },
+  "not": {
+    "required": [
+      "edges"
+    ]
+  },
+  "x-studio-refused": "`edges` at the top level — a control belongs to the screen it sits on.",
+  "$defs": {
+    "screen": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique across screens."
+        },
+        "title": {
+          "type": "string",
+          "description": "Unique across screens — the diff's identity."
+        },
+        "description": {
+          "type": "string"
+        },
+        "content": {
+          "type": "array",
+          "items": {
+            "description": "One thing a state puts on screen: a screenshot key (a string, or `{screenshot}`), `{file}` another file drawn by its own kind, `{frame, view?}` a frame drawn live.",
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "screenshot": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string"
+                  },
+                  "frame": {
+                    "type": "string"
+                  },
+                  "view": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "A declared source, for a `file` panel."
+                  },
+                  "agent": {
+                    "type": "string",
+                    "description": "A directory agent uuid, for a `file` panel."
+                  }
+                }
+              }
+            ]
+          },
+          "description": "The panels, in order."
+        },
+        "screenshot": {
+          "type": "string",
+          "description": "One Storage key — the shorthand for one screenshot panel."
+        },
+        "screenshots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Several keys, top→bottom."
+        },
+        "locals": {
+          "type": "object",
+          "description": "This screen's own dimensions; a name that is already a global dimension is refused.",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          }
+        },
+        "local_defaults": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          }
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "when": {
+                "description": "A condition: a mapping of dimension → value (a bare value equals, `[a, b]` one-of, `\"*\"` any, `\"!x\"` not-equal; keys AND together), the string `\"*\"` for always, or a LIST of such mappings — alternatives, any one matching is enough.",
+                "oneOf": [
+                  {
+                    "const": "*"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "const": "*"
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "description": {
+                "type": "string"
+              },
+              "content": {
+                "type": "array",
+                "items": {
+                  "description": "One thing a state puts on screen: a screenshot key (a string, or `{screenshot}`), `{file}` another file drawn by its own kind, `{frame, view?}` a frame drawn live.",
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "screenshot": {
+                          "type": "string"
+                        },
+                        "file": {
+                          "type": "string"
+                        },
+                        "frame": {
+                          "type": "string"
+                        },
+                        "view": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string",
+                          "description": "A declared source, for a `file` panel."
+                        },
+                        "agent": {
+                          "type": "string",
+                          "description": "A directory agent uuid, for a `file` panel."
+                        }
+                      }
+                    }
+                  ]
+                },
+                "description": "The panels, in order."
+              },
+              "screenshot": {
+                "type": "string",
+                "description": "One Storage key — the shorthand for one screenshot panel."
+              },
+              "screenshots": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Several keys, top→bottom."
+              }
+            },
+            "required": [
+              "label"
+            ]
+          },
+          "description": "Renderings of this screen under conditions."
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique across the flow."
+              },
+              "event": {
+                "type": "string",
+                "description": "The control's label; two controls on one screen may share it only with different `when`s."
+              },
+              "when": {
+                "description": "A condition: a mapping of dimension → value (a bare value equals, `[a, b]` one-of, `\"*\"` any, `\"!x\"` not-equal; keys AND together), the string `\"*\"` for always, or a LIST of such mappings — alternatives, any one matching is enough.",
+                "oneOf": [
+                  {
+                    "const": "*"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "const": "*"
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "description": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string",
+                "description": "A screen id; omitted on a control means stay here in a different state."
+              },
+              "dispatch": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "description": "One branch of a dispatch; first match wins.",
+                  "properties": {
+                    "when": {
+                      "description": "A condition: a mapping of dimension → value (a bare value equals, `[a, b]` one-of, `\"*\"` any, `\"!x\"` not-equal; keys AND together), the string `\"*\"` for always, or a LIST of such mappings — alternatives, any one matching is enough.",
+                      "oneOf": [
+                        {
+                          "const": "*"
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": {
+                            "oneOf": [
+                              {
+                                "oneOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "array",
+                                "items": {
+                                  "oneOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "boolean"
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "const": "*"
+                              },
+                              {
+                                "type": "object"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "to": {
+                      "type": "string",
+                      "description": "A screen id."
+                    },
+                    "sets": {
+                      "type": "object",
+                      "description": "Dimension → value written when the edge is taken.",
+                      "additionalProperties": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "description": "Precedence-ordered when/to branches."
+              },
+              "sets": {
+                "type": "object",
+                "description": "Dimension → value written when the edge is taken.",
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "id",
+              "event"
+            ]
+          },
+          "description": "The controls on this screen.",
+          "x-studio-refused": "`from` on an edge"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+title: Pasted payload
+features:
+  - name: Top
+    prose: In-memory spelling.
+    children:
+      - heading: Child by heading

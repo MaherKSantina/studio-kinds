@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "problems": [
+    "YAML: missed comma between flow collection entries (2:1)"
+  ]
+}

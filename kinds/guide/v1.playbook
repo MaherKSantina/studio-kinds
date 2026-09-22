@@ -70,7 +70,7 @@ events:
               The decision algebra is the shared `crosscut/decisions/decisionSpace.ts` (`pruneLocks`,
               `impliedLocks`, `applyRefs`, `splitRef`). The preview is
               `components/guide/GuidePreview.tsx`, built from `DecisionPills`, `EventRow` and
-              `OneDList`; the checker is `apps/cli/src/check.ts`.
+              `OneDList`; the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

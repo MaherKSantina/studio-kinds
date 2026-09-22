@@ -1,0 +1,5 @@
+{
+  "ok": true,
+  "problems": [],
+  "summary": "3 items → corrections (rules · 2 set; rule 1 → 1, rule 2 → 1) → band (filter · 3 → 2) → cheapest (sort · 2) → 2 out · views: by-price 2, groups 0 · 1 decision"
+}

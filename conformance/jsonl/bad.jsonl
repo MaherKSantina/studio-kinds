@@ -1,0 +1,12 @@
+{"a":1}
+"just a string"
+[1,2]
+{"$title":"T","name":"leak"}
+{"$whatever":1}
+{"$policy":5}
+{"$title":"Second"}
+{"$labels":"nope"}
+{"$labels":{"a":"A","b":7}}
+{"$sources":"one.json"}
+{"$sources":["ok.json#rows",{"file":"x.jsonl","path":"p"},7,{"nofile":1}]}
+{"a":2

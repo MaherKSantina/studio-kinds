@@ -1,0 +1,23 @@
+{
+  "ok": false,
+  "problems": [
+    "could not read missing.json",
+    "\"meta\" is not a list in data.json",
+    "\"nothere\" is not a list in data.json",
+    "bad.jsonl: line 2: not a JSON object",
+    "bad.jsonl: line 3: not a JSON object",
+    "bad.jsonl: line 4: a directive line carries no row fields — \"name\" ignored",
+    "bad.jsonl: line 5: unknown directive \"$whatever\" (known: $sources, $policy, $title, $description, $labels)",
+    "bad.jsonl: line 6: $policy must be a file ref",
+    "bad.jsonl: line 7: a second $title — this one applies",
+    "bad.jsonl: line 8: $labels must be an object of field: label",
+    "bad.jsonl: line 9: $labels.\"b\" must be text",
+    "bad.jsonl: line 10: $sources must be a list of files",
+    "bad.jsonl: line 11: $sources entry 3 is not a file ref",
+    "bad.jsonl: line 11: $sources entry 4 is not a file ref",
+    "bad.jsonl: line 12: Expected ',' or '}' after property value",
+    "bad.jsonl composes rows itself — only its raw lines were read",
+    "policy missing.policy: not found beside this file"
+  ],
+  "summary": "composed: 1 of 1 rows from missing.json (0 rows), data.json#meta (0 rows), data.json#nothere (0 rows), bad.jsonl (1 rows) through missing.policy"
+}

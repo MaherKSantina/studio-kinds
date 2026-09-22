@@ -1,0 +1,22 @@
+title: Pitches
+params:
+  - {key: amount, type: number}
+  - {key: sector, label: Sector}
+  - {key: warm, type: boolean}
+cases:
+  - label: Too small
+    when: [{param: amount, op: lt, value: 10000}]
+    bucket: decline
+  - label: Warm and big
+    when:
+      - {param: warm, op: is_true}
+      - {param: amount, op: between, value: [10000, 500000]}
+      - {param: sector, op: in, value: [fintech, health]}
+    bucket: meet
+  - when: []
+    bucket: hold
+buckets:
+  - {key: meet, label: Meet, start: "09:00", end: "10:30"}
+  - {key: hold}
+  - {key: decline}
+default: decline

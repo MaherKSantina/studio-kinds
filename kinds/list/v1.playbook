@@ -64,7 +64,7 @@ events:
               Reading with sources is `listCollate.ts` (`collateList`, `readListRows`), kept apart
               because it reads files. The view is `components/list/DocListView.tsx` (with
               `RowFieldsBlock`, shared with a policy run's why-dialog); rows open through
-              `components/points/FileContentDialog.tsx`. The checker is `apps/cli/src/check.ts`.
+              `components/points/FileContentDialog.tsx`. The checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

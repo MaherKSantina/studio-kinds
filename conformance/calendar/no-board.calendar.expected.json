@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "problems": [
+    "no `board` — the `.kanban` this calendar is a lens over, a ref resolved against this file's folder"
+  ]
+}

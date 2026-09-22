@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "problems": [
+    "default `zz` is not a declared bucket — one of a",
+    "no `cases` — the ordered switch; `cases: []` claims nothing"
+  ],
+  "summary": "0 params, 0 cases, 1 bucket, default zz"
+}

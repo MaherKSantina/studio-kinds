@@ -2,25 +2,20 @@
   "name": "studio-kinds",
   "private": true,
   "version": "0.1.0",
-  "description": "The Studio — one editor for every document kind: the crosscut kit, the file-kind layer, the web Studio, the desktop app, the VS Code extension, the studio-check command, and the paste-and-check page.",
+  "description": "The Studio — one editor for every document kind: the crosscut kit, the file-kind layer, the web Studio, the desktop app, the VS Code extension. The checker is the Python package in python/ (studio-check).",
   "license": "MIT",
   "scripts": {
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "build": "pnpm -r --if-present build",
-    "page:dev": "pnpm --filter studio-page dev",
-    "page:build": "pnpm --filter studio-page build",
-    "page:deploy": "pnpm --filter studio-page deploy",
     "desktop:renderer": "pnpm --filter studio-frontend build:desktop",
     "desktop": "pnpm --filter studio-frontend build:desktop && pnpm --filter studio-desktop start",
     "vscode:renderer": "pnpm --filter studio-frontend build:vscode",
     "vscode:vsix": "pnpm --filter studio-frontend build:vscode && pnpm --filter studio-vscode package",
-    "cli:build": "pnpm --filter studio-cli build",
-    "skill:export": "node scripts/export-skill.mjs",
-    "check": "node apps/cli/dist/check.cjs",
+    "skill:export": "python scripts/export_skill.py",
     "desktop:dist": "pnpm --filter studio-frontend build:desktop && pnpm --filter studio-desktop dist",
-    "release:build": "pnpm vscode:vsix && pnpm desktop:dist && pnpm cli:pack",
-    "cli:pack": "pnpm cli:build && node scripts/cli-pack.mjs && node -e \"require('fs').mkdirSync('apps/cli/out',{recursive:true})\" && npm pack ./apps/cli --pack-destination apps/cli/out"
+    "release:build": "pnpm vscode:vsix && pnpm desktop:dist",
+    "kinds:check": "python scripts/kind_books.py --check"
   },
   "engines": {
     "node": ">=20"

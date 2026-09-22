@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "views YAML parse error: unexpected end of the stream within a flow collection (2:1)\n\n 1 | views: [\n 2 | \n-----^"
+  ],
+  "summary": "0 screens, 0 states"
+}

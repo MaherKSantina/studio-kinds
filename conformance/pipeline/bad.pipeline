@@ -1,0 +1,48 @@
+title: Broken
+decisions:
+  - key: method
+    label: Method
+    values: []
+labels: {price: 5}
+items:
+  - not a mapping
+  - {name: no id}
+  - {id: dup, name: one}
+  - {id: dup, name: two}
+stages:
+  - rules: []
+  - key: twice
+    filter: [{field: price, op: lte, value: 1}]
+  - key: twice
+    sort: [{field: price}]
+  - key: noverb
+  - key: twoverbs
+    filter: []
+    sort: []
+  - key: badwhen
+    when: [nothing=here, method=wrong]
+    rules:
+      - item: ghost
+        set: {a: 1}
+        when: {method: nope}
+      - where: [{field: name, op: equals, value: Nobody}]
+        set: {a: 1}
+      - where: [{field: name}]
+  - key: rulesnotlist
+    rules: 5
+  - key: filternotlist
+    filter: notalist
+  - key: sortnotlist
+    sort: notalist
+  - key: sortghost
+    sort: [{field: phantom}]
+views:
+  - label: no key
+  - key: v
+  - key: v
+  - key: twice
+  - key: cols
+    columns: [name, ghost]
+    sort: [{field: phantom, dir: sideways}]
+    limit: 0
+    when: [method=x]

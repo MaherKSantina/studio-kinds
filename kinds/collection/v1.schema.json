@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/collection/v1.schema.json",
+  "title": "collection",
+  "description": "A snapshot of rows to decide over, one at a time: the rows copied in, the view's fields and labels, and the decisions — a log of up, down, hide, show, each with a reason.",
+  "type": "object",
+  "required": [
+    "fields",
+    "items",
+    "decisions"
+  ],
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "Where the items were copied from."
+    },
+    "to": {
+      "type": "string",
+      "description": "Where directions go."
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The facts shown, in order."
+    },
+    "stats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The big cards."
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Given at copy time; unique."
+          }
+        }
+      },
+      "description": "The rows."
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One decision.",
+        "properties": {
+          "item": {
+            "type": "number",
+            "description": "An item's id.",
+            "x-studio-ref": "#/properties/items/items/properties/id"
+          },
+          "op": {
+            "enum": [
+              "up",
+              "down",
+              "hide",
+              "show"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Required unless `op` is `show`."
+          }
+        },
+        "required": [
+          "item",
+          "op"
+        ],
+        "if": {
+          "properties": {
+            "op": {
+              "not": {
+                "const": "show"
+              }
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "reason"
+          ]
+        }
+      },
+      "description": "In the order taken."
+    }
+  }
+}

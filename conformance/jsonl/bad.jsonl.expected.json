@@ -1,0 +1,20 @@
+{
+  "ok": false,
+  "problems": [
+    "line 2: not a JSON object",
+    "line 3: not a JSON object",
+    "line 4: a directive line carries no row fields — \"name\" ignored",
+    "line 5: unknown directive \"$whatever\" (known: $sources, $policy, $title, $description, $labels)",
+    "line 6: $policy must be a file ref",
+    "line 7: a second $title — this one applies",
+    "line 8: $labels must be an object of field: label",
+    "line 9: $labels.\"b\" must be text",
+    "line 10: $sources must be a list of files",
+    "line 11: $sources entry 3 is not a file ref",
+    "line 11: $sources entry 4 is not a file ref",
+    "line 12: Expected ',' or '}' after property value",
+    "could not read ok.json",
+    "could not read x.jsonl"
+  ],
+  "summary": "composed: 1 of 1 rows from ok.json#rows (0 rows), x.jsonl#p (0 rows) + 1 raw"
+}

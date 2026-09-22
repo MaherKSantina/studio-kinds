@@ -1,0 +1,4 @@
+title: "untitled"
+description: "A lens over one board: the schedule its dependency edges, durations and due date produce. Nothing is stored here — it recomputes on every open."
+board: board.kanban   # a ref resolved against this file's folder
+# due: 2026-12-31     # optional — overrides the board's own due date

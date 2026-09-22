@@ -79,7 +79,7 @@ events:
               its header comment is what `studio-check --spec points` prints. The views are
               `components/points/PointsView.tsx` (the trail, the shelf and points panes, the
               stream and node dialogs), `PointStream.tsx` and `FileContentDialog.tsx`, over the
-              shared `PaneTrail`; the checker is `apps/cli/src/check.ts`.
+              shared `PaneTrail`; the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

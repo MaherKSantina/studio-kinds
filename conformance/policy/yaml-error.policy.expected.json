@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "problems": [
+    "YAML: unexpected end of the stream within a flow collection (3:1)"
+  ]
+}

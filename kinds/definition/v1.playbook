@@ -130,8 +130,7 @@ events:
               what `studio-check --spec definition` prints. The views are
               `components/definition/DefinitionView.tsx` (which picks the role), `BoardView.tsx`,
               `JourneyView.tsx`, `JourneyKanban.tsx`, `JourneyStagesView.tsx`,
-              `JourneyVariantsView.tsx` and `JourneyCatalog.tsx`; the checker is
-              `apps/cli/src/check.ts`.
+              `JourneyVariantsView.tsx` and `JourneyCatalog.tsx`; the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

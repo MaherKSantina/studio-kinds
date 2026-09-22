@@ -1,0 +1,64 @@
+kind: clip
+version: 1
+fields:
+  - field: title
+    type: string
+    description: The heading.
+  - field: tempo
+    type: number
+    description: Beats per minute (default 120).
+  - field: time
+    type: string | [number, number]
+    description: Time signature, `4/4` or `[3, 4]` (default 4/4).
+  - field: bars
+    type: number
+    description: The clip's length; default the last note rounded up to a bar.
+  - field: channel
+    type: number
+    description: MIDI channel 1–16 (default 1).
+  - field: velocity
+    type: number
+    description: The default velocity 1–127 (default 100).
+  - field: naming
+    type: scientific | ableton
+    description: How pitch names read — `scientific` C4 is 60 (default); `ableton` C3 is 60.
+  - field: notes
+    type: list of note
+    description: Explicit notes.
+  - field: notes[].pitch
+    type: name | number | list
+    required: true
+    description: A pitch name (`C2`, `F#3`), a MIDI number 0–127, or a list for a chord.
+  - field: notes[].start
+    type: number
+    required: true
+    description: Where the note begins, in beats from 0.
+  - field: notes[].length
+    type: number
+    description: How long it holds, in beats (default 1).
+  - field: notes[].velocity
+    type: number
+    description: 1–127; unset, the clip's.
+  - field: grid
+    type: number
+    description: Steps per bar for the lanes (default 16).
+  - field: lanes
+    type: list of lane
+    description: Step rows — one character per step.
+  - field: lanes[].name
+    type: string
+    description: The lane's name.
+  - field: lanes[].pitch
+    type: name | number
+    required: true
+    description: The pitch every hit sounds.
+  - field: lanes[].steps
+    type: string
+    required: true
+    description: "`x` a hit, `X` an accent, `o` a ghost, `1`–`9` that ninth of 127, `.` or `-` a rest; `|` and spaces are ignored."
+  - field: lanes[].length
+    type: number
+    description: How long each hit lasts, in beats (default one step).
+  - field: lanes[].velocity
+    type: number
+    description: The lane's own velocity for `x`.

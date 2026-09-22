@@ -72,7 +72,7 @@ events:
               `compilePlan`; its header comment is what `studio-check --spec plan` prints. The
               planner is `playbookPlan.ts` — `effortDays`, `ratePerDay`, `frontier`, `scoreEvent`,
               `tasksFor`, `operations`, `plan`. The view is `components/plan/PlanPreview.tsx`; the
-              checker is `apps/cli/src/check.ts`.
+              checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

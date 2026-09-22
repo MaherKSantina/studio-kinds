@@ -1,0 +1,2 @@
+{"id":1,"name":"First row","amount":10,"done":true}
+{"id":2,"name":"Second row","amount":20,"done":false,"note":"any key becomes a column"}

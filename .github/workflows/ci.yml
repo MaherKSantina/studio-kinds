@@ -3,7 +3,23 @@ on:
   push:
   pull_request:
 jobs:
-  test-and-build:
+  checker:
+    # The checker — the Python package — and everything that must stay in step with it: the kind
+    # books, field tables and schemas, the package's copies of them, and the exported skill.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e "python[test]"
+      - run: python -m pytest python/tests -q
+      - run: python scripts/kind_books.py --check
+      - run: python scripts/export_skill.py --check
+      - run: studio-check examples/ conformance/kanban/ok.kanban
+  studio:
+    # The Studio itself — the kits, the web Studio, the desktop app and the VS Code extension — parked,
+    # but kept building.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,7 +33,3 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm cli:build
-      - run: node scripts/kind-books.mjs --check
-      - run: node scripts/export-skill.mjs --check
-      - run: pnpm page:build

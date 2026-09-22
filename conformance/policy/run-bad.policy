@@ -1,0 +1,7 @@
+title: A run
+policy: pitches.policy
+items: pitches.list
+map:
+  amount: 5
+  sector: [label, 3]
+date: someday

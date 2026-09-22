@@ -1,0 +1,29 @@
+{
+  "ok": false,
+  "problems": [
+    "a run names both `policy` and `items` — one without the other is a bucket policy missing its cases",
+    "no `title` — a name for the rules",
+    "param 1: no `key`",
+    "param p: duplicate key",
+    "param q: type `date` is not one of string, number, boolean",
+    "bucket 1: no `key`",
+    "bucket b1: `start` is not a time — write `HH:MM`",
+    "bucket b1: `end` is not a time — write `HH:MM`",
+    "bucket b1: duplicate key",
+    "`default` is not a bucket key",
+    "case 1: not a mapping — write `when` and `bucket`",
+    "case 2 (No bucket): no `bucket` — the case is dropped and can never claim an item",
+    "case 3: bucket `nope` is not declared — one of b1",
+    "case 3: `when` is not a list of clauses",
+    "case 4 (Clauses), clause 1: no `param` — the clause is dropped, and a case with no clauses left matches everything",
+    "case 4 (Clauses), clause 2: param `zz` is not declared — one of p, q",
+    "case 4 (Clauses), clause 3: no `op` — the clause is dropped, and a case with no clauses left matches everything",
+    "case 4 (Clauses), clause 4: op `fancy` is not one — the clause is dropped, and a case with no clauses left matches everything; ops are equals, not_equals, contains, not_contains, starts_with, ends_with, matches, gt, gte, lt, lte, between, in, not_in, is_empty, not_empty, is_true, is_false",
+    "case 4 (Clauses), clause 5: `gt` needs a number (got \"big\")",
+    "case 4 (Clauses), clause 6: `between` needs `value: [low, high]` (got [1])",
+    "case 4 (Clauses), clause 7: `in` needs `value:` as a list (got \"single\")",
+    "case 4 (Clauses), clause 8: `is_empty` takes no value",
+    "case 4 (Clauses), clause 9: `contains` needs a `value` — one, or a list meaning any of them"
+  ],
+  "summary": "3 params, 2 cases, 2 buckets"
+}

@@ -1,0 +1,13 @@
+title: untitled
+description: Input in, bucket out — the switch runs in order and stops at the first match.
+params:
+  - {key: name, label: Name, type: string}
+buckets:
+  - {key: "yes", label: "Yes"}
+  - {key: "no", label: "No"}
+default: "no"
+cases:
+  - label: The first filter
+    when:
+      - {param: name, op: not_empty}
+    bucket: "yes"

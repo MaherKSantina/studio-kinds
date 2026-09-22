@@ -54,7 +54,7 @@ events:
               `packages/filekinds/src/lib/programDoc.ts` — `parseProgram`; its header comment is
               what `studio-check --spec program` prints. The view is
               `components/program/ProgramView.tsx`; the runner is the host's `configuredRunner`
-              (the nodes worker); the checker is `apps/cli/src/check.ts`.
+              (the nodes worker); the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

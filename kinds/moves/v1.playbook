@@ -61,7 +61,7 @@ events:
               `computeSnapshot`, `diffMoves`, `pressureAt`, `unitKindOf`, `decisionContext`,
               `writeMovesState`; its header comment is what `studio-check --spec moves` prints. It
               reads the memory through `memoryDoc.ts` and `components/memory/memoryLoad.ts`. The
-              view is `components/moves/MovesView.tsx`; the checker is `apps/cli/src/check.ts`.
+              view is `components/moves/MovesView.tsx`; the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

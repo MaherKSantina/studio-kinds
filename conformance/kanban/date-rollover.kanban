@@ -1,0 +1,7 @@
+title: Rolled dates
+due: 2026-13-01
+columns: [A]
+tasks:
+  - {key: a, title: A, due: 2026-02-30}
+  - {key: b, title: B, due: "2026-02-30"}
+  - {key: c, title: C, due: 2026-09-09T10:00:00+10:00}

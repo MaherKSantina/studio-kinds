@@ -12,11 +12,11 @@ apps/desktop/out/
 Thumbs.db
 apps/vscode/media/
 apps/vscode/*.vsix
-apps/cli/dist/
 .data/
-apps/cli/out/
-apps/cli/kinds/
-apps/cli/specs/
 release/
-.wrangler/
 claude/memory.brief
+__pycache__/
+.pytest_cache/
+python/build/
+python/dist/
+python/*.egg-info/

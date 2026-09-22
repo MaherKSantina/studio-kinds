@@ -1,0 +1,5 @@
+title: untitled
+tracks:
+  - name: Track 1
+    clips:
+      - {file: untitled.clip, at: 0, repeat: 4}

@@ -1,0 +1,12 @@
+title: untitled
+due: 2026-12-31
+columns: [To do, Doing, Done]
+tasks:
+  - key: first
+    title: The first thing
+    status: Doing
+    duration: 2
+  - key: second
+    title: What follows it
+    needs: [first]
+    due: 2026-12-24

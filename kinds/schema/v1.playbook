@@ -66,7 +66,7 @@ events:
               composite fold and the `stream-status` table are `compositeDoc.ts`
               (`compositeStreams`, `cadenceDays`, `flattenStreamFields`). The views are
               `components/schema/SchemaView.tsx`, `components/SplitNodeView.tsx` and
-              `components/composite/CompositeBoard.tsx`; the checker is `apps/cli/src/check.ts`.
+              `components/composite/CompositeBoard.tsx`; the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: It is opened
     trigger: imposed

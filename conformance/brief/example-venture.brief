@@ -1,0 +1,26 @@
+title: The venture, in brief
+description: Facts that hold regardless of where the playbook stands.
+sections:
+  - title: Who
+    description: Two founders, one product.
+    body: |
+      Two of us, both technical. No employees until revenue covers one.
+  - title: Money
+    body: |
+      Bootstrapped. A **business account** opens the day the company does.
+    children:
+      - title: Banking
+        body: One account, one card, receipts photographed the same day.
+      - title: Tax
+        body: Quarterly, by the accountant. We keep the folder.
+        content:
+          kind: playbook
+          doc:
+            version: 2
+            title: When a quarter ends
+            decisions: []
+            events:
+              - key: quarter-ends
+                label: The quarter ends
+                trigger: imposed
+                content: {kind: md, doc: The folder goes to the accountant; the return comes back signed within the month.}

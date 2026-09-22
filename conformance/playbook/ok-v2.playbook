@@ -1,0 +1,37 @@
+version: 2
+title: Release
+description: How a release goes out.
+decisions:
+  - key: push
+    label: Push to origin?
+    values:
+      - {key: yes, label: Yes, activates: [tag]}
+      - {key: no, label: No}
+  - key: tag
+    label: Tag it?
+    values:
+      - {key: yes, label: Yes}
+      - {key: no, label: No, when: [push=yes]}
+events:
+  - key: always
+    label: Always
+    hint: Ask whether to push.
+    domain: Ship
+    content:
+      key: steps
+      label: What to do
+      kind: brief
+      by: [push]
+      docs:
+        push=yes: {title: Push and release, sections: [{title: Push, body: git push}]}
+        push=no: {title: Nothing leaves, sections: [{title: Stay, body: nothing}]}
+  - key: cut
+    label: Cut a release
+    trigger: chosen
+    when: [push=yes]
+    content: {kind: md, doc: Tag the commit and push the tag.}
+  - key: ops
+    label: Watch the logs
+    arity: many
+    rate: 5/w
+    detail: Every week.

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/calendar/v1.schema.json",
+  "title": "calendar",
+  "description": "A lens over one `.kanban` board: the board's edges, durations and due date produce the schedule; this file only says which board, and optionally overrides the anchor.",
+  "type": "object",
+  "required": [
+    "title",
+    "board"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The heading."
+    },
+    "description": {
+      "type": "string",
+      "description": "One line under the title."
+    },
+    "board": {
+      "type": "string",
+      "description": "The `.kanban` this calendar is a lens over — a ref resolved against this file's folder.",
+      "x-studio-file": "kanban"
+    },
+    "due": {
+      "description": "Overrides the board's own due. `YYYY-MM-DD`, bare or quoted.",
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    }
+  }
+}

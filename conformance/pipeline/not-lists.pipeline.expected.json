@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "problems": [
+    "decisions: must be a list",
+    "items: must be a list",
+    "stages: must be a list",
+    "views: must be a list"
+  ],
+  "summary": "0 items → 0 out"
+}

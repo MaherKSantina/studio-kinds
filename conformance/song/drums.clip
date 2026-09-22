@@ -1,0 +1,5 @@
+tempo: 100
+time: 4/4
+channel: 10
+lanes:
+  - {name: Kick, pitch: C1, steps: "x...x...x...x..."}

@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/brief/v1.schema.json",
+  "title": "brief",
+  "description": "A titled tree of sections, each with a one-line description, a markdown body, and — where what the section holds is a document of another kind — that document written in as `content: {kind, doc}`.",
+  "type": "object",
+  "required": [
+    "title",
+    "sections"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The heading of the brief."
+    },
+    "description": {
+      "type": "string",
+      "description": "One line under the title."
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/section"
+      },
+      "description": "The titled tree; each entry is a section."
+    }
+  },
+  "$defs": {
+    "section": {
+      "type": "object",
+      "description": "One section.",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The section's heading; the tree shows it as a node."
+        },
+        "description": {
+          "type": "string",
+          "description": "One line under the section's title."
+        },
+        "body": {
+          "type": "string",
+          "description": "The section's prose, rendered as markdown.",
+          "x-studio-format": "markdown"
+        },
+        "content": {
+          "$ref": "#/$defs/writtenDocument"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/section"
+          },
+          "description": "Sections nested under this one, the same shape at any depth."
+        }
+      },
+      "required": [
+        "title"
+      ]
+    },
+    "writtenDocument": {
+      "description": "A document written inside another. `kind` names the engine that renders `doc`; `doc` is the document exactly as a file of that kind would hold it — as that kind's YAML parses it, or its text for `md`. Checked by that kind's own engine. One document per section: a section that needs two has two children.",
+      "type": "object",
+      "required": [
+        "kind",
+        "doc"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Which engine renders the document — `playbook`, `kanban`, `md`, any kind the Studio knows.",
+          "x-studio-kind": true
+        },
+        "doc": {
+          "description": "The document, as that kind's YAML parses it; a string for `md`."
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "by"
+            ]
+          },
+          {
+            "required": [
+              "docs"
+            ]
+          },
+          {
+            "required": [
+              "file"
+            ]
+          }
+        ]
+      },
+      "x-studio-written-document": {
+        "kind": "kind",
+        "doc": "doc"
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "md"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "doc": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

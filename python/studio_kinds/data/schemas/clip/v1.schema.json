@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/clip/v1.schema.json",
+  "title": "clip",
+  "description": "The notes of one MIDI clip. Time is in beats (quarter notes) from 0 at the clip's start.",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "tempo": {
+      "type": "number",
+      "description": "Beats per minute (default 120).",
+      "exclusiveMinimum": 0,
+      "maximum": 999
+    },
+    "time": {
+      "description": "`4/4`, or `[beats, unit]`.",
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\s*\\d+\\s*/\\s*\\d+\\s*$"
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number"
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "beats": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "bars": {
+      "type": "number",
+      "description": "The clip's length; default = the last note rounded up to a bar.",
+      "exclusiveMinimum": 0
+    },
+    "channel": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16,
+      "description": "MIDI channel (default 1)."
+    },
+    "velocity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 127,
+      "description": "The default velocity (default 100)."
+    },
+    "naming": {
+      "enum": [
+        "scientific",
+        "ableton"
+      ],
+      "description": "scientific: C4 is 60 (the default); ableton: C3 is 60."
+    },
+    "grid": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 128,
+      "description": "Steps per bar for the lanes (default 16)."
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pitch": {
+            "oneOf": [
+              {
+                "description": "A note name (`C2`, `F#3`, `Bb-1`) or a MIDI number 0–127.",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^([A-Ga-g][#♯b♭]?-?\\d+|\\d+)$"
+                  },
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 127
+                  }
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "description": "A note name (`C2`, `F#3`, `Bb-1`) or a MIDI number 0–127.",
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^([A-Ga-g][#♯b♭]?-?\\d+|\\d+)$"
+                    },
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 127
+                    }
+                  ]
+                },
+                "description": "A chord."
+              }
+            ]
+          },
+          "start": {
+            "type": "number",
+            "description": "Beat the note begins on.",
+            "minimum": 0
+          },
+          "length": {
+            "type": "number",
+            "description": "Beats (default 1).",
+            "exclusiveMinimum": 0
+          },
+          "velocity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 127
+          }
+        },
+        "required": [
+          "pitch"
+        ]
+      }
+    },
+    "lanes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "pitch": {
+            "description": "A note name (`C2`, `F#3`, `Bb-1`) or a MIDI number 0–127.",
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^([A-Ga-g][#♯b♭]?-?\\d+|\\d+)$"
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 127
+              }
+            ]
+          },
+          "steps": {
+            "type": "string",
+            "description": "One character per step: `x` a hit, `X` an accent, `o` a ghost, `1`–`9` that ninth of 127, `.`/`-` a rest; `|` and spaces ignored."
+          },
+          "length": {
+            "type": "number",
+            "description": "Length of a hit, in beats.",
+            "exclusiveMinimum": 0
+          },
+          "velocity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 127
+          }
+        },
+        "required": [
+          "pitch",
+          "steps"
+        ]
+      }
+    }
+  }
+}

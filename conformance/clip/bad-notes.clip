@@ -1,0 +1,15 @@
+bars: 1
+notes:
+  - {pitch: C2, start: -1}
+  - {pitch: C2, start: 0, length: 0}
+  - {pitch: C2, start: 0, velocity: 300}
+  - {start: 0}
+  - {pitch: H9, start: 0}
+  - {pitch: [C2, 200, Zz1], start: 0}
+  - {pitch: C2, start: 4}
+lanes:
+  - {name: Bad pitch, pitch: nope, steps: "x..."}
+  - {name: No steps, pitch: C2}
+  - {name: Bad length, pitch: C2, steps: "x...", length: -1}
+  - {name: Bad vel, pitch: C2, steps: "x...", velocity: 0}
+  - {pitch: D2, steps: "x..?x"}

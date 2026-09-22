@@ -12,7 +12,7 @@
 # verify`), proving it was built by this repository's release workflow at the tag's commit; without
 # `gh`, the digests alone are checked and the script says so.
 #
-# Needs: `code` on the PATH for the extension; Node/npm for the checker. A step whose tool is missing
+# Needs: `code` on the PATH for the extension; Python 3.10+ with pip for the checker. A step whose tool is missing
 # is skipped and said. The desktop installer is unsigned — Windows will say so; the digest and the
 # attestation are its provenance.
 param(
@@ -28,13 +28,13 @@ New-Item -ItemType Directory -Path $dir | Out-Null
 
 # Download: the GitHub CLI when it is there (also needed for a private repository), plain HTTPS otherwise.
 $gh = Get-Command gh -ErrorAction SilentlyContinue
-$patterns = @("-p", "*.exe", "-p", "*.vsix", "-p", "*.tgz", "-p", "*skill*.zip", "-p", "SHA256SUMS")
+$patterns = @("-p", "*.exe", "-p", "*.vsix", "-p", "*.whl", "-p", "*skill*.zip", "-p", "SHA256SUMS")
 if ($gh) {
   gh release download $Tag --repo $Repo -D $dir @patterns
 } else {
   $release = Invoke-RestMethod "https://api.github.com/repos/$Repo/releases/tags/$Tag" -Headers @{ "User-Agent" = "install-studio" }
   foreach ($a in $release.assets) {
-    if ($a.name -match '\.(exe|vsix|tgz)$' -or $a.name -like "*skill*.zip" -or $a.name -eq "SHA256SUMS") {
+    if ($a.name -match '\.(exe|vsix|whl)$' -or $a.name -like "*skill*.zip" -or $a.name -eq "SHA256SUMS") {
       Invoke-WebRequest $a.browser_download_url -OutFile (Join-Path $dir $a.name)
     }
   }
@@ -80,10 +80,11 @@ if ($Only -contains "vscode") {
 }
 
 if ($Only -contains "cli") {
-  $tgz = Get-ChildItem $dir -Filter "*.tgz" | Select-Object -First 1
-  if ($tgz) {
-    if (Get-Command npm -ErrorAction SilentlyContinue) { Write-Host "Installing the studio-check command…"; npm install -g $tgz.FullName }
-    else { Write-Host "npm is not on the PATH — install Node.js, then: npm install -g $($tgz.FullName)" }
+  $whl = Get-ChildItem $dir -Filter "*.whl" | Select-Object -First 1
+  if ($whl) {
+    $py = Get-Command python -ErrorAction SilentlyContinue
+    if ($py) { Write-Host "Installing the studio-check command…"; python -m pip install --user --upgrade $whl.FullName }
+    else { Write-Host "python is not on the PATH — install Python 3.10+, then: python -m pip install --user $($whl.FullName)" }
   }
 }
 

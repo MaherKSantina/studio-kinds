@@ -1,0 +1,124 @@
+# A .flow file is TWO YAML docs separated by a line that is just '---'.
+# Doc 1 = MODEL (dimensions + screens, each screen carrying its own controls). Doc 2 = VIEWS.
+#
+# A .flow is a walkthrough whose screens and navigation are PARAMETERISED. A screen that renders
+# differently under different data is ONE screen with variants — not several screens with
+# different titles. Its CONTROLS live on it, in its own `edges:` list; there is no top-level
+# `edges` and no `from` field, because a button belongs to the page it sits on.
+#
+# TWO SCOPES, and choosing between them is the main decision you make here:
+#   dimensions      — facts about the world that outlive a screen (a flag, what the listing is)
+#   screen.locals   — that screen's own UI state (which radio is selected, which step you are on).
+#                     Locals RESET every time you arrive from elsewhere, and no other screen sees
+#                     them. If only one screen reads it, make it a local.
+title: untitled
+
+# Closed, ordered value sets. The whole space is finite so coverage is computable.
+dimensions:
+  shippingType: [free_shipping, flat_rate, price_on_request]
+  featureFlag: [true, false]
+
+# The starting assignment for a simulation. Anything omitted is simply unset.
+defaults:
+  shippingType: flat_rate
+  featureFlag: true
+
+# First-match-wins rules producing another dimension. `value: "= otherDim"` copies a dimension
+# instead of writing a literal — enough for "a flag overrides a data value", and no more.
+derived:
+  - name: effectiveShipping
+    values: [free_shipping, flat_rate, none]
+    rules:
+      - when: { featureFlag: false }
+        value: none
+      - when: { shippingType: price_on_request }
+        value: none
+      - when: "*"
+        value: "= shippingType"
+
+initial: home
+start_mode: screen          # or 'entries' + an `entries:` list of start events
+
+# WHAT A STATE SHOWS. A screenshot is one kind of evidence, not the definition of the format:
+# a state's `content` is a list of PANELS, stepped through one at a time.
+#   - { screenshot: <storage key> }        an image in this directory
+#   - { frame: login.frame, view: Loading } a .frame beside this flow, drawn LIVE at one of its
+#                                          views — the states of a screen point at different views
+#                                          of the SAME frame; its scroll is its own, one panel
+#   - { frame: login, view: Loading }      the same, for a frame kept INSIDE this flow under
+#                                          `frames:` (Projects: "Move into flow…"; the Studio
+#                                          opens it from the flow's preview)
+#   - { file: notes/plan.brief }           ANOTHER file, drawn by its own kind's preview,
+#                                          read-only and LIVE (editing it changes this state)
+# `screenshot:`/`screenshots:` below are the screenshot-only shorthand for the same thing —
+# write those when a state is only images; `frame:` + `view:` is the frame-only shorthand.
+
+# NAMED VERSIONS of the material `file` panels read from. A panel says `source: after` and the
+# same relative path means "that document, that version" — so two states of one screen can differ
+# only in which published version they show, without hard-coding two paths.
+sources:
+  - { name: before, path: versions/before }
+  - { name: after,  path: versions/after }
+default_source: before
+
+screens:
+  - id: home
+    title: Home
+    screenshot: <storage key>          # or screenshots: [top.png, bottom.png] for a tall screen
+    edges:
+      - id: e1
+        event: Checkout       # ONE control, going one place.
+        to: checkout
+
+  - id: checkout
+    title: Checkout
+    # Variables this screen OWNS. First value listed is the default; arriving here resets them.
+    locals:
+      agreed: [false, true]
+    # First matching variant wins. Give the last one `when: "*"` so every configuration renders.
+    # A `when` here may read the dimensions, the derived values, or this screen's own locals.
+    variants:
+      - when: { effectiveShipping: free_shipping }
+        label: Free shipping
+        description: Shows the "Free shipping" chip beside $0.00.
+        screenshot: <storage key>
+      - when: "*"
+        label: Paid shipping
+        # The general form: a capture AND the document that explains it, in that order.
+        content:
+          - { screenshot: <storage key> }
+          - { file: terms.brief, source: after, label: Shipping terms }
+    edges:
+      # No `to` = STAYS on this screen. `sets` moves it to another of its own states — a radio,
+      # a checkbox, a step of a form. This is what a self-transition used to be.
+      - id: e2
+        event: Agree to the terms
+        when: { agreed: false }
+        sets: { agreed: true }
+      # `when` decides whether a control is OFFERED AT ALL. Do NOT write a dispatch whose
+      # branches all fail to say a button is absent — say it here.
+      - id: e3
+        event: Pay
+        when: { agreed: true }
+        # `dispatch` is for when the DESTINATION varies. First match wins.
+        dispatch:
+          - when: { effectiveShipping: none }
+            to: home
+          - when: "*"
+            to: home
+        sets: { featureFlag: true }   # applied on arrival; may seed a local of the target screen
+
+# when matching: bare value = equals · [a, b] = one-of · "*" = any · "!x" = not-equal
+
+# FRAMES KEPT IN THIS FILE — whole .frame bodies by name; a state shows one with `frame: <name>`.
+# frames:
+#   login: { title: Login, frames: [...], nodes: [...], views: [...] }
+---
+active: v1
+views:
+  - id: v1
+    name: Free shipping
+    layout:
+      params: { shippingType: free_shipping, featureFlag: true }
+      tab: screens          # screens | map | changes
+      labelVariants: true

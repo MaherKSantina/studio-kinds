@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "problems": [
+    "rule 1 where 1: no field",
+    "rule 2 where 1: no op",
+    "rule 3 where 1: unknown op \"nope\"",
+    "rule 4: sets nothing — give it set: {field: value} or key/value",
+    "rule 2 matches no row",
+    "rule 5 matches no row"
+  ],
+  "summary": "over rows.csv (2 rows): rule 1 → 2, rule 2 → 0, rule 3 → 2, rule 4 → 1, rule 5 → 0"
+}

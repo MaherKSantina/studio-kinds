@@ -1,0 +1,19 @@
+{
+  "ok": false,
+  "problems": [
+    "note 1: start -1 is not a beat",
+    "note 2: length 0 is not a number of beats",
+    "note 3: velocity 300 is not 1–127",
+    "note 4: no pitch",
+    "note 5: pitch \"H9\" is not a note name or a MIDI number",
+    "note 6: pitch 200 is not a note name or a MIDI number",
+    "note 6: pitch \"Zz1\" is not a note name or a MIDI number",
+    "lane Bad pitch: pitch \"nope\" is not a note name or a MIDI number",
+    "lane No steps: no steps",
+    "lane Bad length: length -1 is not a number of beats",
+    "lane Bad vel: velocity 0 is not 1–127",
+    "lane D2: unknown step character \"?\" at step 4",
+    "a note at beat 4 begins at or after the clip's end (1 bars = 4 beats)"
+  ],
+  "summary": "7 notes · 1 bar · 120 bpm · 4/4 · C2–D2 · channel 1"
+}

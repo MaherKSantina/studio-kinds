@@ -1,0 +1,12 @@
+tracks:
+  - name: T
+    channel: 0
+    clips: notalist
+  - name: U
+    clips:
+      - {at: 0}
+      - {file: bass.clip, at: -1}
+      - {file: bass.clip, repeat: 0}
+      - {file: bass.clip, transpose: 1.5}
+      - {file: nowhere.clip}
+      - {file: broken.clip}

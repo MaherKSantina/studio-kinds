@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/kanban/v1.schema.json",
+  "title": "kanban",
+  "description": "A task board whose columns are status and whose rows are derived from `needs` edges — never authored. Dates are `YYYY-MM-DD`, bare or quoted.",
+  "type": "object",
+  "required": [
+    "title",
+    "columns",
+    "tasks"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The board's heading."
+    },
+    "description": {
+      "type": "string",
+      "description": "One line under the title."
+    },
+    "due": {
+      "description": "The day everything must be done by — the anchor backward scheduling chains from. `YYYY-MM-DD`, bare or quoted.",
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "source": {
+      "type": "string",
+      "description": "Where the tasks come from — a folder of `.node`s or a `.points` ref; the board then authors only its own domains and merges them by key."
+    },
+    "columns": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "type": "object",
+            "description": "A column; `title` or `label` names it.",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string",
+                "description": "Read as `title`."
+              },
+              "color": {
+                "type": "string",
+                "description": "Any CSS colour."
+              }
+            },
+            "anyOf": [
+              {
+                "required": [
+                  "title"
+                ]
+              },
+              {
+                "required": [
+                  "label"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "description": "The statuses, in order.",
+      "minItems": 1
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/task"
+      },
+      "description": "The cards; rows are derived from `needs`, never authored."
+    }
+  },
+  "$defs": {
+    "task": {
+      "type": "object",
+      "description": "One card.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "The stable key `needs` edges point at. Unique."
+        },
+        "title": {
+          "type": "string",
+          "description": "The card's heading."
+        },
+        "status": {
+          "type": "string",
+          "description": "A column title, matched case-insensitively; unset lands in the first column.",
+          "x-studio-ref": "#/properties/columns"
+        },
+        "file": {
+          "type": "string",
+          "description": "A document resolved against the board's folder, opened in the card dialog by its own kind."
+        },
+        "section": {
+          "type": "string",
+          "description": "For a `.brief` file, open only the first section whose title contains this."
+        },
+        "note": {
+          "type": "string",
+          "description": "One line under the title."
+        },
+        "body": {
+          "type": "string",
+          "description": "The task's own prose — the dialog's main content.",
+          "x-studio-format": "markdown"
+        },
+        "needs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Prerequisites, each the `key` of another task in this board. A key no task has, the task itself, or a cycle is a problem.",
+          "x-studio-ref": "#/properties/tasks/items/properties/key",
+          "x-studio-acyclic": true
+        },
+        "duration": {
+          "type": "number",
+          "description": "Calendar days the task takes (default 1).",
+          "exclusiveMinimum": 0
+        },
+        "due": {
+          "description": "A per-task cap, tighter than the board's. `YYYY-MM-DD`, bare or quoted.",
+          "type": "string",
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        }
+      },
+      "required": [
+        "key",
+        "title"
+      ]
+    }
+  }
+}

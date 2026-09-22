@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/song/v1.schema.json",
+  "title": "song",
+  "description": "Clips placed on tracks: an arrangement. Bars count from 0 at the song's start.",
+  "type": "object",
+  "required": [
+    "tracks"
+  ],
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "tempo": {
+      "type": "number",
+      "description": "Default: the first clip's.",
+      "exclusiveMinimum": 0,
+      "maximum": 999
+    },
+    "time": {
+      "description": "`4/4`, or `[beats, unit]`.",
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\s*\\d+\\s*/\\s*\\d+\\s*$"
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number"
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "beats": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "tracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16,
+            "description": "Optional; the clip's own channel otherwise."
+          },
+          "clips": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "description": "A `.clip` beside the song.",
+                  "x-studio-file": "clip"
+                },
+                "at": {
+                  "type": "number",
+                  "description": "Bar the placement begins on; default right after the previous one on this track.",
+                  "minimum": 0
+                },
+                "repeat": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Times the clip plays back to back (default 1)."
+                },
+                "transpose": {
+                  "type": "integer",
+                  "description": "Semitones added to every pitch (default 0)."
+                }
+              },
+              "required": [
+                "file"
+              ]
+            }
+          }
+        },
+        "required": [
+          "clips"
+        ]
+      }
+    }
+  }
+}

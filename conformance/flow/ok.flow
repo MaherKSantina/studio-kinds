@@ -1,0 +1,50 @@
+title: Checkout
+description: Buying a thing.
+dimensions:
+  shipping: [free, paid]
+  member: [true, false]
+defaults:
+  shipping: free
+sources:
+  - {name: v1, path: /v1}
+default_source: v1
+derived:
+  - name: express
+    values: [yes, no]
+    rules:
+      - {when: {shipping: paid, member: true}, value: yes}
+      - {when: "*", value: no}
+initial: cart
+screens:
+  - id: cart
+    title: Cart
+    content:
+      - {file: cart.brief, source: v1, label: The cart}
+      - shot-1
+    locals:
+      mode: [unset, edit]
+    variants:
+      - {label: Editing, when: {mode: edit}, screenshot: shot-2}
+    edges:
+      - {id: e1, event: Continue, to: pay}
+      - {id: e2, event: Edit, when: {mode: unset}, sets: {mode: edit}}
+      - id: e3
+        event: Ship
+        dispatch:
+          - {when: {shipping: free}, to: done}
+          - {when: "*", to: pay}
+  - id: pay
+    title: Pay
+    screenshot: shot-3
+    edges:
+      - {id: e4, event: Pay, to: done, sets: {member: true}}
+  - id: done
+    title: Done
+entries:
+  - {id: n1, event: Deep link, to: pay}
+---
+active: v
+views:
+  - id: v
+    layout:
+      params: {shipping: paid}

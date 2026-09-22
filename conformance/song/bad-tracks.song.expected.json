@@ -1,0 +1,14 @@
+{
+  "ok": false,
+  "problems": [
+    "track T: channel 0 is not 1–16",
+    "track T: clips must be a list",
+    "track U, clip 1: no file",
+    "track U, clip 2: at -1 is not a bar",
+    "track U, clip 3: repeat 0 is not a count",
+    "track U, clip 4: transpose 1.5 is not a number of semitones",
+    "track U: nowhere.clip is not there",
+    "track U: broken.clip has 1 problem of its own"
+  ],
+  "summary": "2 tracks · 5 bars · 4 notes · 120 bpm · 4/4"
+}

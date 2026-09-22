@@ -1,0 +1,12 @@
+role: table
+title: Broken rules
+where:
+  - {op: equals, value: x}
+  - {field: a}
+  - {field: a, op: nope}
+sort:
+  - {dir: asc}
+  - {field: a, dir: sideways}
+limit: -3
+rename: {a: b}
+source: data.json

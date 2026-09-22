@@ -1,0 +1,13 @@
+fields: [name]
+items:
+  - {id: 1, name: A}
+  - {id: 1, name: B}
+  - {id: 3}
+  - {name: D}
+decisions:
+  - {op: up, reason: x}
+  - {item: 1, op: sideways, reason: x}
+  - {item: 1, reason: x}
+  - {item: 9, op: up, reason: x}
+  - {item: 1, op: down}
+  - {item: 1, op: hide, reason: "  "}

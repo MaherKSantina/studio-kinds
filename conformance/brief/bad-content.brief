@@ -1,0 +1,48 @@
+title: Broken content
+sections:
+  - title: Not a mapping
+    content: just text
+  - title: No kind
+    content:
+      doc: {title: x}
+  - title: No doc
+    content:
+      kind: kanban
+  - title: Forbidden keys
+    content:
+      kind: md
+      doc: fine
+      by: [x]
+      docs: {}
+      file: other.md
+  - title: Md not string
+    content:
+      kind: md
+      doc: {not: text}
+  - title: Unknown kind
+    content:
+      kind: widget
+      doc: {}
+  - title: Studio kind
+    content:
+      kind: guide
+      doc: {title: g, steps: []}
+  - title: Nested
+    children:
+      - title: Broken board
+        content:
+          kind: kanban
+          doc:
+            columns: []
+            tasks:
+              - {key: a, title: A, needs: [zz], status: Nowhere}
+      - title: Broken book
+        content:
+          kind: playbook
+          doc:
+            version: 2
+            title: inner
+            events:
+              - key: e
+                label: E
+                content: {doc: hi}

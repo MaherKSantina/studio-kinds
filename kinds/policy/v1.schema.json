@@ -1,0 +1,980 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/policy/v1.schema.json",
+  "title": "policy",
+  "description": "Rules in one of several roles, picked by `role`: absent (a bucket policy, or a run when `policy` and `items` are both present), `tags`, `order`, `table`.",
+  "type": "object",
+  "properties": {
+    "role": {
+      "enum": [
+        "bucket",
+        "tags",
+        "decisions",
+        "order",
+        "run",
+        "table"
+      ],
+      "description": "Which document this file holds."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "const": "table"
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/table"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "enum": [
+              "tags",
+              "decisions"
+            ]
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/tags"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "const": "order"
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/order"
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "properties": {
+            "role": {
+              "enum": [
+                "table",
+                "tags",
+                "decisions",
+                "order"
+              ]
+            }
+          },
+          "required": [
+            "role"
+          ]
+        }
+      },
+      "then": {
+        "if": {
+          "required": [
+            "policy",
+            "items"
+          ]
+        },
+        "then": {
+          "$ref": "#/$defs/run"
+        },
+        "else": {
+          "$ref": "#/$defs/bucket"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "clause": {
+      "type": "object",
+      "description": "One condition. All clauses of a list must hold (AND).",
+      "properties": {
+        "param": {
+          "type": "string",
+          "description": "The param the clause reads."
+        },
+        "op": {
+          "enum": [
+            "equals",
+            "not_equals",
+            "contains",
+            "not_contains",
+            "starts_with",
+            "ends_with",
+            "matches",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "between",
+            "in",
+            "not_in",
+            "is_empty",
+            "not_empty",
+            "is_true",
+            "is_false"
+          ],
+          "description": "The comparison. Text ops compare case-insensitively and take one value or a list (any of them; none of them for the negated ops); numeric ops need a number and are never true for an empty field; `between` takes `[low, high]`; `in`/`not_in` take a list; `is_empty`, `not_empty`, `is_true`, `is_false` take no value."
+        },
+        "value": {
+          "description": "What the op compares against: a string, a number, or a list of those.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "param",
+        "op"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "gt",
+                  "gte",
+                  "lt",
+                  "lte"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": [
+                  "number",
+                  "string"
+                ]
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "between"
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": [
+                    "number",
+                    "string"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "in",
+                  "not_in"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array"
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "is_empty",
+                  "not_empty",
+                  "is_true",
+                  "is_false"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "value"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "contains",
+                  "not_contains",
+                  "starts_with",
+                  "ends_with",
+                  "matches"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ]
+          }
+        }
+      ]
+    },
+    "fieldClause": {
+      "type": "object",
+      "description": "One condition. All clauses of a list must hold (AND).",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "A key of the row, or a dot path into nested objects (`best_offer.price_total_aud`)."
+        },
+        "op": {
+          "enum": [
+            "equals",
+            "not_equals",
+            "contains",
+            "not_contains",
+            "starts_with",
+            "ends_with",
+            "matches",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "between",
+            "in",
+            "not_in",
+            "is_empty",
+            "not_empty",
+            "is_true",
+            "is_false"
+          ],
+          "description": "The comparison. Text ops compare case-insensitively and take one value or a list (any of them; none of them for the negated ops); numeric ops need a number and are never true for an empty field; `between` takes `[low, high]`; `in`/`not_in` take a list; `is_empty`, `not_empty`, `is_true`, `is_false` take no value."
+        },
+        "value": {
+          "description": "What the op compares against: a string, a number, or a list of those.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "param": {
+          "type": "string",
+          "description": "`param` is read as `field` too — the policy's word for it."
+        }
+      },
+      "required": [
+        "field",
+        "op"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "gt",
+                  "gte",
+                  "lt",
+                  "lte"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": [
+                  "number",
+                  "string"
+                ]
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "between"
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": [
+                    "number",
+                    "string"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "in",
+                  "not_in"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array"
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "is_empty",
+                  "not_empty",
+                  "is_true",
+                  "is_false"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "value"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "contains",
+                  "not_contains",
+                  "starts_with",
+                  "ends_with",
+                  "matches"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ]
+          }
+        }
+      ]
+    },
+    "bucket": {
+      "type": "object",
+      "description": "A bucket policy: params → ordered cases (first match wins) → buckets.",
+      "properties": {
+        "role": {
+          "enum": [
+            "bucket"
+          ],
+          "description": "Absent, or `bucket`."
+        },
+        "title": {
+          "type": "string",
+          "description": "A name for the rules."
+        },
+        "description": {
+          "type": "string"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Unique."
+              },
+              "label": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "string",
+                  "number",
+                  "boolean"
+                ],
+                "description": "Default string."
+              }
+            },
+            "required": [
+              "key"
+            ]
+          },
+          "description": "The typed input parameters an item carries."
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "when": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/clause"
+                },
+                "description": "Every clause must hold (AND). An empty `when: []` says \"always\" on purpose."
+              },
+              "bucket": {
+                "type": "string",
+                "description": "The bucket this case assigns — one of `buckets`.",
+                "x-studio-ref": "#/$defs/bucket/properties/buckets/items/properties/key"
+              }
+            },
+            "required": [
+              "when",
+              "bucket"
+            ]
+          },
+          "description": "An ordered switch: first match wins."
+        },
+        "buckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Unique."
+              },
+              "label": {
+                "type": "string"
+              },
+              "start": {
+                "type": "string",
+                "description": "`HH:MM`",
+                "pattern": "^\\d{1,2}:\\d{2}$"
+              },
+              "end": {
+                "type": "string",
+                "description": "`HH:MM`",
+                "pattern": "^\\d{1,2}:\\d{2}$"
+              }
+            },
+            "required": [
+              "key"
+            ]
+          },
+          "description": "The declared outputs."
+        },
+        "default": {
+          "type": "string",
+          "description": "The bucket for items no case claims; omitted = the built-in `unmatched`.",
+          "x-studio-ref": "#/$defs/bucket/properties/buckets/items/properties/key"
+        }
+      },
+      "required": [
+        "title",
+        "cases"
+      ]
+    },
+    "run": {
+      "type": "object",
+      "description": "A run: a policy applied to a list through a column map.",
+      "properties": {
+        "role": {
+          "enum": [
+            "run"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "policy": {
+          "type": "string",
+          "description": "Path of the `.policy` to apply."
+        },
+        "items": {
+          "type": "string",
+          "description": "Path of the `.list` whose rows are the items."
+        },
+        "map": {
+          "type": "object",
+          "description": "Policy param key → list column(s); `label` means the row's own label.",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        },
+        "date": {
+          "type": "string",
+          "description": "The day this run schedules, `YYYY-MM-DD`.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        }
+      },
+      "required": [
+        "policy",
+        "items"
+      ]
+    },
+    "tags": {
+      "type": "object",
+      "description": "A tags policy: dimensions derived from an item's params.",
+      "properties": {
+        "role": {
+          "enum": [
+            "tags",
+            "decisions"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "string",
+                  "number",
+                  "boolean"
+                ]
+              }
+            },
+            "required": [
+              "key"
+            ]
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "key": {},
+                        "label": {
+                          "type": "string"
+                        },
+                        "detail": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "derive": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "value": {},
+                    "label": {
+                      "type": "string"
+                    },
+                    "when": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/clause"
+                      }
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                },
+                "description": "Ordered rules over the params; the first that holds tags; no conditions = the default."
+              },
+              "from": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "value": {},
+                    "label": {
+                      "type": "string"
+                    },
+                    "when": {
+                      "oneOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "description": "A ref `decision=answer` — the decision's key, `=`, the answer's key.",
+                            "pattern": "^[^=]+=.+$"
+                          }
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                },
+                "description": "For a computed dimension: ordered rules over the answers of dimensions declared above."
+              }
+            },
+            "required": [
+              "key"
+            ]
+          },
+          "description": "The dimensions items are tagged along."
+        }
+      },
+      "required": [
+        "role"
+      ]
+    },
+    "order": {
+      "type": "object",
+      "description": "An order policy: a ranking over tag combinations.",
+      "properties": {
+        "role": {
+          "enum": [
+            "order"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "string",
+          "description": "Ref of the tags policy it consumes.",
+          "x-studio-file": "policy"
+        },
+        "order": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "when": {
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "A ref `decision=answer` — the decision's key, `=`, the answer's key.",
+                      "pattern": "^[^=]+=.+$"
+                    }
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "description": "`dimension=value` refs, ANDed; a value may be `a|b`. Empty takes everything left."
+              }
+            }
+          },
+          "description": "Best first; position is rank."
+        }
+      },
+      "required": [
+        "role",
+        "order"
+      ]
+    },
+    "table": {
+      "type": "object",
+      "description": "A table policy: which rows to keep, in which order, which columns. It names no source and no labels — the `.jsonl` that applies it does.",
+      "properties": {
+        "role": {
+          "enum": [
+            "table"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "description": "A name for the rules, never the data."
+        },
+        "description": {
+          "type": "string"
+        },
+        "where": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fieldClause"
+          },
+          "description": "Every clause must hold (AND); a row failing one is out."
+        },
+        "sort": {
+          "type": "array",
+          "items": {
+            "description": "A sort key: `{field, dir}` (`dir` asc, the default, or desc), or the field name alone.",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "A key of the row, or a dot path."
+                  },
+                  "dir": {
+                    "enum": [
+                      "asc",
+                      "desc"
+                    ]
+                  }
+                },
+                "required": [
+                  "field"
+                ]
+              }
+            ]
+          },
+          "description": "First key first; a later key breaks ties."
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The columns shown, in this order; omitted = every column the rows carry; `\"*\"` = every other column, after these."
+        },
+        "hide": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Subtracted from the columns shown."
+        },
+        "limit": {
+          "type": "number",
+          "description": "At most this many rows; a positive number.",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "role"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "rename"
+            ]
+          },
+          {
+            "required": [
+              "source"
+            ]
+          },
+          {
+            "required": [
+              "sources"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

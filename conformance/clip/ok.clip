@@ -1,0 +1,15 @@
+title: Bass
+tempo: 128
+time: 4/4
+bars: 2
+channel: 1
+velocity: 100
+naming: scientific
+notes:
+  - {pitch: C2, start: 0, length: 0.75}
+  - {pitch: [C3, Eb3, G3], start: 4, length: 4, velocity: 90}
+  - {pitch: 60, start: 6, length: 1}
+grid: 16
+lanes:
+  - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
+  - {name: Hat, pitch: F#2, steps: "..X...o...5...x. | ..x...x...x..xx.", length: 0.125}

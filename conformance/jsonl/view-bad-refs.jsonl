@@ -1,0 +1,1 @@
+{"$sources": ["missing.json", "data.json#meta", "data.json#nothere", "bad.jsonl"], "$policy": "missing.policy"}

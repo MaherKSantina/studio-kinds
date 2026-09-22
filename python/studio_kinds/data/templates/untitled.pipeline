@@ -1,0 +1,19 @@
+decisions:
+  - key: method
+    label: Method
+    values: [{key: measured, label: Measured}, {key: anecdotal, label: Anecdotal}]
+items:
+  - {id: 8c1f2b6e-3d4a-4e5f-9a0b-1c2d3e4f5a6b, name: First item, price: 100}
+stages:
+  - key: corrections
+    rules:
+      - item: 8c1f2b6e-3d4a-4e5f-9a0b-1c2d3e4f5a6b
+        set: {price: 90}
+        when: [method=anecdotal]
+  - key: band
+    filter: [{field: price, op: lte, value: 1000}]
+  - key: cheapest
+    sort: [{field: price, dir: asc}]
+views:
+  - key: all
+    label: All

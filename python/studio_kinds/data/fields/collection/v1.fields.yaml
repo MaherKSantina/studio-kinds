@@ -1,0 +1,39 @@
+kind: collection
+version: 1
+fields:
+  - field: source
+    type: path
+    required: true
+    description: The `.jsonl` view the items were copied from.
+  - field: to
+    type: string
+    description: Where directions go.
+  - field: fields
+    type: list of field
+    required: true
+    description: The facts shown for each item, in order; dot paths allowed.
+  - field: stats
+    type: list of field
+    description: The fields shown as the big cards.
+  - field: labels
+    type: map of field → label
+    description: Header names, by field.
+  - field: items
+    type: list of item
+    required: true
+    description: The rows copied in, each with an `id` given at copy time; `featured` names the picture that stands for it.
+  - field: decisions
+    type: list of decision
+    required: true
+    description: The log, in the order taken; never applied to the items.
+  - field: decisions[].item
+    type: item id
+    required: true
+    description: The item decided on.
+  - field: decisions[].op
+    type: up | down | hide | show
+    required: true
+    description: Push it up or down in rank, hide it, or take a hide back.
+  - field: decisions[].reason
+    type: string
+    description: Why, in plain words; required for up, down and hide.

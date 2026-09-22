@@ -1,8 +1,9 @@
 # studio-kinds — how Claude works here
 
 `claude/claude.playbook` is Claude's master playbook for this repository, a version-2 book: its
-events are things that happen while working on the Studio — the kinds and their engines, the
-checker, the page, the desktop app, the VS Code extension, the skill, the kits — and each event's
+events are things that happen while working on the Studio — the kinds, their schemas and books, the
+checker (the Python package), the parked front end (the kits, the desktop app, the VS Code
+extension), the skill — and each event's
 content, a checklist or a child playbook, is written in the file itself. Consult it:
 
 - at the start of every task, to know which events to watch for;

@@ -1,0 +1,21 @@
+{
+  "ok": false,
+  "problems": [
+    "section Not a mapping: `content` is not a mapping — write `kind` and `doc`",
+    "section No kind: `content` has no `kind` — say which kind renders it (playbook, kanban, md, …)",
+    "section No doc: `content` has no `doc` — the document itself, as a file of that kind would hold it",
+    "section Forbidden keys: `content` has `by` — a section holds one document written in; a brief has no answers to vary by and names no file",
+    "section Forbidden keys: `content` has `docs` — a section holds one document written in; a brief has no answers to vary by and names no file",
+    "section Forbidden keys: `content` has `file` — a section holds one document written in; a brief has no answers to vary by and names no file",
+    "section Md not string: an `md` document is its text — write it as a block string",
+    "section No doc (kanban): no `title` — the board's heading",
+    "section No doc (kanban): no `columns` — the statuses in order, a string or `{title, color?}` each",
+    "section No doc (kanban): no `tasks` — the cards; `tasks: []` is an empty board",
+    "section Unknown kind (widget): not a kind the Studio knows — `--kinds` lists them",
+    "section Nested › Broken board (kanban): no `title` — the board's heading",
+    "section Nested › Broken board (kanban): `columns` is empty — a board needs at least one status",
+    "section Nested › Broken board (kanban): task a: needs `zz` — no task has that key",
+    "section Nested › Broken book (playbook): event e: inline content has `doc` but no `kind` — say which kind renders it (brief, guide, md, …)"
+  ],
+  "summary": "10 sections, 7 documents"
+}

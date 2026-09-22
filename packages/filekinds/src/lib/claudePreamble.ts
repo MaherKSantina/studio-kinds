@@ -11,8 +11,8 @@
  */
 
 export const CLAUDE_FILE = "CLAUDE.md";
-/** The checker as the global command a release installs (`npm install -g studio-cli-<v>.tgz`; on the dev
- *  machine `npm install -g ./apps/cli` links it) — the same words on every machine. */
+/** The checker as the global command the Python package installs (`pip install studio-kinds`, or the
+ *  release's wheel; on the dev machine `pip install -e python`) — the same words on every machine. */
 export const CHECKER = "studio-check";
 
 /** The file's text — `folder` is what to call the place (the folder's name); empty when the

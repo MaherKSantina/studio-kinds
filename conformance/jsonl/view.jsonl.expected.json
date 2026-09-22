@@ -1,0 +1,5 @@
+{
+  "ok": true,
+  "problems": [],
+  "summary": "composed: 5 of 9 rows from data.json#properties (3 rows), more.csv (2 rows), corrections.middleware → data.json#properties (3 rows, 1 amended) + 1 raw through cheapest.policy"
+}

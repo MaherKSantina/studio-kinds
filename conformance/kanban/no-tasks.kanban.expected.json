@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "no `tasks` — the cards; `tasks: []` is an empty board"
+  ],
+  "summary": "0 tasks in 0 rows, 1 column"
+}

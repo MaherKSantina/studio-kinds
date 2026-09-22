@@ -1,0 +1,26 @@
+title: A venture
+description: One line under the title
+sections:
+  - title: Money
+    description: Where it comes from
+    body: |
+      Some **prose** here.
+    children:
+      - title: Banking
+        body: The account.
+      - title: Launch board
+        content:
+          kind: kanban
+          doc:
+            title: Launch
+            columns: [To do, Done]
+            tasks:
+              - {key: a, title: A}
+              - {key: b, title: B, needs: [a], status: Done}
+  - title: People
+    body: Who.
+    content:
+      kind: md
+      doc: |
+        # A note
+        Plain markdown.

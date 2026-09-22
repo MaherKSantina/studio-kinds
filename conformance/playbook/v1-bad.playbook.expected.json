@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "problems": [
+    "event e1: Written is written in the book — version 1 has no such thing; add `version: 2` at the top",
+    "topic t: a content entry is written in the book — version 1 has no such thing; add `version: 2` at the top",
+    "event e1: `when`, `hint` on the event — version 1 says this in a rule; move it to `rules:`, or add `version: 2` at the top",
+    "`library:` is gone — put each entry on its event under `content:`",
+    "`compare:` is gone — there is no A/B view any more",
+    "topic `variants:` are gone — a topic has `content:` directly; content that differs by answer is a `by` entry with one whole document per answer",
+    "event `inputs:` is gone — what an event needs or captures belongs in its content",
+    "`view.against` is gone with the A/B view",
+    "`view.tab` is gone — the walk is the only view",
+    "`materials:`, `scales:` and `view.thresholds` are gone — nothing damps a branch any more; a document that was a material belongs on an event or topic under `content:`",
+    "x.md.variants/d=a.md: missing — every answer combination of `by` is a book of its own",
+    "x.md.variants/d=b.md: missing — every answer combination of `by` is a book of its own"
+  ],
+  "summary": "v1 · 1 decisions, 2 events, 1 topics, 0 of 2 child variations present"
+}

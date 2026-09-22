@@ -73,7 +73,7 @@ events:
               `localizeGraph`) with `projectGraphLoad.ts`; the Ask vocabulary `projectAsk.ts`;
               versions `nodeHistory.ts`. The view is `components/project/ProjectView.tsx` with
               `ProjectDagView`, `ProjectLensView`, `ProjectAsk`, `MoveIntoFlow`,
-              `NodeHistoryDialog`; the checker is `apps/cli/src/check.ts`.
+              `NodeHistoryDialog`; the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

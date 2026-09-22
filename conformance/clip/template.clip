@@ -1,0 +1,8 @@
+title: untitled
+tempo: 120
+time: 4/4
+bars: 1
+notes:
+  - {pitch: C3, start: 0, length: 1}
+lanes:
+  - {name: Kick, pitch: C2, steps: "x...x...x...x..."}

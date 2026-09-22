@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "could not read nowhere.csv"
+  ],
+  "summary": "over nowhere.csv (0 rows): rule 1 → 0"
+}

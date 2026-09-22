@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "views doc must be a mapping with `active` and `views`."
+  ],
+  "summary": "0 screens, 0 states"
+}

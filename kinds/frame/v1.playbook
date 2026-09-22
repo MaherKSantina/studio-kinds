@@ -54,7 +54,7 @@ events:
               `frameEdit.ts`, the Ask vocabulary `frameAsk.ts`, the export `frameHandover.ts`,
               the flow side `flowFrames.ts`. The views are `components/frame/FrameViewer.tsx`,
               `FrameCanvas.tsx`, `FrameEditor.tsx`, `FrameInspector.tsx` and `FrameAsk.tsx`; the
-              checker is `apps/cli/src/check.ts`.
+              checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

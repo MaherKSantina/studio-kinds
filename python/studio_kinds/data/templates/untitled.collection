@@ -1,0 +1,5 @@
+source: rows.jsonl
+to: Narooma NSW
+fields: [name]
+items: []
+decisions: []

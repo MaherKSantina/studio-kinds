@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/md/v1.schema.json",
+  "title": "md",
+  "description": "Plain markdown; the Studio renders it, nothing to validate.",
+  "x-studio-file": "markdown text",
+  "type": "string"
+}

@@ -1,0 +1,291 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/middleware/v1.schema.json",
+  "title": "middleware",
+  "description": "Rows amended on their way to a view: a source, and rules that each pick rows by clauses and set fields on them. A rule that matches no row is a problem.",
+  "type": "object",
+  "required": [
+    "source",
+    "rules"
+  ],
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "file"
+          ]
+        }
+      ],
+      "description": "A .json (`#key` naming its list), a .jsonl, a .csv, or another .middleware (chains; no cycles)."
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One rule; needs `set` or `key`/`value`.",
+        "properties": {
+          "where": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/fieldClause"
+            },
+            "description": "Every clause must hold; none = every row."
+          },
+          "set": {
+            "type": "object",
+            "description": "Field → value set on each matched row; keys may be dot paths."
+          },
+          "key": {
+            "type": "string",
+            "description": "One field to set — with `value`, the short form of `set`."
+          },
+          "value": {
+            "description": "The value for `key`."
+          },
+          "note": {
+            "type": "string",
+            "description": "What you saw, for the reader."
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "set"
+            ]
+          },
+          {
+            "required": [
+              "key"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "fieldClause": {
+      "type": "object",
+      "description": "One condition. All clauses of a list must hold (AND).",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "A key of the row, or a dot path into nested objects (`best_offer.price_total_aud`)."
+        },
+        "op": {
+          "enum": [
+            "equals",
+            "not_equals",
+            "contains",
+            "not_contains",
+            "starts_with",
+            "ends_with",
+            "matches",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "between",
+            "in",
+            "not_in",
+            "is_empty",
+            "not_empty",
+            "is_true",
+            "is_false"
+          ],
+          "description": "The comparison. Text ops compare case-insensitively and take one value or a list (any of them; none of them for the negated ops); numeric ops need a number and are never true for an empty field; `between` takes `[low, high]`; `in`/`not_in` take a list; `is_empty`, `not_empty`, `is_true`, `is_false` take no value."
+        },
+        "value": {
+          "description": "What the op compares against: a string, a number, or a list of those.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "param": {
+          "type": "string",
+          "description": "`param` is read as `field` too — the policy's word for it."
+        }
+      },
+      "required": [
+        "field",
+        "op"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "gt",
+                  "gte",
+                  "lt",
+                  "lte"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": [
+                  "number",
+                  "string"
+                ]
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "between"
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": [
+                    "number",
+                    "string"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "in",
+                  "not_in"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array"
+              }
+            },
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "is_empty",
+                  "not_empty",
+                  "is_true",
+                  "is_false"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "value"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "contains",
+                  "not_contains",
+                  "starts_with",
+                  "ends_with",
+                  "matches"
+                ]
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

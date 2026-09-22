@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "not a mapping — a board is `title`, `columns` and `tasks`"
+  ],
+  "summary": "0 tasks in 0 rows, 0 columns"
+}

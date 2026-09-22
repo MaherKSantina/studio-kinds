@@ -1,0 +1,91 @@
+kind: pipeline
+version: 1
+fields:
+  - field: title
+    type: string
+    description: The heading; the file's name stands in.
+  - field: decisions
+    type: list of decision
+    description: "A playbook's decisions — the circumstances a `when` can name: `{key, label, values: [{key, label}]}`."
+  - field: labels
+    type: map of field → string
+    description: Header names by field, for every view.
+  - field: items
+    type: list of item
+    required: true
+    description: The list, in the file; every item is a mapping of fields.
+  - field: items[].id
+    type: string
+    required: true
+    description: The item's identity — a uuid; what a rule's `item` names. Missing, the item is given `#N` and reported.
+  - field: stages
+    type: list of stage
+    description: In order; each is a key and ONE verb — `rules`, `filter` or `sort`.
+  - field: stages[].key
+    type: string
+    required: true
+    description: The stage's identity, unique among stages and views; what `#<key>` names from another file.
+  - field: stages[].label
+    type: string
+    description: What the rail shows; the key stands in.
+  - field: stages[].when
+    type: list of ref
+    description: "The circumstance the whole stage holds under — refs `decision=answer`; skipped once a taken answer contradicts it."
+  - field: stages[].rules
+    type: list of rule
+    description: The `rules` verb — a middleware's rules, applied in order; a rule matching no item is a problem.
+  - field: stages[].rules[].item
+    type: string or list of string
+    description: The ids the rule picks — the short form of a clause on `id`; an id no item has is a problem.
+  - field: stages[].rules[].where
+    type: list of clause
+    description: "Every clause must hold — `{field, op, value?}`; with no `item` and no clauses, every item."
+  - field: stages[].rules[].set
+    type: map of field → value
+    description: The fields set on the picked items; a key may be a dot path.
+  - field: stages[].rules[].key
+    type: field
+    description: With `value`, the one-field form of `set`.
+  - field: stages[].rules[].value
+    type: value
+    description: The value for `key`.
+  - field: stages[].rules[].when
+    type: list of ref
+    description: The circumstance the rule's values hold under; the badge every cell it sets carries.
+  - field: stages[].rules[].note
+    type: string
+    description: What was seen, for the reader.
+  - field: stages[].filter
+    type: list of clause
+    description: The `filter` verb — the items every clause holds for are kept; the rest are dropped for the stages after it and the output.
+  - field: stages[].sort
+    type: list of sort key
+    description: "The `sort` verb — `{field, dir: asc|desc}`, first key first."
+  - field: views
+    type: list of view
+    description: The output shown, one at a time; the first opens. None = every column, the output's order.
+  - field: views[].key
+    type: string
+    required: true
+    description: The view's identity, unique among views and stages; what `#<key>` names from another file.
+  - field: views[].label
+    type: string
+    description: The tab's name; the key stands in.
+  - field: views[].when
+    type: list of ref
+    description: The circumstance the view holds under; struck through once a taken answer contradicts it.
+  - field: views[].filter
+    type: list of clause
+    description: Hides, for this view only, the rows a clause fails.
+  - field: views[].sort
+    type: list of sort key
+    description: The view's order, first key first.
+  - field: views[].columns
+    type: list of field
+    description: "The columns shown, in this order; `\"*\"` = every other column, after the named ones; omitted = every column but `id`."
+  - field: views[].hide
+    type: list of field
+    description: Subtracted from the columns shown.
+  - field: views[].limit
+    type: number
+    description: At most this many rows.

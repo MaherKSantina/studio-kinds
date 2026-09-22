@@ -1,0 +1,14 @@
+{
+  "ok": false,
+  "problems": [
+    "where 1: no field",
+    "where 2: no op",
+    "where 3: unknown op \"nope\"",
+    "sort 1: no field",
+    "sort 2: dir must be asc or desc, not \"sideways\"",
+    "limit: must be a positive number",
+    "rename: header labels belong to the .jsonl that applies this policy ($labels), not to the rules",
+    "source: the data is named by the .jsonl that applies this policy ($sources), not by the rules"
+  ],
+  "summary": "table policy: 1 filters, 0 sort keys"
+}

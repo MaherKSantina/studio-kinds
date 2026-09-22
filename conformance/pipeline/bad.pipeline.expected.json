@@ -1,0 +1,31 @@
+{
+  "ok": false,
+  "problems": [
+    "decision method: no values",
+    "labels.price: must be text",
+    "item 1: not a mapping",
+    "item 1: no id",
+    "item 2: no id",
+    "item 4: id dup is item 3's too",
+    "stage 1: no key",
+    "stage twice: key twice",
+    "stage noverb: no verb — give it rules, filter or sort",
+    "stage twoverbs: filter and sort — one verb per stage",
+    "stage badwhen when: no decision \"nothing\"",
+    "stage badwhen when: method has no answer \"wrong\"",
+    "stage badwhen rule 1: item ghost is no item",
+    "stage badwhen rule 1 when: method has no answer \"nope\"",
+    "stage badwhen rule 3 where 1: no op",
+    "stage badwhen rule 3: sets nothing — give it set: {field: value} or key/value",
+    "stage rulesnotlist: rules must be a list",
+    "stage filternotlist: filter must be a list of clauses",
+    "stage sortnotlist: sort must be a list of keys",
+    "view 1: no key",
+    "view v: key twice",
+    "view twice: a stage has this key",
+    "view cols when: method has no answer \"x\"",
+    "view cols sort 1: dir must be asc or desc, not \"sideways\"",
+    "view cols limit: must be a positive number"
+  ],
+  "summary": "4 items → stage-1 (rules · 0 set; no rules) → twice (filter · 4 → 0) → twice (sort · 0) → noverb (rules · 0 set; no rules) → twoverbs (filter · 0 → 0) → badwhen (rules · 0 set; rule 1 → 0, rule 2 → 0, rule 3 → 0) → rulesnotlist (rules · 0 set; no rules) → filternotlist (filter · 0 → 0) → sortnotlist (sort · 0) → sortghost (sort · 0) → 0 out · views: view-1 0, v 0, v 0, twice 0, cols 0 · 1 decision"
+}

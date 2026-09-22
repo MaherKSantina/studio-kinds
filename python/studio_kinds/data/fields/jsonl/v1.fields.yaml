@@ -1,0 +1,22 @@
+kind: jsonl
+version: 1
+fields:
+  - field: (line)
+    type: JSON object
+    required: true
+    description: One row per line; the columns are the union of the objects' keys in the order first seen. A whole file that is one JSON array of objects is accepted too.
+  - field: $sources
+    type: list of ref
+    description: "Directive: the files the rows are read from on every open — a `.json` (`#key` naming its list), a `.jsonl`, a `.csv`, or a `.middleware`; resolved against this file's folder."
+  - field: $policy
+    type: path
+    description: "Directive: the table policy (`role: table`) the rows pass through — kept, ordered, cut to its columns."
+  - field: $title
+    type: string
+    description: "Directive: the view's heading."
+  - field: $description
+    type: string
+    description: "Directive: one line under the title."
+  - field: $labels
+    type: map of field → label
+    description: "Directive: the header names, by field, dot paths included."

@@ -1,0 +1,56 @@
+kind: kanban
+version: 1
+fields:
+  - field: title
+    type: string
+    required: true
+    description: The board's heading.
+  - field: description
+    type: string
+    description: One line under the title.
+  - field: due
+    type: date
+    description: The day everything must be done by — the anchor backward scheduling chains from. `YYYY-MM-DD`, bare or quoted.
+  - field: source
+    type: path
+    description: Where the tasks come from — a folder of `.node`s or a `.points` ref; the board then authors only its own domains and merges them by key.
+  - field: columns
+    type: list of string | column
+    required: true
+    description: The statuses, in order; a string, or `{title, color?}` — `color` any CSS colour. A task's `status` must spell one of these.
+  - field: tasks
+    type: list of task
+    required: true
+    description: The cards; rows are derived from `needs`, never authored.
+  - field: tasks[].key
+    type: string
+    required: true
+    description: The stable key `needs` edges point at.
+  - field: tasks[].title
+    type: string
+    required: true
+    description: The card's heading.
+  - field: tasks[].status
+    type: column title
+    description: The column, matched case-insensitively; unset lands in the first column, and a title that is no column is a problem to the checker.
+  - field: tasks[].file
+    type: path
+    description: A document resolved against the board's folder, opened in the card dialog by its own kind.
+  - field: tasks[].section
+    type: string
+    description: For a `.brief` file, open only the first section whose title contains this.
+  - field: tasks[].note
+    type: string
+    description: One line under the title.
+  - field: tasks[].body
+    type: markdown
+    description: The task's own prose — the dialog's main content.
+  - field: tasks[].needs
+    type: list of task key
+    description: Prerequisites, each the `key` of another task in this board; the board layers tasks by longest chain. A key no task has, the task itself, or a cycle is a problem to the checker.
+  - field: tasks[].duration
+    type: number
+    description: Calendar days the task takes (default 1) — weekends are days too; there is no holiday calendar.
+  - field: tasks[].due
+    type: date
+    description: A per-task cap, tighter than the board's. `YYYY-MM-DD`, bare or quoted.

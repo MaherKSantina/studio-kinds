@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/playbook/v2.schema.json",
+  "title": "playbook (version 2)",
+  "description": "Where we are, what can happen, and what is true while it does. DECISIONS are the state space; EVENTS are what can happen, each showing ONE document written in the book. The walk over it is session-only: nothing is written back.",
+  "type": "object",
+  "required": [
+    "version",
+    "title",
+    "events"
+  ],
+  "properties": {
+    "version": {
+      "const": 2,
+      "description": "2 — every document written in the file, the walk session-only."
+    },
+    "title": {
+      "type": "string",
+      "description": "The heading."
+    },
+    "description": {
+      "type": "string",
+      "description": "One line under the title."
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/decision"
+      },
+      "description": "The state space — questions, each with its answers."
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/event"
+      },
+      "description": "What can happen, and the one document each shows when taken."
+    }
+  },
+  "not": {
+    "anyOf": [
+      {
+        "required": [
+          "rules"
+        ]
+      },
+      {
+        "required": [
+          "topics"
+        ]
+      },
+      {
+        "required": [
+          "view"
+        ]
+      }
+    ]
+  },
+  "x-studio-refused": "At version 2: `rules`, `topics` and `view` at the top; `status`, `sets`, a `content` list or a `file` entry on an event.",
+  "$defs": {
+    "decision": {
+      "type": "object",
+      "description": "A question, with its answers. A state is the set of answers taken; none is ever written.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Identity — appears in every `when` and `docs` key."
+        },
+        "label": {
+          "type": "string",
+          "description": "The question as shown."
+        },
+        "detail": {
+          "type": "string",
+          "description": "One line under the question."
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Identity of the answer; a ref is `decision=answer`."
+              },
+              "label": {
+                "type": "string",
+                "description": "The answer as shown."
+              },
+              "detail": {
+                "type": "string",
+                "description": "One line under the answer."
+              },
+              "activates": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Decisions that exist only while this answer is taken.",
+                "x-studio-ref": "#/properties/decisions/items/properties/key"
+              },
+              "when": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "A ref `decision=answer` — the decision's key, `=`, the answer's key.",
+                  "pattern": "^[^=]+=.+$"
+                },
+                "description": "The answer is on offer only while every ref holds."
+              }
+            },
+            "required": [
+              "key",
+              "label"
+            ]
+          },
+          "description": "The answers on offer."
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "values"
+      ]
+    },
+    "event": {
+      "type": "object",
+      "description": "One event.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Identity of the event."
+        },
+        "label": {
+          "type": "string",
+          "description": "The event as shown in the rail."
+        },
+        "trigger": {
+          "enum": [
+            "imposed",
+            "chosen"
+          ],
+          "description": "`imposed` arrives whether or not we are ready (default); `chosen` fires when we say so."
+        },
+        "arity": {
+          "enum": [
+            "once",
+            "many"
+          ],
+          "description": "`once` (default) is a move; `many` never leaves the table."
+        },
+        "rate": {
+          "type": "string",
+          "description": "How often a `many` event fires, such as `5/w`."
+        },
+        "domain": {
+          "type": "string",
+          "description": "A grouping heading in the rail."
+        },
+        "detail": {
+          "type": "string",
+          "description": "One italic line shown when the event is open."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "A ref `decision=answer` — the decision's key, `=`, the answer's key.",
+            "pattern": "^[^=]+=.+$"
+          },
+          "description": "The event is on the table only while every ref holds; absent, always."
+        },
+        "hint": {
+          "type": "string",
+          "description": "Markdown shown while an answer the document follows is still open, or as the whole detail when the event has no document.",
+          "x-studio-format": "markdown"
+        },
+        "content": {
+          "$ref": "#/$defs/content"
+        }
+      },
+      "required": [
+        "key",
+        "label"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "status"
+            ]
+          },
+          {
+            "required": [
+              "sets"
+            ]
+          }
+        ]
+      }
+    },
+    "content": {
+      "description": "The one document the event shows — a mapping, not a list. `kind` names the renderer; then either `doc`, one document as that kind's YAML parses it (a string for `md`), or `by` + `docs`, a closed set of them — one per combination of the `by` answers, keyed `decision=answer,...` in `by` order.",
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "A stable name for the entry: what the view collapses by."
+        },
+        "label": {
+          "type": "string",
+          "description": "The panel header."
+        },
+        "kind": {
+          "type": "string",
+          "description": "The kind of the document, or of every member of `docs`.",
+          "x-studio-kind": true
+        },
+        "doc": {
+          "description": "One document, as its kind's YAML parses it; a string for `md`."
+        },
+        "by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The decisions the set is keyed by, in key order.",
+          "minItems": 1,
+          "x-studio-ref": "#/properties/decisions/items/properties/key"
+        },
+        "docs": {
+          "type": "object",
+          "description": "One document per combination of the `by` answers, keyed `decision=answer,...` in `by` order — no more and no less.",
+          "propertyNames": {
+            "pattern": "^[^=,]+=[^,]+(,[^=,]+=[^,]+)*$"
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "doc"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "docs"
+                ]
+              },
+              {
+                "required": [
+                  "by"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "by",
+            "docs"
+          ],
+          "not": {
+            "required": [
+              "doc"
+            ]
+          }
+        }
+      ],
+      "not": {
+        "required": [
+          "file"
+        ]
+      },
+      "x-studio-written-document": {
+        "kind": "kind",
+        "doc": "doc",
+        "docs": "docs"
+      },
+      "x-studio-closed-set": "The keys of `docs` are exactly the answer combinations of `by`."
+    }
+  }
+}

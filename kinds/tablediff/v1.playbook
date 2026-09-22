@@ -49,7 +49,7 @@ events:
               `packages/filekinds/src/lib/tableDiff.ts` — `parseTableDiff`, `diffTables`,
               `columnTotals`, `diffToHtml`; its header comment is what `studio-check --spec
               tablediff` prints. The CSV parser is `tableData.ts`. The view is
-              `components/tablediff/TableDiffView.tsx`; the checker is `apps/cli/src/check.ts`.
+              `components/tablediff/TableDiffView.tsx`; the checker (`studio-check`, the Python package) knows the kind by name only and does not check it.
   - key: opened
     label: The file is opened
     trigger: imposed

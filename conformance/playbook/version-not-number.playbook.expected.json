@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "`version: two` is not a whole number from 1 — read as version 2"
+  ],
+  "summary": "v2 · 0 decisions, 0 events"
+}

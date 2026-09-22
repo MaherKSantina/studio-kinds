@@ -1,0 +1,13 @@
+title: Demo
+tempo: 128
+time: 4/4
+tracks:
+  - name: Drums
+    channel: 10
+    clips:
+      - {file: drums.clip, at: 0, repeat: 2}
+      - {file: drums.clip, at: 3}
+  - name: Bass
+    clips:
+      - {file: bass.clip, repeat: 4}
+      - {file: bass.clip, repeat: 2, transpose: 5}
