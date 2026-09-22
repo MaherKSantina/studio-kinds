@@ -1,0 +1,17 @@
+title: Board with documents
+due: 2026-12-31
+columns: [To do, Done]
+tasks:
+  - key: brief-in
+    title: The facts, written in
+    content:
+      kind: brief
+      doc:
+        title: What the task is about
+        sections:
+          - title: The premise
+            body: Two sentences of it.
+  - key: notes
+    title: A markdown note
+    needs: [brief-in]
+    content: {kind: md, doc: "Everything this task needs, in the board."}

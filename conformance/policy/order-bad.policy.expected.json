@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "problems": [
+    "`policy:`, `items:`, `map:` — a run applied a policy to a list in another file; a `.pipeline` holds the list, the rules that transform it and the views over it, in one file",
+    "`tags:` is a path — write the dimensions this ranking reads in, as a list under `tags:`",
+    "entry 1: no dimension \"platform\" — every dimension a ranking reads is written in under `tags:`"
+  ],
+  "summary": "order policy: 0 dimensions, 1 ranked entry"
+}

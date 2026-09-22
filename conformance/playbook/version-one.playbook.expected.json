@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "problems": [
+    "`version: 1` — a playbook is one file at version 2: every document written in, no `topics`, `rules` or `view`. Read as 2",
+    "`topics:` — what is always true is the content of an always-on event",
+    "`rules:` — an event carries its own `when` and `hint`, and its document shows once the answers it follows are taken. Move each rule's `process` onto its event as `hint`, and its `when` onto the event",
+    "`view:` — the walk is session-only and writes nothing; every decision opens unanswered. Delete the view",
+    "event e1: `content` is one document — a mapping, not a list; several sections belong in one brief",
+    "event e1: Steps is a file beside the book — write the document into the book as `kind` + `doc`"
+  ],
+  "summary": "v2 · 1 decisions, 1 events"
+}

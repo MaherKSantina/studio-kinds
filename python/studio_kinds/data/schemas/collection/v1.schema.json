@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/collection/v1.schema.json",
   "title": "collection",
-  "description": "A snapshot of rows to decide over, one at a time: the rows copied in, the view's fields and labels, and the decisions — a log of up, down, hide, show, each with a reason.",
+  "description": "Rows to decide over, one at a time: the rows themselves, the fields and labels a card shows, and the decisions — a log of up, down, hide, show, each with a reason.",
   "type": "object",
   "required": [
     "fields",
@@ -10,10 +10,6 @@
     "decisions"
   ],
   "properties": {
-    "source": {
-      "type": "string",
-      "description": "Where the items were copied from."
-    },
     "to": {
       "type": "string",
       "description": "Where directions go."

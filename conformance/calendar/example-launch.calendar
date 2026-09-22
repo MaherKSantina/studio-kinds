@@ -1,3 +1,27 @@
 title: Podcast launch, on the calendar
-description: The schedule launch.kanban's edges, durations and due date produce — nothing stored here.
-board: launch.kanban
+description: The schedule these edges, durations and the launch date produce — no date is written down.
+due: 2026-11-13
+tasks:
+  - key: plan
+    title: Plan the show
+    note: Format, audience, cadence, name
+    duration: 5
+  - key: record
+    title: Record the pilot
+    needs: [plan]
+    duration: 3
+  - key: edit
+    title: Edit the pilot
+    note: Cut, level, add intro and outro
+    needs: [record]
+    duration: 4
+  - key: publish
+    title: Publish the pilot
+    note: Host it, submit the feed to the directories
+    needs: [edit]
+    duration: 2
+    due: 2026-11-06
+  - key: promote
+    title: Promote the launch
+    needs: [publish]
+    duration: 5

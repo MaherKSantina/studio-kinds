@@ -107,7 +107,7 @@ def _count(sections: list[Section]) -> int:
     return sum(1 + _count(s.children) for s in sections)
 
 
-def check(text: str, file: str | None = None) -> CheckResult:
+def check(text: str) -> CheckResult:
     y = _yaml.error_line(text)
     if y:
         return CheckResult([y])
@@ -120,7 +120,7 @@ def check(text: str, file: str | None = None) -> CheckResult:
         written += 1
         kind = node.content["kind"]
         name = f"section {path} ({kind})"
-        known, r = check_written(kind, node.content["doc"], file)
+        known, r = check_written(kind, node.content["doc"])
         if not known:
             out.append(f"{name}: not a kind the Studio knows — `--kinds` lists them")
             continue

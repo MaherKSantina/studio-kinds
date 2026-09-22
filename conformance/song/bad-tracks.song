@@ -1,3 +1,12 @@
+clips:
+  - name: bass
+    notes:
+      - {pitch: C2, start: 0}
+  - name: bass
+    notes: []
+  - notes: []
+  - name: silent
+    notes: []
 tracks:
   - name: T
     channel: 0
@@ -5,8 +14,8 @@ tracks:
   - name: U
     clips:
       - {at: 0}
-      - {file: bass.clip, at: -1}
-      - {file: bass.clip, repeat: 0}
-      - {file: bass.clip, transpose: 1.5}
-      - {file: nowhere.clip}
-      - {file: broken.clip}
+      - {clip: bass, at: -1}
+      - {clip: bass, repeat: 0}
+      - {clip: bass, transpose: 1.5}
+      - {clip: nowhere}
+      - {file: bass.clip}

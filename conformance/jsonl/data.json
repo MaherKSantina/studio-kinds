@@ -1,3 +1,0 @@
-{"meta": {"n": 3}, "properties": [{"name": "Cabin", "price": 900, "available": true, "km": 10},
- {"name": "Room", "price": 2500, "available": true, "km": 3},
- {"name": "Tent", "price": 300, "available": false, "km": 40}], "other": [{"x": 1}]}

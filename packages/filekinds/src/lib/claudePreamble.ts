@@ -22,16 +22,19 @@ export function claudePreamble(folder: string): string {
   return `# ${name ? `${name} — ` : ""}Studio documents
 
 Every file in this folder and below is a Studio document picked by its extension — \`.brief\`,
-\`.playbook\`, \`.kanban\`, \`.calendar\`, \`.policy\`, \`.flow\`, \`.jsonl\`, \`.middleware\`, \`.pipeline\`,
-\`.collection\`, \`.clip\`, \`.song\` — and \`.md\` for anything else. The folder shows in the Studio (the web
-front door over a folder, the desktop app, VS Code's Studio editor).
+\`.playbook\`, \`.kanban\`, \`.calendar\`, \`.policy\`, \`.flow\`, \`.jsonl\`, \`.pipeline\`,
+\`.collection\`, \`.clip\`, \`.song\` — and \`.md\` for anything else. Each one is ONE self-contained file:
+a document holds everything it shows, and a document of another kind is written in, never named as a
+path. The folder shows in the Studio (the web front door over a folder, the desktop app, VS Code's
+Studio editor).
 
 For anything touching these files, open the \`studio-files\` skill — the event **A Studio document is
 asked for** in \`claude/claude.playbook\` of the studio-kinds repository, exported to
 \`skills/studio-files/SKILL.md\` and shipped with every release — and follow it, including the question
 "which file type should this be?": its "Which kind for what" table is the answer (a hierarchy of content → \`.brief\`;
 event-based content under decision answers → \`.playbook\`; workflows tracked through one process →
-\`.kanban\` + \`.calendar\`; rules that sort and filter → \`.policy\`; data rows → \`.jsonl\`; nothing fits → \`.md\`).
+\`.kanban\` or \`.calendar\`; rules that sort and filter → \`.policy\`; data rows → \`.jsonl\`; a curated
+list with the rules that shaped it → \`.pipeline\`; nothing fits → \`.md\`).
 
 - Before writing a kind, read its spec: \`${CHECKER} --spec <ext>\`
 - Start a new file from its template: \`${CHECKER} --template <ext> > new.<ext>\`

@@ -1,5 +1,5 @@
 version: 2
-title: How a version-1 pipeline works
+title: How a pipeline works
 description: One curated list in the file, the stages that transform it and the views that show the output — the rows as of any stage and the logic behind them one click apart; applied on every open, never cached, never written back.
 events:
   - key: always
@@ -30,7 +30,7 @@ events:
               ```yaml
               stages:
                 - key: corrections
-                  rules:                                   # a middleware's rules: pick items, set fields
+                  rules:                                   # pick items by id or clause, set fields
                     - item: 9b2f6d1c-4e0a-4c7b-9a1d-2f5e8c3b7a10   # one id or a list — the short form of a clause on `id`
                       set: {price: 850}
                       when: [method=anecdotal]             # the circumstance
@@ -42,7 +42,7 @@ events:
                   sort: [{field: price, dir: asc}]         # first key first
               ```
 
-              A rule is the middleware's: `where` clauses (all must hold; none = every item), `set`
+              A rule is `where` clauses (all must hold; none = every item), `set`
               (a key may be a dot path) or `key`/`value`, a `note`; `item` names items by id. The
               clause vocabulary is the suite's one: `equals`, `not_equals`, `contains`,
               `not_contains`, `starts_with`, `ends_with`, `matches`, `gt`, `gte`, `lt`, `lte`,
@@ -61,7 +61,7 @@ events:
                   sort: [{field: price, dir: asc}]
               ```
 
-              A view is the table policy's rules over the output — `filter`, `sort`, `columns`,
+              A view is a set of rules over the output — `filter`, `sort`, `columns`,
               `hide`, `limit` together — and nothing else; the first view is what opens. No
               views: one plain view, every column, the output's order.
           - title: A circumstance
@@ -83,13 +83,12 @@ events:
               render it with nothing else on disk.
           - title: Where the engine lives
             body: |
-              `packages/filekinds/src/lib/pipelineDoc.ts` — `parsePipeline`, `runPipeline`,
-              `holdsUnder`, `trail`, `rowsAt`, `pipelineSummary`; its header comment is what
-              `studio-check --spec pipeline` prints, with `tablePolicy.ts` beside it. The rules
-              are `middlewareDoc.ts`'s (`readRule`, `applyMiddleware`), the filter, sort and views
-              `tablePolicy.ts`'s (`readTableRules`, `applyTablePolicy`), the clauses
-              `policyDoc.ts`'s. The view is `components/pipeline/PipelineView.tsx`, over the data
-              grid and the row dialog; the checker is `python/studio_kinds/kinds/pipeline.py`.
+              `python/studio_kinds/kinds/pipeline.py` — `parse`, `run`, `holds_under`, `trail`,
+              `rows_at`, `summary`, with the rules (`read_rule`, `apply_rules`) in it and the
+              clauses, the filter and the sort in `_rows.py` (`read_clauses`, `read_table_rules`,
+              `apply_table`); its header comment is what `studio-check --spec pipeline` prints,
+              and the shape is `kinds/pipeline/v1.schema.json`. The view is
+              `components/pipeline/PipelineView.tsx`, over the data grid and the row dialog.
   - key: opened
     label: The file is opened
     trigger: imposed
@@ -119,12 +118,12 @@ events:
             body: |
               The stages in order, each on the rows the one before it left: a `rules` stage runs
               the rules on the table (their `when` holds under the answers taken) as one
-              middleware, so a later rule sees an earlier rule's value — every cell set is marked
+              in order, so a later rule sees an earlier rule's value — every cell set is marked
               with the rule's circumstance and the claim joins the field's trail; a `rules` stage
               rule matching nothing is `stage x rule N matches no item`; a `filter` stage keeps
               the rows every clause holds for and remembers the dropped; a `sort` stage orders
               (a key no row carries is a problem). A stage whose `when` is contradicted is
-              skipped — the rows pass through. Then every view over the output: the table policy
+              skipped — the rows pass through. Then every view over the output: the same rules
               applied, `id` shown only when named in `columns`.
           - title: What is drawn
             body: |
@@ -216,24 +215,22 @@ events:
         with a copy button, and for every field a stage set, its trail: `900 (item) → 850
         (corrections · rule 1 · Method = Anecdotal)`. Arrows walk the rows as the grid shows them.
   - key: named-as-source
-    label: Another file reads it
+    label: The output is taken somewhere
     trigger: imposed
     arity: many
     domain: Elsewhere
-    detail: A .jsonl's $sources, a .middleware's source and --collect take the file, a stage or a view; nothing taken.
+    detail: --collect COPIES the output, or a view's rows, into a collection of its own; nothing else reads a pipeline.
     content:
       key: elsewhere
-      label: Who reads a pipeline
+      label: What becomes of the output
       kind: md
       doc: |
-        - A `.jsonl` lists `stays.pipeline` in `$sources` for the output, `stays.pipeline#band`
-          for the rows as of that stage, `stays.pipeline#by-price` for a view's rows — and, as
-          the only source, its columns; the lead shows `(N rows, N amended)`; a key that is no
-          stage and no view is a problem.
-        - A `.middleware` names it as `source` and amends its rows in turn.
-        - `studio-check --collect stays.pipeline` or `stays.pipeline#by-price` copies the rows
-          into a `.collection` beside it, with the file's labels.
-        - Every run is with nothing taken.
+        - `studio-check --collect stays.pipeline`, or `stays.pipeline#by-price` for a view, writes
+          a `.collection` holding those rows — the file's labels copied with them — to decide over
+          one at a time. The rows are COPIED: the collection then holds them and nothing points
+          back here, so the two can never drift apart. The run is with nothing taken.
+        - Nothing reads a pipeline while it is open: the items, the stages and the views are in
+          this file, and what it produces is looked at here.
   - key: checked
     label: studio-check runs on it
     trigger: imposed

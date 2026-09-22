@@ -4,7 +4,9 @@ params: [{key: text}]
 tags:
   - key: platform
     label: Platform
-    values: [ios, android]
     derive:
       - {value: ios, when: [{param: text, op: contains, value: iOS}]}
       - {value: android}
+  - key: nothing
+    label: No rules
+  - label: No key

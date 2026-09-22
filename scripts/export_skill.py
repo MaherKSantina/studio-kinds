@@ -20,7 +20,7 @@ OUT = os.path.join(ROOT, "skills", "studio-files", "SKILL.md")
 
 FRONTMATTER = """---
 name: studio-files
-description: Author and edit Studio documents on DISK — every kind of the Digital Symphony suite (.brief, .playbook, .kanban, .calendar, .policy, .flow, .jsonl, .middleware, .pipeline, .collection, .clip, .song, and .md for anything else) — in any folder the Studio opens. Use whenever a task touches one of these files by extension, asks to create, change or validate one, mentions the Studio, the desktop app or the VS Code preview, or asks WHICH file type to use for something.
+description: Author and edit Studio documents on DISK — every kind of the Digital Symphony suite (.brief, .playbook, .kanban, .calendar, .policy, .flow, .jsonl, .pipeline, .collection, .clip, .song, and .md for anything else), each one self-contained file — in any folder the Studio opens. Use whenever a task touches one of these files by extension, asks to create, change or validate one, mentions the Studio, the desktop app or the VS Code preview, or asks WHICH file type to use for something.
 ---
 """
 

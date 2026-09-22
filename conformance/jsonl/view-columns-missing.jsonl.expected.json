@@ -1,8 +1,0 @@
-{
-  "ok": false,
-  "problems": [
-    "policy columns.policy: column \"ghost\": no row carries it",
-    "policy columns.policy: sort \"phantom\": no row carries it"
-  ],
-  "summary": "composed: 3 of 3 rows from data.json#properties (3 rows) through columns.policy"
-}

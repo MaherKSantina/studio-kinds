@@ -28,12 +28,6 @@ fields:
   - field: entries
     type: list of entry
     description: Start events, when `start_mode` is `entries`.
-  - field: sources
-    type: list of source
-    description: "Named versions the material panels read from — `{name, path}`."
-  - field: default_source
-    type: source name
-    description: The source panels use when they name none.
   - field: frames
     type: map of name → frame
     description: Frames kept inside the flow, drawn live by a panel's `frame` + `view`.
@@ -54,7 +48,7 @@ fields:
     description: The screen's own UI state; reset on every arrival, seen by no other screen.
   - field: screens[].content
     type: list of panel
-    description: "What the state shows, stepped one panel at a time — `{screenshot}`, `{frame, view}`, or `{file, source?}`."
+    description: "What the state shows, stepped one panel at a time — `{screenshot}` (an image beside the flow) or `{frame, view}` (one of this flow’s own frames, drawn live)."
   - field: screens[].screenshot
     type: storage key
     description: Shorthand for a single screenshot panel.

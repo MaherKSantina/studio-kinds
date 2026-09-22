@@ -1,14 +1,18 @@
 {
   "ok": false,
   "problems": [
+    "clip bass: the name is already another clip's — names are identity",
+    "clip 3: no `name` — the name a track's placement calls it by",
+    "clip silent: no notes — write them under `notes` or `lanes`",
     "track T: channel 0 is not 1–16",
     "track T: clips must be a list",
-    "track U, clip 1: no file",
+    "track U, clip 1: no `clip` — the name of one of this song's clips",
     "track U, clip 2: at -1 is not a bar",
     "track U, clip 3: repeat 0 is not a count",
     "track U, clip 4: transpose 1.5 is not a number of semitones",
-    "track U: nowhere.clip is not there",
-    "track U: broken.clip has 1 problem of its own"
+    "track U, clip 5: no clip called \"nowhere\" — this song holds bass, silent",
+    "track U, clip 6: `file:` — a song holds its clips; write the clip under `clips:` and place it by `clip: <name>`",
+    "track U, clip 6: no `clip` — the name of one of this song's clips"
   ],
-  "summary": "2 tracks · 5 bars · 4 notes · 120 bpm · 4/4"
+  "summary": "2 clips · 2 tracks · 4 bars · 3 notes · 120 bpm · 4/4"
 }

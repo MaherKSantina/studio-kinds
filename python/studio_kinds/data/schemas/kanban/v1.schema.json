@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/kanban/v1.schema.json",
   "title": "kanban",
-  "description": "A task board whose columns are status and whose rows are derived from `needs` edges — never authored. Dates are `YYYY-MM-DD`, bare or quoted.",
+  "description": "A task board whose columns are status and whose rows are derived from `needs` edges — never authored. A task that holds more than its card shows writes that document into itself. Dates are `YYYY-MM-DD`, bare or quoted.",
   "type": "object",
   "required": [
     "title",
@@ -23,10 +23,6 @@
       "type": "string",
       "format": "date",
       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-    },
-    "source": {
-      "type": "string",
-      "description": "Where the tasks come from — a folder of `.node`s or a `.points` ref; the board then authors only its own domains and merges them by key."
     },
     "columns": {
       "type": "array",
@@ -96,14 +92,6 @@
           "description": "A column title, matched case-insensitively; unset lands in the first column.",
           "x-studio-ref": "#/properties/columns"
         },
-        "file": {
-          "type": "string",
-          "description": "A document resolved against the board's folder, opened in the card dialog by its own kind."
-        },
-        "section": {
-          "type": "string",
-          "description": "For a `.brief` file, open only the first section whose title contains this."
-        },
         "note": {
           "type": "string",
           "description": "One line under the title."
@@ -132,11 +120,74 @@
           "type": "string",
           "format": "date",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "content": {
+          "$ref": "#/$defs/writtenDocument",
+          "description": "One document of another kind, written into the task; the card dialog draws it under the prose."
         }
       },
       "required": [
         "key",
         "title"
+      ]
+    },
+    "writtenDocument": {
+      "description": "A document written inside another. `kind` names the engine that renders `doc`; `doc` is the document exactly as a file of that kind would hold it — as that kind's YAML parses it, or its text for `md`. Checked by that kind's own engine. One document per task: a task that needs two is two tasks.",
+      "type": "object",
+      "required": [
+        "kind",
+        "doc"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Which engine renders the document — `brief`, `playbook`, `md`, any kind the Studio knows.",
+          "x-studio-kind": true
+        },
+        "doc": {
+          "description": "The document, as that kind's YAML parses it; a string for `md`."
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "by"
+            ]
+          },
+          {
+            "required": [
+              "docs"
+            ]
+          },
+          {
+            "required": [
+              "file"
+            ]
+          }
+        ]
+      },
+      "x-studio-written-document": {
+        "kind": "kind",
+        "doc": "doc"
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "md"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "doc": {
+                "type": "string"
+              }
+            }
+          }
+        }
       ]
     }
   }

@@ -2,7 +2,7 @@
 
 ## The engine's account
 
-The check is `python/studio_kinds/kinds/jsonl.py` in the studio-kinds repository; the account below is the Studio's engine's own (`packages/filekinds/src/lib/dataRows.ts`), which the check reproduces.
+The check is `python/studio_kinds/kinds/jsonl.py` in the studio-kinds repository; the account below is that engine's own.
 
 The `.jsonl` file kind — DATA ROWS: one JSON object per line (JSON Lines),
 shown as a table whose columns are FOUND, not declared — the union of the
@@ -19,72 +19,23 @@ as text — strings as they are, numbers and booleans as written, null and
 missing empty, objects and arrays as compact JSON — and that text is what
 the search and the sort see.
 
-COMPOSED rows — a line whose keys start with `$` is a DIRECTIVE, not a row:
+WHAT IS KNOWN ABOUT THE ROWS lives in the same file — a line whose keys
+start with `$` is a DIRECTIVE, not a row:
 
-  {"$sources": ["accommodation.json#properties", "more.jsonl"], "$policy": "cheapest.policy"}
   {"$title": "Stays by price", "$description": "Thu 1 - Mon 5 Oct, 4 nights, two adults"}
   {"$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)", "distance_from_narooma_km": "km from Narooma"}}
 
-makes the file a LIVE VIEW: its rows are read from the sources on every
-open — a .json array, a .json object (`#key` naming the list it holds,
-else the longest list of objects in it), a .jsonl (its raw lines), a .csv
-(first row the header) — plus any raw lines beside the directive, and pass
-through the table policy (`role: table`, tablePolicy.ts) named by
-`$policy`: kept, ordered, cut to its columns. Nothing is cached: the file
-holds the references, never the result, so it can never drift from its
-data. Refs resolve against the file's own folder. Either key alone works:
-sources without a policy is the union of the files; a policy without
-sources applies to the raw lines.
+`$title` and `$description` name the table, `$labels` give the header
+names (by field, dot paths included). Directive lines may be split as
+above; they merge (`$labels` accumulates, a second scalar replaces the
+first with a note).
 
-THIS file is where the data is known — so what is said ABOUT the data
-lives here too: `$title` and `$description` name the view, `$labels`
-give the header names (by field, dot paths included). The policy names
-fields and rules only, nothing about what the rows are. Directive lines
-may be split as above; they merge (`$sources` and `$labels` accumulate,
-a second scalar replaces the first with a note).
+The rows are THIS file's: a `.jsonl` is written by whatever produced them
+and holds them, so what the table shows is what the file holds, and a
+copy of the file is a copy of the table. A list curated from several
+places at several times, with rules that amend, filter and sort it, is a
+`.pipeline` — one file too.
 
-## Also (tablePolicy.ts)
-
-The TABLE role of a `.policy` (`role: table`) — a policy over ROWS: which
-to keep, in which order, which columns. The file holds RULES only and
-knows NOTHING about the data: no source, no title for the rows, no header
-labels. The rows come from the `.jsonl` that applies it — its directive
-lines name the sources, this policy, and everything said about the data
-(see dataRows.ts) — read live on every open and never cached, so several
-`.jsonl` files can share one policy and none can drift from its data.
-
-Authoring shape (YAML, lenient — a half-written file still renders):
-
-  role: table
-  title, description?                # a name for the RULES ("within the price band, cheapest first"), never the data
-  where:                            # EVERY clause must hold (AND); a row failing one is out
-    - {field: available_for_dates, op: is_true}
-    - {field: best_offer.price_total_aud, op: between, value: [600, 2000]}
-  sort:                             # first key first; a later key breaks ties
-    - {field: best_offer.price_total_aud, dir: asc}
-    - {field: distance_from_narooma_km, dir: asc}
-  columns: [name, sleeps, best_offer.price_total_aud, "*"]   # shown, in THIS order; omitted = every
-                                    # column the rows carry; "*" = every other column, after these
-  hide: [images]                    # subtracted from the columns shown
-  limit: 100                        # at most this many rows
-
-A `field` is a key of the row, or a DOT PATH into nested objects
-(`best_offer.price_total_aud`), everywhere a field is named. The ops are
-the suite's one clause vocabulary (policyDoc.ts): equals, not_equals,
-contains, not_contains, starts_with, ends_with, matches (regex), gt, gte,
-lt, lte, between ([low, high]), in / not_in (a list), is_empty, not_empty,
-is_true, is_false — text ops case-insensitive and taking one value or a
-LIST (any of them; none of them for the not_ ops: {field: name, op:
-contains, value: [caravan, truck]}), numeric ops never true for an empty
-field. An unknown op, a sort direction that is not asc/desc, a
-column no row carries are PROBLEMS the checker and the view report, not
-silent drops.
-
-Apply it from a `.jsonl` beside it — the title and the header labels
-belong THERE, with the data:
-
-  {"$sources": ["accommodation.json#properties"], "$policy": "cheapest.policy"}
-  {"$title": "Stays by price", "$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)"}}
 
 ## A fresh document (what the Studio creates)
 

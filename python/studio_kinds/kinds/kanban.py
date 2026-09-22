@@ -1,11 +1,14 @@
 """`.kanban` — a task board whose COLUMNS are status and whose ROWS are derived dependency groups:
 each task may name prerequisites (`needs:`), and the board layers tasks by longest prerequisite
-chain. Dates are `YYYY-MM-DD`, bare or quoted; `duration` is calendar days (default 1).
+chain. Dates are `YYYY-MM-DD`, bare or quoted; `duration` is calendar days (default 1). A task that
+holds more than its card shows writes that document into itself — `content: {kind, doc}`, the same
+shape a brief's section carries — so the board is one file.
 
 The parser is lenient so a half-written board still renders; the check is strict — it names what
 the parser silently dropped or defaulted: a missing title, columns or tasks, a task with no key, a
 duplicate key, a `needs` edge to no task, a status that is not a column, a duration that is not a
-positive number, a due that is not a date, and tasks caught in a cycle.
+positive number, a due that is not a date, tasks caught in a cycle, and what a task's written
+document cannot be; each written document then goes through its own kind's engine.
 """
 from __future__ import annotations
 
@@ -15,7 +18,7 @@ from typing import Any
 
 from .. import _yaml
 from .._js import as_str, finite_number, get, is_list, is_obj, json_of, number, plural, defined
-from . import CheckResult
+from . import CheckResult, check_written, written_kind
 
 # What `Date.parse` takes: an ISO day (`2026-9-9` included), a US slash date, a month name.
 _DATE = re.compile(r"^(?:\d{4}-\d{1,2}-\d{1,2}|\d{1,2}/\d{1,2}/\d{4}|(?:[A-Za-z]{3,9}\.? \d{1,2},? \d{4})|\d{1,2} [A-Za-z]{3,9}\.? \d{4})")
@@ -32,6 +35,8 @@ class Task:
     title: str
     needs: list[str] = field(default_factory=list)
     status: str | None = None
+    content: dict | None = None
+    """`{"kind": str, "doc": Any}` when the task holds a written document."""
 
 
 @dataclass
@@ -40,7 +45,6 @@ class Board:
     columns: list[Column]
     tasks: list[Task]
     due: str | None = None
-    source: str | None = None
 
 
 def as_date(v: Any) -> str:
@@ -78,9 +82,10 @@ def parse(text: str) -> Board:
             continue
         seen.add(key)
         needs = [k for k in (as_str(n) for n in (t["needs"] if is_list(t.get("needs")) else [])) if k and k != key]
-        tasks.append(Task(key, title, needs, as_str(t.get("status")) or None))
-    return Board(as_str(raw.get("title")), columns, tasks,
-                 as_date(raw.get("due")) or None, as_str(raw.get("source")) or None)
+        content = t.get("content")
+        written = {"kind": written_kind(content.get("kind")) or "", "doc": content.get("doc")} if is_obj(content) else None
+        tasks.append(Task(key, title, needs, as_str(t.get("status")) or None, written))
+    return Board(as_str(raw.get("title")), columns, tasks, as_date(raw.get("due")) or None)
 
 
 def _layers(tasks: list[Task]) -> dict[str, int]:
@@ -127,6 +132,8 @@ def problems(text: str) -> list[str]:
     out: list[str] = []
     if not is_obj(raw):
         return ["not a mapping — a board is `title`, `columns` and `tasks`"]
+    if defined(get(raw, "source")):
+        out.append("`source:` is gone — a board's tasks are its own; write them under `tasks`")
     if not as_str(raw.get("title")):
         out.append("no `title` — the board's heading")
     if defined(get(raw, "due")) and not as_date(raw["due"]):
@@ -171,6 +178,7 @@ def problems(text: str) -> list[str]:
             out.append(f"{name}: `duration` is not a positive number of days (got {json_of(t['duration'])})")
         if defined(get(t, "due")) and not as_date(t["due"]):
             out.append(f"{name}: `due` is not a date — write `YYYY-MM-DD` (got {json_of(t['due'])})")
+        out.extend(f"{name}: {p}" for p in content_problems(t))
         status = as_str(t.get("status"))
         if status and columns and status.lower() not in columns:
             out.append(f"{name}: status `{status}` is not a column — it would land in the first column; columns are {', '.join(c.title for c in parsed.columns)}")
@@ -193,14 +201,47 @@ def problems(text: str) -> list[str]:
     return out
 
 
+def content_problems(t: dict) -> list[str]:
+    """What a task's written document cannot be — the shape a brief's section uses."""
+    if not defined(get(t, "content")):
+        return []
+    c = t["content"]
+    if not is_obj(c):
+        return ["`content` is not a mapping — write `kind` and `doc`"]
+    out: list[str] = []
+    kind = written_kind(c.get("kind"))
+    if not kind:
+        out.append("`content` has no `kind` — say which kind renders it (brief, playbook, md, …)")
+    if not defined(get(c, "doc")):
+        out.append("`content` has no `doc` — the document itself, as a file of that kind would hold it")
+    for k in ("by", "docs", "file"):
+        if defined(get(c, k)):
+            out.append(f"`content` has `{k}` — a task holds one document written in; a board has no answers to vary by and names no file")
+    if kind == "md" and defined(get(c, "doc")) and not isinstance(c["doc"], str):
+        out.append("an `md` document is its text — write it as a block string")
+    return out
+
+
 def summary(doc: Board) -> str:
     rows = len(dependency_rows(doc.tasks))
+    written = sum(1 for t in doc.tasks if t.content and t.content["kind"])
     return f"{plural(len(doc.tasks), 'task')} in {plural(rows, 'row')}, {plural(len(doc.columns), 'column')}" + \
-        (f", due {doc.due}" if doc.due else "") + (f", from {doc.source}" if doc.source else "")
+        (f", due {doc.due}" if doc.due else "") + (f", {plural(written, 'document')}" if written else "")
 
 
-def check(text: str, file: str | None = None) -> CheckResult:
+def check(text: str) -> CheckResult:
     y = _yaml.error_line(text)
     if y:
         return CheckResult([y])
-    return CheckResult(problems(text), summary(parse(text)))
+    doc = parse(text)
+    out = problems(text)
+    for t in doc.tasks:
+        if not t.content or not t.content["kind"]:
+            continue
+        kind = t.content["kind"]
+        known, r = check_written(kind, t.content["doc"])
+        if not known:
+            out.append(f"task {t.key} ({kind}): not a kind the Studio knows — `--kinds` lists them")
+            continue
+        out.extend(f"task {t.key} ({kind}): {p}" for p in r.problems)
+    return CheckResult(out, summary(doc))

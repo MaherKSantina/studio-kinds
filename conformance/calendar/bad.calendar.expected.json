@@ -1,0 +1,20 @@
+{
+  "ok": false,
+  "problems": [
+    "`board:` is gone — a calendar holds its own tasks; write them under `tasks`",
+    "no `title` — the calendar's heading",
+    "`due` is not a date — write `YYYY-MM-DD`, bare or quoted (got \"soon\")",
+    "task 1: not a mapping — write `key`, `title` and the rest",
+    "task no key here: no `key` — the stable key `needs` edges point at",
+    "task dup: duplicate key — every edge to it would fork; keys are identity",
+    "task needs-bad: no `title` — the chip's heading",
+    "task needs-bad: `needs` is not a list — the keys of its prerequisites",
+    "task needs-bad: `duration` is not a positive number of days (got -1)",
+    "task needs-bad: `due` is not a date — write `YYYY-MM-DD` (got \"yesterday\")",
+    "task empty-need: a `needs` entry is not a key",
+    "task empty-need: needs itself",
+    "task empty-need: needs `missing` — no task has that key",
+    "cycle: cyc1 → cyc2 — tasks that need each other cannot be scheduled"
+  ],
+  "summary": "6 tasks, longest chain 2"
+}

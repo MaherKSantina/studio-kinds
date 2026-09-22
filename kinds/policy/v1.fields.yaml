@@ -2,7 +2,7 @@ kind: policy
 version: 1
 fields:
   - field: role
-    type: bucket | tags | order | run | table
+    type: bucket | tags | order
     description: Which policy this is; absent means the bucket machine.
   - field: title
     type: string
@@ -69,35 +69,8 @@ fields:
     type: bucket key
     description: "Bucket role: the bucket for items no case claims — one declared under `buckets`; omitted, the built-in unmatched bucket."
   - field: tags
-    type: list of dimension | path
-    description: "Tags role: the dimensions the policy tags along, each with ordered `derive` rules (clauses → value) or `from` rules (refs over dimensions above → value), `hidden` for plumbing. Order role: the path of the tags policy it consumes."
+    type: list of dimension
+    description: "Tags and order roles: the dimensions, each with ordered `derive` rules (clauses → value) or `from` rules (refs over dimensions above → value), `hidden` for plumbing. An order policy writes in the dimensions it ranks over, so the ranking says what it reads."
   - field: order
     type: list of entry
-    description: "Order role: the ranking — each entry a `when` of `dimension=value` refs; its position is its rank; an entry with no refs takes everything left."
-  - field: policy
-    type: path
-    description: "Run role: the order policy the run applies."
-  - field: items
-    type: path
-    description: "Run role: the rows the run maps."
-  - field: map
-    type: map of param → list of field
-    description: "Run role: which row fields feed which param."
-  - field: date
-    type: date
-    description: "Run role: the day the run stands at."
-  - field: where
-    type: list of clause
-    description: "Table role: every clause must hold for a row to stay — `{field, op, value?}`, `field` a key or dot path."
-  - field: sort
-    type: list of sort key
-    description: "Table role: `{field, dir: asc|desc}`, first key first."
-  - field: columns
-    type: list of field
-    description: "Table role: the fields shown in this order; `\"*\"` every other column after these; omitted, every column."
-  - field: hide
-    type: list of field
-    description: "Table role: subtracted from the columns shown."
-  - field: limit
-    type: number
-    description: "Table role: at most this many rows."
+    description: "Order role: the ranking — each entry a `when` of `dimension=value` refs into this file's own `tags`; its position is its rank; an entry with no refs takes everything left."

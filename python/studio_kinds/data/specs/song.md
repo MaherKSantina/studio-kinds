@@ -2,40 +2,50 @@
 
 ## The engine's account
 
-The check is `python/studio_kinds/kinds/song.py` in the studio-kinds repository; the account below is the Studio's engine's own (`packages/filekinds/src/lib/songDoc.ts`), which the check reproduces.
+The check is `python/studio_kinds/kinds/song.py` in the studio-kinds repository; the account below is that engine's own.
 
-The `.song` kind — clips placed on tracks: an arrangement. Each track
-names the `.clip` files it plays and where, in bars; the Studio draws
-the tracks against the bars, opens a clip when it is clicked, and
-exports the whole as ONE multi-track Standard MIDI File (`<stem>.mid`
-beside it — the Export button, or `studio-check --midi x.song`). That
-file is the Ableton handover: dropped on Live's Arrangement it becomes
-one named track per song track, at the song's tempo.
+The `.song` kind — an arrangement, whole. The song holds the CLIPS it is
+made of, each written in under a `name`, and the TRACKS that place them by
+that name. The Studio draws the tracks against the bars, opens a clip when
+it is clicked, and exports the whole as ONE multi-track Standard MIDI File
+(`<stem>.mid` beside it — the Export button, or `studio-check --midi
+x.song`). That file is the Ableton handover: dropped on Live's Arrangement
+it becomes one named track per song track, at the song's tempo.
 
 Authoring shape (YAML, lenient — a half-written file still renders):
 
   title: Demo
-  tempo: 128                  # default: the first clip's
-  time: 4/4                   # default: the first clip's
+  tempo: 128                  # default: the first placed clip's
+  time: 4/4                   # default: the first placed clip's
+  clips:                      # the clips this song is made of — a `name`, then
+    - name: drums             # the clip's own fields (see the .clip kind)
+      grid: 16
+      lanes:
+        - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
+    - name: bass
+      notes:
+        - {pitch: C2, start: 0, length: 0.75}
   tracks:
     - name: Drums
       channel: 10             # optional; the clip's own channel otherwise
       clips:
-        - {file: drums.clip, at: 0, repeat: 8}     # from bar 0, eight times back to back
-        - {file: fill.clip, at: 7}
+        - {clip: drums, at: 0, repeat: 8}     # from bar 0, eight times back to back
     - name: Bass
       clips:
-        - {file: bass.clip, repeat: 4}              # no `at` = right after the previous clip on this track
-        - {file: bass.clip, repeat: 4, transpose: 5}   # the same riff, a fourth up
+        - {clip: bass, repeat: 4}              # no `at` = right after the previous placement
+        - {clip: bass, repeat: 4, transpose: 5}   # the same riff, a fourth up
+
+Writing the clips IN is what makes the song whole: the riff above is
+written once and placed twice, and the file exports to MIDI with nothing
+beside it. `clip` names one of the song's own clips — a name no clip has
+is a problem, and the rest of the song still renders and exports.
 
 BARS count from 0 at the song's start, in the song's time signature.
 `at` is where a placement begins (default: where the previous one on
 the track ended, or 0), `repeat` how many times the clip plays back to
-back (default 1), `transpose` semitones added to every pitch (default
-0). Clip refs are relative to the song's folder. A clip that is not
-there is a problem; the rest of the song still renders and exports.
+back (default 1), `transpose` semitones added to every pitch (default 0).
 
-## Also (clipDoc.ts)
+## Also — the clip
 
 The `.clip` kind — the NOTES of one MIDI clip, as a document. What a
 DAW keeps behind a clip's piano roll, written down: which pitches sound
@@ -85,7 +95,7 @@ into the next. Each hit lasts one step unless the lane gives `length:`
 Nothing here is informational text: `title` is the heading, everything
 else is what the notes are.
 
-## Also (midiFile.ts)
+## Also — the MIDI file
 
 Standard MIDI Files, written and read — the bytes a `.clip` or a `.song`
 exports (`<stem>.mid`), and the same bytes read back so a test, or a
@@ -104,9 +114,23 @@ No running status on the way out; on the way in it is honoured.
 
 ```yaml
 title: untitled
+tempo: 120
+time: 4/4
+clips:
+  - name: beat
+    grid: 16
+    lanes:
+      - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
+  - name: bass
+    notes:
+      - {pitch: C2, start: 0, length: 1}
 tracks:
-  - name: Track 1
+  - name: Drums
+    channel: 10
     clips:
-      - {file: untitled.clip, at: 0, repeat: 4}
+      - {clip: beat, at: 0, repeat: 4}
+  - name: Bass
+    clips:
+      - {clip: bass, repeat: 4}
 ```
 

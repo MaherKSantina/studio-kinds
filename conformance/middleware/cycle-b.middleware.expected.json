@@ -1,7 +1,0 @@
-{
-  "ok": false,
-  "problems": [
-    "cycle-a.middleware: a cycle — it is already being read (cycle-a.middleware → cycle-b.middleware)"
-  ],
-  "summary": "over cycle-a.middleware → cycle-b.middleware → cycle-a.middleware (0 rows): rule 1 → 0"
-}

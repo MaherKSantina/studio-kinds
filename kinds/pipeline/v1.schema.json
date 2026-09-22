@@ -347,7 +347,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "description": "A middleware rule under a circumstance.",
+            "description": "A rule under a circumstance: the items it picks, and the fields it sets on them.",
             "properties": {
               "where": {
                 "type": "array",

@@ -1,6 +1,7 @@
 {
   "ok": false,
   "problems": [
+    "`source:` is gone — a collection holds its items; nothing points back at where they were copied from",
     "item 2: id 1 is already used",
     "decision 1: no item",
     "decision 2: unknown op \"sideways\"",

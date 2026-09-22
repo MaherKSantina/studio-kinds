@@ -4,9 +4,8 @@
     "`title` must be a string.",
     "`description` must be a string.",
     "`start_mode` must be `screen` or `entries`.",
-    "`sources` names \"dup\" twice.",
-    "`sources` entries must be objects with a `name`.",
-    "`default_source` \"ghost\" is not a declared source.",
+    "`sources` is gone — a panel is a `frame` of this flow at one of its views, or a screenshot beside it.",
+    "`default_source` is gone — a panel is a `frame` of this flow at one of its views, or a screenshot beside it.",
     "dimensions.empty must be a non-empty array of scalars.",
     "dimensions.mixed must contain only scalars.",
     "derived[0] must be an object.",
@@ -40,7 +39,8 @@
     "screens[3].local_defaults.ghost is not a declared dimension.",
     "screens[3].description must be a string.",
     "screens[3].screenshot must be a string Storage key.",
-    "screens[3].screenshots must be an array of string Storage keys, ordered top→bottom."
+    "screens[3].screenshots must be an array of string Storage keys, ordered top→bottom.",
+    "screens[3].content must be an array of panels (`{ screenshot: <key> }` or `{ frame: <name>, view: <view> }`)."
   ],
-  "summary": "5 screens, 1 states"
+  "summary": "5 screens, 1 states, 1 frames"
 }

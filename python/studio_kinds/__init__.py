@@ -1,14 +1,17 @@
 """studio-kinds — the Studio's document kinds, checked from Python.
 
     from studio_kinds import check, check_path
-    r = check(text, "kanban")            # a document as text
-    r = check_path("launch.kanban")      # a file on disk — kinds that name other files read them beside it
+    r = check(text, "kanban")            # a document as text — all a document ever is
+    r = check_path("launch.kanban")      # the same, read from a file
     r.ok, r.problems, r.summary
 
-The kinds: brief, playbook, kanban, calendar, policy, flow, jsonl, middleware, pipeline, collection,
-clip, song, md. Each has a JSON Schema (`schema_path`), a book (`book_path`), a field table
-(`fields_path`), a spec (`spec`) and a template (`template`) shipped as data. `studio-check` is the
-command over all of it.
+Every kind is ONE self-contained file: a document holds its own content and names no other, so a
+check takes the text and reads nothing beside it.
+
+The kinds: brief, playbook, kanban, calendar, policy, flow, jsonl, pipeline, collection, clip, song,
+md. Each has a JSON Schema (`schema_path`), a book (`book_path`), a field table (`fields_path`), a
+spec (`spec`) and a template (`template`) shipped as data. `studio-check` is the command over all
+of it.
 """
 from __future__ import annotations
 
@@ -45,9 +48,7 @@ class Result:
 
 
 def check(text: str, kind: str, file: str | None = None) -> Result:
-    """One document as text, by its kind. `file` is its absolute path when it has one, so a kind that
-    names other files (a calendar's board, a jsonl's sources, a song's clips, a playbook's `by` files)
-    can read them beside it."""
+    """One document as text, by its kind. `file` only names the result — nothing is read beside it."""
     ext = kind.lstrip(".").lower()
     k = KINDS.get(ext)
     if not k:
@@ -56,7 +57,7 @@ def check(text: str, kind: str, file: str | None = None) -> Result:
         if k.studio_own:
             return Result(file, ext, True, [], None, k.label, f"{k.label} — the Studio's own kind; nothing checked here")
         return Result(file, ext, True, [], None, k.label, f"{k.label} — nothing to validate")
-    r = k.check(text, file)
+    r = k.check(text)
     return Result(file, ext, not r.problems, list(r.problems), r.summary, k.label)
 
 
@@ -71,9 +72,14 @@ def check_path(path: str) -> Result:
     return check(text, ext, abs_path)
 
 
+def versions(ext: str) -> tuple[int, ...]:
+    """The versions of a kind this checker carries; each has a schema, a book and a field table."""
+    return (2,) if ext == "playbook" else (1,)
+
+
 def latest_version(ext: str) -> int:
-    """The newest version of a kind; every version has a book."""
-    return 2 if ext == "playbook" else 1
+    """The newest version of a kind."""
+    return versions(ext)[-1]
 
 
 def book_path(ext: str, version: int | None = None) -> str:
@@ -103,4 +109,4 @@ def spec(ext: str) -> str:
 
 
 __all__ = ["AUTHORING", "KINDS", "Kind", "Result", "book_path", "check", "check_path", "fields_path",
-           "kind_of", "latest_version", "schema_path", "spec", "template"]
+           "kind_of", "latest_version", "schema_path", "spec", "template", "versions"]

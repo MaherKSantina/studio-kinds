@@ -23,7 +23,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "python"))
 
-from studio_kinds import AUTHORING, _yaml, check_path, latest_version, spec  # noqa: E402
+from studio_kinds import AUTHORING, _yaml, check_path, spec, versions  # noqa: E402
 
 KINDS_DIR = os.path.join(ROOT, "kinds")
 DATA = os.path.join(ROOT, "python", "studio_kinds", "data")
@@ -52,7 +52,7 @@ def rel(p: str) -> str:
 def write_missing() -> int:
     written = 0
     for ext in AUTHORING:
-        for v in range(1, latest_version(ext) + 1):
+        for v in versions(ext):
             book = repo_paths(ext, v)["book"]
             if os.path.exists(book):
                 continue
@@ -61,7 +61,7 @@ def write_missing() -> int:
             label = m.group(1) if m else ext
             doc = {
                 "version": 2,
-                "title": f"How a version-{v} {label.lower()} works",
+                "title": f"How a {label.lower()} works",
                 "description": f"The .{ext} kind at version {v}: the engine's own account, and the document a fresh file starts from.",
                 "events": [{
                     "key": "always", "label": "Always", "trigger": "imposed", "domain": "Always",
@@ -79,7 +79,7 @@ def write_missing() -> int:
 
 def sync() -> None:
     for ext in AUTHORING:
-        for v in range(1, latest_version(ext) + 1):
+        for v in versions(ext):
             src, dst = repo_paths(ext, v), package_paths(ext, v)
             for k in src:
                 if os.path.exists(src[k]):
@@ -91,7 +91,7 @@ def sync() -> None:
 def check() -> int:
     problems = 0
     for ext in AUTHORING:
-        for v in range(1, latest_version(ext) + 1):
+        for v in versions(ext):
             src, dst = repo_paths(ext, v), package_paths(ext, v)
             if not os.path.exists(src["book"]):
                 problems += 1

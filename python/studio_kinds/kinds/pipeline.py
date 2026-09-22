@@ -17,10 +17,9 @@ from typing import Any
 from .. import _yaml
 from .._decisions import ref_of, split_ref
 from .._js import MISSING, arr, defined, get, is_bool, is_list, is_num, is_obj, is_str, num_str, opt_str, rec
-from .._rows import Row, columns_of
+from .._rows import (Clause, Row, Sort, TableRules, apply_table, holds_all, read_clauses, read_table_rules,
+                     with_value)
 from . import CheckResult
-from .middleware import Middleware, Rule, apply as apply_middleware, read_rule
-from .policy import Clause, Sort, TableRules, apply_table, read_table_rules
 
 VERBS = ("rules", "filter", "sort")
 
@@ -54,9 +53,46 @@ class Decision:
 
 
 @dataclass
-class PRule(Rule):
+class Rule:
+    """A rule of a `rules` stage: the items it picks, the clauses they must hold, the fields it sets."""
+    where: list[Clause] = field(default_factory=list)
+    set: dict[str, Any] = field(default_factory=dict)
     items: list[str] = field(default_factory=list)
     when: list[str] = field(default_factory=list)
+
+
+def read_rule(o: dict, problems: list[str], at: str) -> tuple[list[Clause], dict[str, Any]]:
+    """One rule as written — its clauses, and its `set` (`set:` and `key`/`value` merged)."""
+    where = read_clauses(get(o, "where"), problems, f"{at} where")
+    st: dict[str, Any] = dict(rec(get(o, "set")))
+    key = get(o, "key")
+    if is_str(key) and key.strip():
+        st[key.strip()] = o.get("value")
+    if not st:
+        problems.append(f"{at}: sets nothing — give it set: {{field: value}} or key/value")
+    return where, st
+
+
+def apply_rules(rules: list[Rule], rows: list[Row]) -> tuple[list[Row], list[list[int]], int]:
+    """The rules applied in order to copies of the rows; later rules see earlier rules' values."""
+    out = list(rows)
+    touched: set[int] = set()
+    matches: list[list[int]] = []
+    for rule in rules:
+        hit: list[int] = []
+        for i, row in enumerate(out):
+            if rule.items and str(row.get("id", "")) not in rule.items:
+                continue
+            if not holds_all(rule.where, row):
+                continue
+            nxt = row
+            for k, v in rule.set.items():
+                nxt = with_value(nxt, k, v)
+            out[i] = nxt
+            hit.append(i)
+            touched.add(i)
+        matches.append(hit)
+    return out, matches, len(touched)
 
 
 @dataclass
@@ -65,7 +101,7 @@ class Stage:
     label: str | None
     when: list[str]
     verb: str
-    rules: list[PRule]
+    rules: list[Rule]
     filter: list[Clause]
     sort: list[Sort]
 
@@ -192,12 +228,12 @@ def parse(source: str) -> Pipeline:
         verb = verbs[0] if verbs else "rules"
         when = read_when(get(o, "when"))
         check_when(when, at)
-        rules: list[PRule] = []
+        rules: list[Rule] = []
         if verb == "rules":
             for j, r in enumerate(arr(get(o, "rules"))):
                 ro = rec(r)
                 rule_at = f"{at} rule {j + 1}"
-                base = read_rule(ro, problems, rule_at)
+                where, st = read_rule(ro, problems, rule_at)
                 item = get(ro, "item")
                 named = [x for x in (_text(v) for v in item) if x] if is_list(item) else ([_text(item)] if _text(item) else [])
                 for id_ in named:
@@ -205,7 +241,7 @@ def parse(source: str) -> Pipeline:
                         problems.append(f"{rule_at}: item {id_} is no item")
                 rw = read_when(get(ro, "when"))
                 check_when(rw, rule_at)
-                rules.append(PRule(base.where, base.set, named, rw))
+                rules.append(Rule(where, st, named, rw))
         if verb == "rules" and defined(get(o, "rules")) and not is_list(o["rules"]):
             problems.append(f"{at}: rules must be a list")
         table = read_table_rules(o, problems, "filter", at) if verb in ("filter", "sort") else TableRules()
@@ -283,15 +319,11 @@ def run(doc: Pipeline, taken: list[str] | None = None) -> Run:
         amended = 0
         if applied and stage.verb == "rules":
             live = [(r, i) for i, r in enumerate(stage.rules) if holds_under(taken, r.when)]
-            mw = Middleware("", None, [
-                Rule([*([Clause("id", "in", r.items)] if r.items else []), *r.where], r.set) for r, _ in live], [])
-            out = apply_middleware(mw, rows, own_problems=[])
-            for k, (r, i) in enumerate(live):
-                matches[i] = out.matches[k]
-                if not out.matches[k] and rows:
+            rows, hits, amended = apply_rules([r for r, _ in live], rows)
+            for k, (_, i) in enumerate(live):
+                matches[i] = hits[k]
+                if not hits[k] and rows:
                     problems.append(f"stage {stage.key} rule {i + 1} matches no item")
-            rows = out.rows
-            amended = out.amended
         elif applied and stage.verb == "filter":
             rows = apply_table(TableRules(stage.filter, []), rows).rows
         elif applied and stage.verb == "sort":
@@ -354,7 +386,7 @@ def rows_at(r: Run, at: str | None) -> At:
     return At([], [f'no stage or view "{at}"'])
 
 
-def check(text: str, file: str | None = None) -> CheckResult:
+def check(text: str) -> CheckResult:
     y = _yaml.error_line(text)
     if y:
         return CheckResult([y])

@@ -290,44 +290,9 @@
         ]
       }
     },
-    "sources": {
-      "description": "Named versions file panels read from: a list of `{name, path}` or a mapping of name → path.",
-      "oneOf": [
-        {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
-              },
-              "path": {
-                "type": "string"
-              },
-              "agent": {
-                "type": "string"
-              },
-              "description": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "name"
-            ]
-          }
-        },
-        {
-          "type": "object"
-        }
-      ]
-    },
-    "default_source": {
-      "type": "string",
-      "description": "A declared source name."
-    },
     "frames": {
       "type": "object",
-      "description": "Frames kept inside the flow, by name.",
+      "description": "Frames kept in this flow, by name; a panel shows one with `frame: <name>` at one of its views.",
       "additionalProperties": {
         "type": "object"
       }
@@ -373,7 +338,7 @@
         "content": {
           "type": "array",
           "items": {
-            "description": "One thing a state puts on screen: a screenshot key (a string, or `{screenshot}`), `{file}` another file drawn by its own kind, `{frame, view?}` a frame drawn live.",
+            "description": "One thing a state puts on screen: a screenshot key (a string, or `{screenshot}`), or `{frame, view?}` — one of this flow's own frames, drawn live.",
             "oneOf": [
               {
                 "type": "string",
@@ -385,27 +350,20 @@
                   "screenshot": {
                     "type": "string"
                   },
-                  "file": {
-                    "type": "string"
-                  },
                   "frame": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "One of this flow's own `frames:`, by name.",
+                    "x-studio-ref": "#/properties/frames"
                   },
                   "view": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Which of that frame's views the panel draws."
                   },
                   "label": {
                     "type": "string"
-                  },
-                  "source": {
-                    "type": "string",
-                    "description": "A declared source, for a `file` panel."
-                  },
-                  "agent": {
-                    "type": "string",
-                    "description": "A directory agent uuid, for a `file` panel."
                   }
-                }
+                },
+                "description": "A panel: a screenshot key, or a frame of this flow at one of its views."
               }
             ]
           },
@@ -530,7 +488,7 @@
               "content": {
                 "type": "array",
                 "items": {
-                  "description": "One thing a state puts on screen: a screenshot key (a string, or `{screenshot}`), `{file}` another file drawn by its own kind, `{frame, view?}` a frame drawn live.",
+                  "description": "One thing a state puts on screen: a screenshot key (a string, or `{screenshot}`), or `{frame, view?}` — one of this flow's own frames, drawn live.",
                   "oneOf": [
                     {
                       "type": "string",
@@ -542,27 +500,20 @@
                         "screenshot": {
                           "type": "string"
                         },
-                        "file": {
-                          "type": "string"
-                        },
                         "frame": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "One of this flow's own `frames:`, by name.",
+                          "x-studio-ref": "#/properties/frames"
                         },
                         "view": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Which of that frame's views the panel draws."
                         },
                         "label": {
                           "type": "string"
-                        },
-                        "source": {
-                          "type": "string",
-                          "description": "A declared source, for a `file` panel."
-                        },
-                        "agent": {
-                          "type": "string",
-                          "description": "A directory agent uuid, for a `file` panel."
                         }
-                      }
+                      },
+                      "description": "A panel: a screenshot key, or a frame of this flow at one of its views."
                     }
                   ]
                 },

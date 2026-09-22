@@ -1,3 +1,0 @@
-title: No source
-rules:
-  - {where: [], set: {a: 1}}

@@ -11,9 +11,6 @@ fields:
   - field: due
     type: date
     description: The day everything must be done by — the anchor backward scheduling chains from. `YYYY-MM-DD`, bare or quoted.
-  - field: source
-    type: path
-    description: Where the tasks come from — a folder of `.node`s or a `.points` ref; the board then authors only its own domains and merges them by key.
   - field: columns
     type: list of string | column
     required: true
@@ -33,12 +30,17 @@ fields:
   - field: tasks[].status
     type: column title
     description: The column, matched case-insensitively; unset lands in the first column, and a title that is no column is a problem to the checker.
-  - field: tasks[].file
-    type: path
-    description: A document resolved against the board's folder, opened in the card dialog by its own kind.
-  - field: tasks[].section
-    type: string
-    description: For a `.brief` file, open only the first section whose title contains this.
+  - field: tasks[].content
+    type: written document
+    description: One document of another kind, written into the task — a mapping, not a list; drawn in the card dialog by its kind's viewer, checked by its kind's engine.
+  - field: tasks[].content.kind
+    type: kind
+    required: true
+    description: Which engine renders the document — `brief`, `playbook`, `md`, any kind the Studio knows.
+  - field: tasks[].content.doc
+    type: document
+    required: true
+    description: The document, as that kind's YAML parses it; a string for `md`.
   - field: tasks[].note
     type: string
     description: One line under the title.

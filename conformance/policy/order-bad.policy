@@ -1,0 +1,8 @@
+role: order
+title: Broken ranking
+policy: pitches.policy
+items: pitches.list
+map: {amount: amount}
+tags: tags.policy
+order:
+  - {when: [platform=ios]}

@@ -2,7 +2,7 @@
 
 ## The engine's account
 
-The check is `python/studio_kinds/kinds/flow.py` in the studio-kinds repository; the account below is the Studio's engine's own (`packages/filekinds/src/lib/flowOps.ts`), which the check reproduces.
+The check is `python/studio_kinds/kinds/flow.py` in the studio-kinds repository; the account below is that engine's own.
 
 `.flow` — a walkthrough whose screens and edges are PARAMETERISED.
 
@@ -38,14 +38,18 @@ declared literals, not expressions; there is no arithmetic, no strings, no user-
 functions. The point is to validate what is about to be built and stay cheap to author — the
 moment this needs a real evaluator, the answer is that the app should be running instead.
 
+WHAT A STATE SHOWS is in this file, or is an image beside it. A state's `content` is a list of
+PANELS, stepped through one at a time: `{screenshot: <key>}`, an image in the flow's own assets
+folder, or `{frame: <name>, view: <view>}` — one of the flow's own `frames:`, whole `.frame`
+bodies written in by name, drawn live at one of its views, so the states of a screen point at
+different views of the SAME frame. A panel names no other document.
+
 FILE SHAPE: two YAML documents separated by a line that is exactly `---`. Doc 1 is the MODEL
 (hand-authored). Doc 2 is the VIEWS (saved parameter sets and layout; the preview writes back
-only this half). Same two-document contract as `.analysis`, for the same reason: the thing you
-explore with is not the thing you author.
+only this half): the thing you explore with is not the thing you author.
 
-This module is a deliberate COPY of the shapes in walkthrough_ops.ts and analysisEngine.ts
-rather than an import of either. `.flow` is work in progress and its model will move; sharing
-code would make every change here a change to two shipped file kinds.
+Named as gone: `sources`, `default_source`, and `file`, `source` or `agent` on a panel — they
+drew a document from another folder into a state.
 
 ## A fresh document (what the Studio creates)
 
@@ -93,25 +97,13 @@ start_mode: screen          # or 'entries' + an `entries:` list of start events
 
 # WHAT A STATE SHOWS. A screenshot is one kind of evidence, not the definition of the format:
 # a state's `content` is a list of PANELS, stepped through one at a time.
-#   - { screenshot: <storage key> }        an image in this directory
-#   - { frame: login.frame, view: Loading } a .frame beside this flow, drawn LIVE at one of its
-#                                          views — the states of a screen point at different views
-#                                          of the SAME frame; its scroll is its own, one panel
-#   - { frame: login, view: Loading }      the same, for a frame kept INSIDE this flow under
-#                                          `frames:` (Projects: "Move into flow…"; the Studio
-#                                          opens it from the flow's preview)
-#   - { file: notes/plan.brief }           ANOTHER file, drawn by its own kind's preview,
-#                                          read-only and LIVE (editing it changes this state)
+#   - { screenshot: <storage key> }        an image in this flow's assets folder
+#   - { frame: login, view: Loading }      a frame kept IN this file under `frames:`, drawn LIVE at
+#                                          one of its views — the states of a screen point at
+#                                          different views of the SAME frame; its scroll is its own
 # `screenshot:`/`screenshots:` below are the screenshot-only shorthand for the same thing —
 # write those when a state is only images; `frame:` + `view:` is the frame-only shorthand.
-
-# NAMED VERSIONS of the material `file` panels read from. A panel says `source: after` and the
-# same relative path means "that document, that version" — so two states of one screen can differ
-# only in which published version they show, without hard-coding two paths.
-sources:
-  - { name: before, path: versions/before }
-  - { name: after,  path: versions/after }
-default_source: before
+# A panel names no other document: what a state shows is in this file, or is an image beside it.
 
 screens:
   - id: home
@@ -139,7 +131,7 @@ screens:
         # The general form: a capture AND the document that explains it, in that order.
         content:
           - { screenshot: <storage key> }
-          - { file: terms.brief, source: after, label: Shipping terms }
+          - { frame: login, view: Terms, label: Shipping terms }
     edges:
       # No `to` = STAYS on this screen. `sets` moves it to another of its own states — a radio,
       # a checkbox, a step of a form. This is what a self-transition used to be.
@@ -163,8 +155,8 @@ screens:
 # when matching: bare value = equals · [a, b] = one-of · "*" = any · "!x" = not-equal
 
 # FRAMES KEPT IN THIS FILE — whole .frame bodies by name; a state shows one with `frame: <name>`.
-# frames:
-#   login: { title: Login, frames: [...], nodes: [...], views: [...] }
+frames:
+  login: { title: Login, nodes: [], views: [{ name: Terms }] }
 ---
 active: v1
 views:

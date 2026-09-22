@@ -33,7 +33,7 @@ fields:
     description: "The circumstance the whole stage holds under — refs `decision=answer`; skipped once a taken answer contradicts it."
   - field: stages[].rules
     type: list of rule
-    description: The `rules` verb — a middleware's rules, applied in order; a rule matching no item is a problem.
+    description: The `rules` verb — rules applied in order; a rule matching no item is a problem.
   - field: stages[].rules[].item
     type: string or list of string
     description: The ids the rule picks — the short form of a clause on `id`; an id no item has is a problem.

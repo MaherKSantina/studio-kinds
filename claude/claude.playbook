@@ -74,28 +74,32 @@ events:
         looks easiest to write. These are the kinds; when none fits, the file is markdown. One row each;
         combine them (a brief feeding a playbook feeding a board).
 
+        EVERY KIND IS ONE FILE. A document holds everything it shows — its own rows, its own
+        tasks, its own clips, and any document of another kind it needs, written in — and names no
+        other file. Nothing is read from beside it, so a document can be pasted, checked and
+        rendered anywhere, and two documents can never drift apart.
+
         | you want | kind | because |
         |---|---|---|
-        | a hierarchical group of content — the facts of a situation, in sections | `.brief` | a titled tree of sections with prose — the source everything else points at |
-        | event-based content: what applies when a specific event happens, under given criteria; an event is something that happens intentionally or is imposed, and its content is the event's information given a context — the decision answers | `.playbook` | version 2, one file: decisions, and events on the table while their `when` holds, each showing one document that follows the answers; start from the template |
-        | several workflows that follow the same process, each one's progress tracked | `.kanban` | columns are the stages, tasks the items; rows are derived from `needs:` edges — never hand-ordered |
-        | workflow items with a start date and an end date, seen on a calendar | `.calendar` beside the board | a lens: the schedule the board's edges, durations and `due` produce; nothing stored |
-        | a set of rules that sorts and filters, agnostic of the actual data | `.policy` | params → ordered cases (first match wins) → buckets; or, with `role: table`, the rules a data view applies |
-        | a system that follows a state machine — states, and the events that move between them; states clicked through are kept until the page refreshes | `.flow` | screens with variants and edges; the walkthrough keeps its pins for the session |
-        | a data table over JSON rows, with an optional policy applied | `.jsonl` | one JSON object per line, or directive lines that read rows from other files and pass them through a table policy; columns found from the rows, paged, searched, sorted |
-        | parameters added to existing data by specific filters — information for some items arriving in stages, without touching the data file | `.middleware` beside the data | a source + rules: clauses pick the rows, `set:` gives fields their values; a `.jsonl` names the middleware among its `$sources` and sees the amended rows, live |
-        | a list curated from several places at several times — the items in the file, each with an id; what came later as stages (rules that set fields, a filter, a sort — each under a circumstance the decisions name); the output shown through views | `.pipeline` | one file: the rows as of any stage and the logic that made them one click apart; the pills are taken for the session only; a `.jsonl`, a `.middleware` and `--collect` read its output, a stage or a view |
-        | a gallery view of data — each item with its images, facts and link, decided over one at a time | `.collection` made from a `.jsonl` view or a `.pipeline` | a snapshot of the rows and a log of decisions with reasons |
+        | a hierarchical group of content — the facts of a situation, in sections | `.brief` | a titled tree of sections with prose; a section may hold one whole document of another kind, written in as `content: {kind, doc}` |
+        | event-based content: what applies when a specific event happens, under given criteria; an event is something that happens intentionally or is imposed, and its content is the event's information given a context | `.playbook` | one file: decisions, and events on the table while their `when` holds, each showing one document, written in, that follows the answers; start from the template |
+        | several workflows that follow the same process, each one's progress tracked | `.kanban` | columns are the stages, tasks the items; rows are derived from `needs:` edges — never hand-ordered; a task that holds more than its card shows writes that document into itself |
+        | workflow items with a start date and an end date, seen on a calendar | `.calendar` | its own tasks with `needs:`, `duration:` and a `due:` to chain back from; every date drawn is derived, none written down |
+        | a set of rules that sorts and filters, agnostic of the actual data | `.policy` | params → ordered cases (first match wins) → buckets; or the chain — `role: tags` dimensions, and `role: order` ranking over them with those dimensions written in |
+        | a system that follows a state machine — states, and the events that move between them; states clicked through are kept until the page refreshes | `.flow` | screens with variants and edges; a state shows one of the flow's own `frames:` or a screenshot beside it; the walkthrough keeps its pins for the session |
+        | a data table over JSON rows | `.jsonl` | one JSON object per line — the file's own rows — plus `$title`, `$description` and `$labels` for what is known about them; columns found from the rows, paged, searched, sorted |
+        | a list curated from several places at several times — the items in the file, each with an id; what came later as stages (rules that set fields, a filter, a sort — each under a circumstance the decisions name); the output shown through views | `.pipeline` | one file: the rows as of any stage and the logic that made them one click apart; the pills are taken for the session only |
+        | a gallery view of data — each item with its images, facts and link, decided over one at a time | `.collection` | the rows copied in, and a log of decisions with reasons; the copy is a handover — nothing points back at where the rows came from |
         | the notes of one MIDI clip — a beat, a bass line, chords, a hook — on a piano roll, handed to a DAW | `.clip` | pitches by name (`C2`, `F#3`) or number, `start`/`length` in beats from 0, velocities, drum `lanes:` as step strings (`x...x...`); Export .mid writes the Standard MIDI File beside it |
-        | clips placed on tracks — the arrangement, and the ONE file to drop on Ableton | `.song` | tracks of `{file: x.clip, at: <bar>, repeat, transpose}`; drawn as tracks against bars; Export .mid = one multi-track MIDI file, a named track per song track |
+        | clips placed on tracks — the arrangement, and the ONE file to drop on Ableton | `.song` | the clips written in under `clips:`, placed by `{clip: <name>, at: <bar>, repeat, transpose}`; drawn as tracks against bars; Export .mid = one multi-track MIDI file, a named track per song track |
         | anything else | `.md` | plain markdown — the default whenever no kind above fits |
 
         Worked example — "a process for managing a trip, from the input markdown": `trip.brief` (the
         facts: party, dates, car, stay, budget), `trip.playbook` (decisions such as *where to stay*
         with answers Narooma / Tilba / further out, *car* pickup and return, *days* — each answer
-        holding the events that only matter then), `todo.kanban` (book the car → book the stay → pack,
-        with `needs:`, `duration:` and `due:`) and `todo.calendar` over it. Notes that fit none of these
-        are `.md`.
+        holding the events that only matter then) and `todo.kanban` (book the car → book the stay →
+        pack, with `needs:`, `duration:` and `due:`), or `todo.calendar` when the dates are what
+        matters. Notes that fit none of these are `.md`.
 
         ## 1 · The protocol
 
@@ -139,80 +143,74 @@ events:
            ```
            Exit 1 = problems, printed per file. Fix them; a document that fails here fails in the Studio.
            Without the checker (another PC, Claude.ai, Cowork), validate the shape against the kind's JSON
-           Schema; only the checker sees the references between fields and the files beside the document.
+           Schema; only the checker sees the references between fields inside the document.
         6. **Refer to documents by path** in replies, exactly as on disk.
 
         ## 2 · The kinds
 
         | ext | what it is | the check (in `python/studio_kinds/kinds`) |
         |---|---|---|
-        | `.brief` | a titled tree of sections with prose | `brief.py` |
-        | `.playbook` | decisions, and events on the table while their `when` holds, each with one document | `playbook.py` |
-        | `.kanban` | columns + tasks (`needs:` for dependencies) | `kanban.py` |
-        | `.calendar` | a lens over one `.kanban`: its schedule, nothing stored | `calendar.py` |
-        | `.policy` | params → ordered cases (first match wins) → buckets | `policy.py` |
-        | `.policy` with `role: table` | a policy over ROWS — the rules a composed .jsonl applies, and NOTHING about the data (no source, no title for the rows, no header labels — the checker refuses `source:`/`rename:`): `where:` clauses (all must hold; `field` may be a dot path like `best_offer.price_total_aud`; ops equals/not_equals/contains/not_contains/starts_with/ends_with/matches/gt/gte/lt/lte/between `[lo, hi]`/in `[...]`/not_in/is_empty/not_empty/is_true/is_false; a text op takes one value or a LIST = any of them, e.g. `{field: name, op: contains, value: [caravan, truck]}`), `sort:` keys (first key first, `dir: asc\|desc`), `columns:` = the fields shown IN THAT ORDER (omitted = every column; `"*"` = every other column, after the named ones), `hide:`, `limit:`; `title:`/`description:` name the RULES ("within the band, cheapest first"). Its preview says the rules in words; the row dialog lists the columns first in that order, then the rest | `policy.py` |
-        | `.flow` | a walkthrough of screens: states with variants and edges | `flow.py` (two YAML docs: model `---` views) |
-        | `.jsonl` | data rows: one JSON object per line, shown as a paged table with the columns found, a search over every field, a sort per header, a row opened whole on click (links open in the browser, copy with a click). Written by whatever PRODUCES the data — a scrape, an export, a script you write — one `JSON.stringify(row)` per line, same keys per row where you can; not hand-edited row by row. COMPOSED: a line whose keys start with `$` is a directive, not a row — `{"$sources": ["accommodation.json#properties", "more.jsonl"], "$policy": "stays.policy"}` reads the rows from those files when the .jsonl opens (a .json array; a .json object, `#key` naming the list, else its longest list of objects; a .jsonl; a .csv), adds raw lines beside it, and passes them through the table policy; nothing is cached. Either key alone works. Everything said ABOUT the data lives here too, on further directive lines: `{"$title": "Stays by price", "$description": "…"}` and `{"$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)"}}` (header names by field) | `jsonl.py` |
-        | `.middleware` | rows AMENDED on their way to a view: `source:` (a .json `#key`, .jsonl, .csv, or another .middleware — chains), `rules:` each `where:` clauses (all must hold; none = every row) + `set: {field: value}` (dot paths allowed; or `key:`/`value:` for one). The data file stays untouched; the amendment lives here. A `.jsonl` names the middleware among its `$sources` instead of the raw file. A rule matching NO row is a problem (the link changed, the row is gone) — the checker prints each rule's match count | `middleware.py` |
-        | `.pipeline` | ONE curated list and its stages, in one file: `decisions:` (a playbook's — `{key, label, values: [{key, label}]}`), `labels:` (header names by field), `items:` (mappings, each with an `id` — a uuid, its identity, what a rule's `item:` names; mint one with `crypto.randomUUID()` when adding an item), `stages:` in order, each `key` + ONE verb — `rules:` (the middleware's rules: `item:` an id or a list and/or `where:` clauses → `set:` fields, a `note`; a rule matching no item is a problem), `filter:` (clauses every kept item holds; the rest dropped for the stages after and the output), `sort:` (`{field, dir}`, first key first) — with an optional `label:` and `when:`; `views:` the output shown, each `key`, `label`, `filter`/`sort`/`columns`/`hide`/`limit` (the table policy's rules over the output; a view's filter hides for that view only), `when:`. `when:` on a rule, a stage or a view = refs `decision=answer` into `decisions`, holding while no taken answer contradicts it: nothing taken, everything applies and a later rule wins; the pills are taken on the page for the session, never saved. A value a rule set carries its refs as a badge; one key set by two rules under different circumstances shows every value on the table in the cell (the row's, then the others muted) until an answer decides — write one rule per circumstance, never one rule with two values; the row dialog shows the id and every field's trail. Nothing cached, nothing written back. A `.jsonl`'s `$sources`, a `.middleware`'s `source` and `--collect` take `stays.pipeline` (the output), `#<stage>` or `#<view>` | `pipeline.py` |
-        | `.collection` | a SNAPSHOT of a `.jsonl` view's or a `.pipeline`'s rows to decide over: `source:`, `to:` (where directions go), `fields:`/`labels:` (copied from the view), `stats:` (the fields shown as big cards), `items:` (the rows, each with an `id`; `featured:` the picture chosen for it), `decisions:` a LOG of `{item, op: up\|down\|hide\|show, reason}` in the order taken — never applied to the items; the order shown is derived (rank = ups − downs, hidden out). An item's fields may be edited in place (no reason). Made by Collect on the `.jsonl` view, `studio-check --collect stays.jsonl` or `--collect stays.pipeline#<view>`; not hand-written. Read the reasons to write the policy/middleware that yields the same order | `collection.py` |
+        | `.brief` | a titled tree of sections with prose; a section may hold one document of another kind, written in as `content: {kind, doc}` | `brief.py` |
+        | `.playbook` | decisions, and events on the table while their `when` holds, each with one document written in | `playbook.py` |
+        | `.kanban` | columns + tasks (`needs:` for dependencies); a task may hold one document written in as `content: {kind, doc}` | `kanban.py` |
+        | `.calendar` | its own tasks, and the `due:` the schedule chains backward from — every date derived, none authored | `calendar.py` |
+        | `.policy` | params → ordered cases (first match wins) → buckets; or the chain: `role: tags` (dimensions with ordered `derive` rules) and `role: order` (a ranking over their combinations, with those dimensions written in under `tags:`). The one clause vocabulary — equals/not_equals/contains/not_contains/starts_with/ends_with/matches/gt/gte/lt/lte/between `[lo, hi]`/in `[...]`/not_in/is_empty/not_empty/is_true/is_false; a text op takes one value or a LIST = any of them. A policy knows nothing about any data: no source, no rows | `policy.py` |
+        | `.flow` | a walkthrough of screens: states with variants and edges; a state shows one of the flow's own `frames:` at a view, or a screenshot from `<stem>-assets/` | `flow.py` (two YAML docs: model `---` views) |
+        | `.jsonl` | data rows: one JSON object per line, shown as a paged table with the columns found, a search over every field, a sort per header, a row opened whole on click (links open in the browser, copy with a click). The rows are the file's own — written by whatever PRODUCES the data (a scrape, an export, a script you write), one `JSON.stringify(row)` per line, same keys per row where you can; not hand-edited row by row. What is known ABOUT them lives here too, on directive lines — a line whose keys start with `$` is not a row: `{"$title": "Stays by price", "$description": "…"}` and `{"$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)"}}` (header names by field) | `jsonl.py` |
+        | `.pipeline` | ONE curated list and its stages, in one file: `decisions:` (a playbook's — `{key, label, values: [{key, label}]}`), `labels:` (header names by field), `items:` (mappings, each with an `id` — a uuid, its identity, what a rule's `item:` names; mint one with `crypto.randomUUID()` when adding an item), `stages:` in order, each `key` + ONE verb — `rules:` (`item:` an id or a list and/or `where:` clauses → `set:` fields, a `note`; a rule matching no item is a problem), `filter:` (clauses every kept item holds; the rest dropped for the stages after and the output), `sort:` (`{field, dir}`, first key first) — with an optional `label:` and `when:`; `views:` the output shown, each `key`, `label`, `filter`/`sort`/`columns`/`hide`/`limit` (a view's filter hides for that view only), `when:`. `when:` on a rule, a stage or a view = refs `decision=answer` into `decisions`, holding while no taken answer contradicts it: nothing taken, everything applies and a later rule wins; the pills are taken on the page for the session, never saved. A value a rule set carries its refs as a badge; one key set by two rules under different circumstances shows every value on the table in the cell (the row's, then the others muted) until an answer decides — write one rule per circumstance, never one rule with two values; the row dialog shows the id and every field's trail. Nothing cached, nothing written back. `studio-check --collect stays.pipeline` (or `#<view>`) copies the output into a `.collection` of its own | `pipeline.py` |
+        | `.collection` | rows to decide over, one at a time: `to:` (where directions go), `fields:`/`labels:` (the columns shown), `stats:` (the fields shown as big cards), `items:` (the rows themselves, each with an `id`; `featured:` the picture chosen for it), `decisions:` a LOG of `{item, op: up\|down\|hide\|show, reason}` in the order taken — never applied to the items; the order shown is derived (rank = ups − downs, hidden out). An item's fields may be edited in place (no reason). Made by Collect on a table, `studio-check --collect stays.jsonl` or `--collect stays.pipeline#<view>`; not hand-written. The rows are COPIED in — nothing points back — so read the reasons to write the rules that yield the same order | `collection.py` |
         | `.clip` | the NOTES of one MIDI clip: `tempo`, `time: 4/4`, `bars`, `channel`, `velocity`, `naming` (scientific = C4 is 60, the default; `ableton` = C3 is 60, what Live shows), `notes: [{pitch, start, length, velocity}]` (pitch = a name, a number, or a LIST for a chord; start/length in beats — quarter notes — from 0), `grid` (steps per bar, 16) + `lanes: [{name, pitch, steps: "x...X...o...", length?, velocity?}]` (`x` a hit, `X` accent 127, `o` ghost 50, `1`–`9` ninths of 127, `.`/`-` rest, `\|` and spaces ignored). Drawn as a piano roll (lanes coloured apart, a note past the clip's end shaded); Export .mid writes `<stem>.mid` beside it, or `studio-check --midi x.clip` | `clip.py` |
-        | `.song` | clips on tracks: `tempo`/`time` (default: the first clip's), `tracks: [{name, channel?, clips: [{file, at?, repeat?, transpose?}]}]` — `at` a BAR from 0 (default: right after the previous clip on the track), `repeat` back-to-back passes, `transpose` semitones; refs relative to the song's folder; a missing clip is a problem, the rest still renders. Drawn as an arrangement (blocks with note thumbnails; a block opens its clip; a track's name lays its notes on a roll); Export .mid = ONE format-1 MIDI file, a named track per song track, or `studio-check --midi x.song` — drop it on Ableton Live's Arrangement for one track per song track at the song's tempo | `song.py` |
+        | `.song` | an arrangement, whole: `tempo`/`time` (default: the first placed clip's), `clips: [{name, …the clip's own fields}]` — the clips this song is made of, written in — and `tracks: [{name, channel?, clips: [{clip: <name>, at?, repeat?, transpose?}]}]` placing them; `at` a BAR from 0 (default: right after the previous placement), `repeat` back-to-back passes, `transpose` semitones. A riff played twice is written once and placed twice; a placement naming no clip is a problem, the rest still renders. Drawn as an arrangement (blocks with note thumbnails; a block opens its clip; a track's name lays its notes on a roll); Export .mid = ONE format-1 MIDI file, a named track per song track, or `studio-check --midi x.song` — drop it on Ableton Live's Arrangement for one track per song track at the song's tempo | `song.py` |
         | `.md` | markdown — rendered, edited as text; the default when no kind fits | — |
 
         ## 3 · Conventions that bite
 
         - **`.flow` is TWO YAML documents** separated by a line that is just `---`: doc 1 = the MODEL
-          (`dimensions`, `derived`, `sources`, `screens` with their own `variants` and `edges`), doc 2 =
+          (`dimensions`, `derived`, `frames`, `screens` with their own `variants` and `edges`), doc 2 =
           the VIEWS (saved pins; the preview writes only this half, and they are the states kept while
           clicking through — gone on refresh). Screen `id`s and titles are the diff identity — unique,
           stable. A screen that looks different under different data is ONE screen with `variants`, never
-          two screens. A control that goes somewhere different is ONE edge with `dispatch`. Screenshots
-          live in `<stem>-assets/` beside the flow and are referenced by that relative path.
-        - **`.playbook`** — a NEW playbook is always version 2: `studio-check --template playbook > new.playbook` and keep
-          its `version: 2` line. The `version:` line at the top picks one of two shapes, never mixed:
-          - **Version 1** (no `version:` line) = `decisions` (key, label, values with keys) + `events` (each with
-            optional `content: [...]`) + `topics` (`when?`, `content: [...]`) + `rules` (`event`, `when`, `status`,
-            `process`, `sets`). Answers CHOOSE content, content never reads answers. Every entry is a FILE beside the
-            book — `{label?, file, by?}`. `{file: funding.playbook, by: [entity]}` shows
-            `funding.playbook.variants/entity=<answer>.playbook` (the base's own extension — `steps.brief` by `push`
-            shows `steps.brief.variants/push=yes.brief`) — one whole, self-contained document per answer combination,
-            authored up front as a closed set (`studio-check` lists the missing ones). Refs are relative to the ROOT
-            playbook's folder.
-          - **Version 2** (`version: 2` at the top) = `decisions` + `events`, SESSION-ONLY and ONE FILE. ON THE
-            EVENT: `when` (on the table only where it holds; absent = always), `hint` (what to do before its
-            document shows — the ask while a `by` answer is open; the response when it shows nothing). Every
-            decision opens unanswered, and answering or folding a panel changes the screen and never the file — no host saves a version-2 book from the walk.
-            What is always true is the content of an always-on event. Each event has ONE content entry IN THE BOOK — a
-            mapping, not a list: `content: {key?, label?, kind, doc}` for one document, or `content: {key?, label?,
-            kind, by, docs}` for a closed set that FOLLOWS the answer — one document per combination of the `by`
-            answers, keyed `decision=answer,...` in `by` order (`{kind: brief, by: [push], docs: {push=yes: {title,
-            sections}, push=no: {...}}}`). `kind` names the renderer, a document is that kind's YAML (a block string for
-            `md`). While a `by` decision is unanswered the pane shows the event's `hint` and asks for the answer;
-            once taken, the member for that answer shows. A nested book is `kind: playbook` with the whole book under
-            `doc`. Paste it, validate it, render it with nothing beside it. Content has no path, so no
-            annotations and no pinning.
-          `studio-check` runs the kind's own engine over each document and refuses `doc`/`docs` without `kind`,
-          `doc` and `docs` together, `by` on a `doc`, `docs` without `by`, a `docs` set that is not exactly the closed set
-          of its `by` answers, an `md` document that is not a string, a written entry or `when`/`hint` on an
-          event in a version-1 file (it says: add `version: 2`, or move them to a rule), and — in a version-2 file —
-          a `content` list or a `file` on an entry (it says: write it into the book, or take `version: 2` off). A `key` on an entry
-          is what the walk collapses by (the file, then the label, stand in). A version-1 file the engine cannot carry —
-          a newer `version`, or version 1 holding written content — is never saved by any host: the walk is held for the
-          session and a line at the top says "Not saved"; fix the file rather than clicking on. Nesting is unlimited
-          (a cycle is refused). No
-          `library:`, no topic `variants:`, no `compare:` — the checker names them if a file still has
-          them. Never author steps as events — a procedure is markdown.
+          two screens. A control that goes somewhere different is ONE edge with `dispatch`. A panel is a
+          `frame` of this flow at one of its views, or a `screenshot`; the images live in
+          `<stem>-assets/` beside the flow, the one thing a document keeps outside itself.
+        - **`.playbook`** — one file, `version: 2` on the first line
+          (`studio-check --template playbook > new.playbook`): `decisions` + `events`. ON THE EVENT:
+          `when` (on the table only where it holds; absent = always), `hint` (what to do before its
+          document shows — the ask while a `by` answer is open; the response when it shows nothing).
+          Every decision opens unanswered, and answering or folding a panel changes the screen and never
+          the file — no host saves a book from the walk. What is always true is the content of an
+          always-on event. Each event has ONE content entry IN THE BOOK — a mapping, not a list:
+          `content: {key?, label?, kind, doc}` for one document, or `content: {key?, label?, kind, by,
+          docs}` for a closed set that FOLLOWS the answer — one document per combination of the `by`
+          answers, keyed `decision=answer,...` in `by` order (`{kind: brief, by: [push], docs: {push=yes:
+          {title, sections}, push=no: {...}}}`). `kind` names the renderer, a document is that kind's YAML
+          (a block string for `md`). While a `by` decision is unanswered the pane shows the event's
+          `hint` and asks for the answer; once taken, the member for that answer shows. A nested book is
+          `kind: playbook` with the whole book under `doc`. Paste it, validate it, render it with nothing
+          beside it. Content has no path, so no annotations and no pinning; a document two books need is
+          written in each.
+          `studio-check` runs the kind's own engine over each document and refuses `doc`/`docs` without
+          `kind`, `doc` and `docs` together, `by` on a `doc`, `docs` without `by`, a `docs` set that is
+          not exactly the closed set of its `by` answers, and an `md` document that is not a string. It
+          names as gone: a `content` list, a `file` on an entry, `topics:`, `rules:`, `view:`, `status`
+          and `sets` on an event, `library:`, `compare:`, `materials:`, `scales:`. Nesting is unlimited
+          (a cycle is refused). Never author steps as events — a procedure is markdown.
         - **`.policy`**: `params` → `cases` in order, the FIRST matching case wins → buckets. Every param a
           clause names is declared under `params`, every bucket a case names under `buckets`, and `op` is one
           of the vocabulary in the kinds table — the checker names a misspelled one, because the engine
-          would drop the clause and the case would match everything. With
-          `role: table` it is the rules a data view applies — see the kinds table.
+          would drop the clause and the case would match everything. An `order` policy writes the
+          dimensions it ranks over into itself under `tags:`, so the ranking says what it reads;
+          `role: table`, `policy:`, `items:` and `map:` are named as gone.
         - **`.kanban`** `columns` + `tasks` (`needs:` for dependencies — keys of tasks in the same board;
           `duration:` in calendar days; `due:` as `YYYY-MM-DD`; `status:` spelled as a column title). The
-          checker names a `needs` to no task, a status that is no column, a duplicate key, a cycle. **`.brief`**
-          `sections: [{title, description?, body?, children?}]`.
+          checker names a `needs` to no task, a status that is no column, a duplicate key, a cycle.
+          **`.calendar`** is the same tasks without columns, and a `due:` to chain back from.
+          **`.brief`** `sections: [{title, description?, body?, children?}]`.
+        - **A document inside a document** — a brief's section, a kanban's task, a playbook's event:
+          `content: {kind, doc}`, where `kind` is any kind the Studio knows and `doc` is that kind's YAML
+          (a block string for `md`). The checker runs it through that kind's own engine, so a broken
+          kanban inside a brief is a broken brief. One document per section or task; a document two
+          places need is written in both.
         - **`.pipeline`**: every item has a uuid `id` — mint one when adding an item, never renumber; a stage's
           `key` is its identity; ONE verb per stage (`rules`, `filter` or `sort`) and no `kind:` — the verb says
           what the stage is; a rule that means one item says `item: <id>`, not a `where` on its name; every
@@ -225,8 +223,9 @@ events:
           the check, the `.mid` is the handover. To Ableton: drop the exported `.mid` on a track (a song's on
           the Arrangement), or add the folder to Live's browser (Places › Add Folder) so every export shows
           up there as it lands. No `.als`/`.alc` is written — that format is undocumented and version-bound.
-        - **Refs** between documents are **document-relative** (`money/funding.playbook`,
-          `../events.playbook`) or absolute from the folder root (`/Meme XP/events.playbook`).
+        - **No document names another.** Every kind is one self-contained file: what a document
+          shows is in it, written in where it is a document of another kind. The one thing kept
+          outside a file is an image — a flow's screenshots in `<stem>-assets/` beside it.
 
         ## 4 · How the previews pick up your edits
 

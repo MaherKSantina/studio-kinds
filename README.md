@@ -1,11 +1,16 @@
 # studio-kinds
 
-Thirteen document kinds — `.brief`, `.playbook`, `.kanban`, `.calendar`, `.policy`, `.flow`,
-`.jsonl`, `.middleware`, `.pipeline`, `.collection`, `.clip`, `.song`, `.md` — each defined three ways
+Twelve document kinds — `.brief`, `.playbook`, `.kanban`, `.calendar`, `.policy`, `.flow`,
+`.jsonl`, `.pipeline`, `.collection`, `.clip`, `.song`, `.md` — each defined three ways
 that never drift: a **JSON Schema** (the shape), a **book** (how the kind works), and a **checker**
 (the engine that reads a file and names every problem, references between fields included). The
 checker is a Python package, `studio-kinds`, with the `studio-check` command; the schemas and books
 ship inside it and sit here as plain files, fetchable by URL.
+
+**A document is ONE FILE.** Every kind holds everything it shows — its own rows, its own tasks, its
+own clips — and a document of another kind is WRITTEN IN, as `content: {kind, doc}`, never named as
+a path. So a document can be pasted, checked and rendered anywhere, two documents can never drift
+apart, and a check reads the text and nothing beside it.
 
 ```
 kinds/<ext>/           every kind: v<N>.schema.json, v<N>.playbook (the book), v<N>.fields.yaml (the field table)
@@ -28,14 +33,15 @@ studio-check --json a.kanban                      # machine-readable: {file, ext
 
 `ok` means the engine runs the file as written: every fallback a lenient reader would take (a `needs`
 to no task, an `op` outside the vocabulary, a required field missing, a `status` that is no column, a
-cycle) is a problem line naming where. A kind that names other files — a calendar's board, a
-`.jsonl`'s sources, a song's clips, a playbook's `by` files — reads them beside the document.
+cycle) is a problem line naming where. Each document written inside another — a brief's section, a
+kanban task's, a playbook event's — goes through its own kind's engine too, so a broken kanban
+inside a brief is a broken brief.
 
 From Python:
 
 ```python
 from studio_kinds import check, check_path
-r = check_path("launch.kanban")      # or check(text, "kanban")
+r = check_path("launch.kanban")      # or check(text, "kanban") — the text is the whole document
 r.ok, r.problems, r.summary
 ```
 
@@ -60,8 +66,8 @@ https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/examples/lau
 
 A `# yaml-language-server: $schema=<that URL>` line at the top of a file gives autocomplete and
 hover descriptions in any editor with a YAML language server. The schema is the shape; the
-references between fields and the files beside a document are the checker's — a document valid
-against the schema can still fail `studio-check`, never the reverse.
+references between fields inside the document are the checker's — a document valid against the
+schema can still fail `studio-check`, never the reverse.
 
 Claude Code with this repository on disk needs none of that: the `studio-files` skill (and every
 `CLAUDE.md` the Studio's "Prepare for Claude Code" button writes) walks it through `--book`,

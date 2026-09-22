@@ -1,3 +1,16 @@
 title: Launch calendar
-board: board.kanban
+description: Three chained tasks and the day they must be done by.
 due: 2026-12-01
+tasks:
+  - key: a
+    title: A
+    duration: 2
+    note: one line
+  - key: b
+    title: B
+    needs: [a]
+    due: "2026-11-28"
+  - key: c
+    title: C
+    needs: [a, b]
+    duration: 3

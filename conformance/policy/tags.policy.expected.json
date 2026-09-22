@@ -1,5 +1,8 @@
 {
-  "ok": true,
-  "problems": [],
-  "summary": "tags policy"
+  "ok": false,
+  "problems": [
+    "dimension nothing: no rules — ordered `derive` clauses, the last with none as the default",
+    "dimension 3: no `key` — the name a ranking's refs use"
+  ],
+  "summary": "tags policy: 3 dimensions"
 }

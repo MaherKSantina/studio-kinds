@@ -1,13 +1,23 @@
 title: Demo
 tempo: 128
 time: 4/4
+clips:
+  - name: drums
+    grid: 16
+    lanes:
+      - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
+      - {name: Clap, pitch: D2, steps: "....x.......x..."}
+  - name: bass
+    notes:
+      - {pitch: C2, start: 0, length: 0.75}
+      - {pitch: G2, start: 2, length: 1}
 tracks:
   - name: Drums
     channel: 10
     clips:
-      - {file: drums.clip, at: 0, repeat: 2}
-      - {file: drums.clip, at: 3}
+      - {clip: drums, at: 0, repeat: 2}
+      - {clip: drums, at: 3}
   - name: Bass
     clips:
-      - {file: bass.clip, repeat: 4}
-      - {file: bass.clip, repeat: 2, transpose: 5}
+      - {clip: bass, repeat: 4}
+      - {clip: bass, repeat: 2, transpose: 5}

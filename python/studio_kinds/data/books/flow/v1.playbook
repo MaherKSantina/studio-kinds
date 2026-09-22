@@ -1,5 +1,5 @@
 version: 2
-title: How a version-1 flow works
+title: How a flow works
 description: A walkthrough whose screens and edges are parameterised — two YAML documents in one file, a closed parameter space, screens with variants and controls, a walk that keeps its trail in the session and its pins in the views half, and an Ask that edits only the model.
 decisions:
   - key: host
@@ -41,14 +41,13 @@ events:
               | `derived` | dimensions produced by first-match-wins rules — `{name, values, rules: [{when, value}]}`; `value: "= other"` copies a dimension |
               | `initial` | the screen a walk starts on |
               | `start_mode`, `entries` | start on `initial`, or from one of the `entries` start events |
-              | `sources`, `default_source` | named versions the file panels read from — `{name, path}` |
-              | `frames` | frames kept inside the flow, by name — a state shows one as `frame: <name>` |
+              | `frames` | the frames this flow holds, by name — a state shows one as `frame: <name>` at one of its views |
               | `screens` | the screens |
 
               A screen: `id` (what edges point at), `title` (unique), `description`, `locals`
               (its own UI state — reset on every arrival, seen by no other screen), `content`
-              (panels: `{screenshot}`, `{frame, view}`, `{file, source?}`; `screenshot` and
-              `screenshots` are shorthands), `variants` (`{when, title?, content}` — the same
+              (panels: `{screenshot}` — an image in `<stem>-assets/` — or `{frame, view}`, one
+              of this flow's own frames; `screenshot` and `screenshots` are shorthands), `variants` (`{when, title?, content}` — the same
               screen under a condition), `edges` (its controls: `id`, `event`, `to` or
               `dispatch` — a precedence-ordered list of `{when, to}`, first match wins — `sets`
               dimension values established by walking, `when` the control is present only while
@@ -116,8 +115,8 @@ events:
           flow is one half of a diff. Above them the PARAMETER BAR — every global dimension with
           its values, the derived ones read-only. Screens: the list down the side; the focused
           screen's page shows its resolved rendering — the variant whose `when` holds first, its
-          panels stepped one at a time: a screenshot from `<stem>-assets/`, a file rendered live
-          by its kind, a frame drawn through the canvas fitted to the pane — its STATES listed (a
+          panels stepped one at a time: a screenshot from `<stem>-assets/`, or one of the flow's
+          own frames drawn through the canvas fitted to the pane — its STATES listed (a
           state that does not apply is only dimmed: looking is not walking), its CONTROLS (a dead
           one dimmed with why it is not offered), and where it was reached from. The trail of
           crumbs sits above. An empty model shows the empty-flow page; validation problems show
@@ -127,7 +126,7 @@ events:
           text; on the screen page, add / edit / delete for states and controls through dialogs
           (a state's `when` and panels; a control's event, `to` or `dispatch`, `sets`, `when`);
           screenshot uploads that land beside the flow as `<name>-<hash>.<ext>` in
-          `<stem>-assets/`; the frame dialog for a frame beside the flow or an inline one; on the
+          `<stem>-assets/`; the frame dialog for one of the flow's own frames; on the
           Changes tab, revert and promote per change; and the Ask panel (Ctrl+K). Every mutation
           runs through `flowOps` on the model half and is re-serialised with `withModel`, so the
           views half survives every edit.
@@ -242,7 +241,8 @@ events:
         `remove_local`, `set_initial`, `set_title`. Screens are named by id or title, states by
         label or 1-based index, controls by id or event label; conditions and assignments are
         text in the file's own grammar (`flag: true; type: a|b`; `when -> screen; * -> screen`
-        for a dispatch); a state's `frame` names a `.frame` beside the flow at one of its views.
+        for a dispatch); a state's `frame` names one of this flow's own frames, at one of its
+        views.
         `applyFlowOps` runs them through the same mutators on a clone and re-serialises only the
         model, so the views survive every turn; refusals become skipped lines. Ctrl+K opens the
         panel.
@@ -268,16 +268,16 @@ events:
     trigger: imposed
     arity: many
     domain: Elsewhere
-    detail: Frames move into it; projects move them; the Studio opens its inline frames by name.
+    detail: A frame moves INTO it; the Studio opens the flow's own frames by name.
     content:
       key: elsewhere
       label: Who touches a flow
       kind: md
       doc: |
-        - A `.frame` beside the flow is shown by a state's `{frame, view}` panel and edited from
-          the flow's frame dialog; "Move into flow" — from a project pane or a project's Ask —
-          folds the file under `frames.<stem>` and adds a screen when no state showed it.
-        - The Studio opens an inline frame as `?path=<flow>&frame=<name>`.
+        - "Move into flow" — from a project pane or a project's Ask — folds a `.frame` file
+          under `frames.<stem>` and adds a screen when no state showed it. The frame is then this
+          flow's, edited from its frame dialog, and the file it came from is no longer read.
+        - The Studio opens one of the flow's frames as `?path=<flow>&frame=<name>`.
         - A `.diff` of two flows renders one as the Changes tab of the other.
   - key: checked
     label: studio-check runs on it
@@ -300,11 +300,12 @@ events:
                  screen it sits on`); `dimensions` not a mapping, a dimension empty or non-scalar;
                  `derived` names clashing with dimensions, rules whose `value` is not in the
                  dimension or `"= x"` naming nothing; `initial` not a screen; `start_mode` not
-                 `screen` or `entries`; `sources` malformed, named twice, `default_source`
-                 unknown; a screen without `id` or `title`, a duplicated id or title, `locals`
-                 clashing with a dimension or non-scalar; a variant without a label; a panel with
-                 both `file` and `screenshot` or neither, a `source` not declared, `label` not a
-                 string; a `when` naming an undeclared dimension or a value not in it, a list
+                 `screen` or `entries`; `sources` and `default_source`, named as gone (a panel
+                 drew a document from another folder); a screen without `id` or `title`, a
+                 duplicated id or title, `locals` clashing with a dimension or non-scalar; a
+                 variant without a label; a panel with both `frame` and `screenshot` or neither, a
+                 `frame` this flow does not hold, a `file`, `source` or `agent` on it, `label` not
+                 a string; a `when` naming an undeclared dimension or a value not in it, a list
                  `when` whose entries are not mappings, an empty list of alternatives; an edge with
                  both `to` and `dispatch` or neither, a `to` or a branch's `to` naming no screen,
                  a `dispatch` that is not a list; a duplicate `event` + `when` on one screen.
@@ -313,13 +314,14 @@ events:
               At most 40 problems are reported.
           - title: The summary line
             body: |
-              `N screens, N states` and `, N inline frames` when the model keeps frames — on the
-              command line and on the page alike.
+              `N screens, N states` and `, N frames` when the model holds frames — on the command
+              line and on the page alike.
           - title: Not checked
             body: |
-              That a screenshot key exists in `<stem>-assets/` (the Missing tab shows it). That a
-              panel's file exists. That every screen is reachable (the Map shows it). The content
-              of the views half — a pin, a tab, a focus — beyond its YAML parsing.
+              That a screenshot key exists in `<stem>-assets/` (the Missing tab shows it) — the
+              images are the one thing a flow keeps beside itself. That every screen is reachable
+              (the Map shows it). The content of the views half — a pin, a tab, a focus — beyond
+              its YAML parsing.
   - key: authored
     label: A flow is written
     trigger: chosen
@@ -336,8 +338,8 @@ events:
             label: Start from the template
             detail: |
               `studio-check --template flow > new.flow`, or Ctrl+N in the Studio — a commented
-              model with two dimensions, a derived one, defaults, named sources and screens with
-              their controls, then the `---` and the views half.
+              model with two dimensions, a derived one, defaults, a frame and screens with their
+              controls, then the `---` and the views half.
           - key: dimensions
             label: Declare the parameter space
             after: [template]
@@ -348,8 +350,9 @@ events:
             label: Write one screen per page
             after: [dimensions]
             detail: |
-              A stable `id`, a unique `title`, a screenshot or a frame; a VARIANT with a `when`
-              wherever the same page renders differently under data, never a second screen.
+              A stable `id`, a unique `title`, and a screenshot or one of the flow's own frames;
+              a VARIANT with a `when` wherever the same page renders differently under data, never
+              a second screen.
           - key: controls
             label: Put each control on its screen
             after: [screens]

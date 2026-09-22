@@ -1,0 +1,4 @@
+{"$title": "Stays by price", "$description": "Four nights, two adults"}
+{"$labels": {"price": "Total (AUD)", "best_offer.url": "Link"}}
+{"name": "Beach Cabin", "price": 1200, "best_offer": {"url": "https://example.test/1"}}
+{"name": "Family Room", "price": 900, "best_offer": {"url": "https://example.test/2"}}

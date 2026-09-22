@@ -2,7 +2,7 @@
 
 ## The engine's account
 
-The check is `python/studio_kinds/kinds/brief.py` in the studio-kinds repository; the account below is the Studio's engine's own (`packages/filekinds/src/lib/briefDoc.ts`), which the check reproduces.
+The check is `python/studio_kinds/kinds/brief.py` in the studio-kinds repository; the account below is that engine's own.
 
 The `.brief` file kind: a nested set of titled sections, each with a one-line
 description, a markdown body, and — where what the section holds is a document
@@ -28,14 +28,14 @@ other authored kind here uses (`.list`, `.kanban`, `.email`), and a file people 
 write should not inherit a vocabulary from the one stage that happened to need it first.
 
 A SECTION CAN HOLD ONE DOCUMENT OF ANY KIND the Studio knows — a playbook, a kanban, a
-guide, a policy, a data table, markdown — written in the section as `content: {kind, doc}`
-(writtenDocument.ts): `kind` names the engine, `doc` is the document exactly as a file of
-that kind would hold it. The viewer shows it under the section's prose through that kind's
-own viewer, and the checker runs it through that kind's own engine, so a broken document in
-a section is a broken brief. One document per section: a section that needs two has two
-children. Refused (`briefProblems`): a `content` that is not a mapping, one without `kind`
-or without `doc`, an `md` document that is not a string, and `by`, `docs` or `file` on it —
-a brief has no answers to vary by and names no file.
+policy, a data table, markdown — written in the section as `content: {kind, doc}`: `kind`
+names the engine, `doc` is the document exactly as a file of that kind would hold it. The
+viewer shows it under the section's prose through that kind's own viewer, and the checker
+runs it through that kind's own engine, so a broken document in a section is a broken
+brief. One document per section: a section that needs two has two children. Refused: a
+`content` that is not a mapping, one without `kind` or without `doc`, an `md` document that
+is not a string, and `by`, `docs` or `file` on it — a brief has no answers to vary by and
+names no file.
 
     sections:
       - title: The master is read
@@ -53,19 +53,18 @@ Parsing is LENIENT and never throws — a half-written file still has to render.
 accepts the in-memory spelling (`name`/`prose`) and the foundry array key (`features`), so
 a features payload pasted into a `.brief` just works.
 
-## Also (writtenDocument.ts)
+## Also — a document written inside another
 
-A DOCUMENT WRITTEN INSIDE ANOTHER — the shape a playbook event's `content`
-and a brief section's `content` share.
+A DOCUMENT WRITTEN INSIDE ANOTHER — the shape a brief's section, a kanban
+task's and a playbook event's `content` share.
 
 There is no file, so there is no extension to pick a renderer from: `kind`
 names the engine that renders `doc`, and `doc` is the document exactly as a
 file of that kind would hold it — as that kind's YAML parses it, or its text
-for `md`. A viewer takes the text back (`docText`) under a synthetic path
-(`writtenPath`, `inline.brief`) that the file-kind registry resolves as it
-would a real `x.brief`. Nothing is read from disk to show it, so a written
-document carries no annotations and is never pinned; a document two files
-share is written in each.
+for `md`. A viewer takes the text back under a synthetic path that the
+file-kind registry resolves as it would a real `x.brief`. Nothing is read
+from disk to show it, so a written document carries no annotations and is
+never pinned; a document two files need is written in each.
 
     content:
       kind: playbook          # any kind the Studio knows: brief, playbook, kanban, md, …

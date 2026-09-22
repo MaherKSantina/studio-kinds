@@ -1,7 +1,5 @@
 {
-  "ok": false,
-  "problems": [
-    "track Track 1: untitled.clip is not there"
-  ],
-  "summary": "1 track · 4 bars · 0 notes · 120 bpm · 4/4"
+  "ok": true,
+  "problems": [],
+  "summary": "2 clips · 2 tracks · 4 bars · 20 notes · 120 bpm · 4/4"
 }

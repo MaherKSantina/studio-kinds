@@ -1,8 +1,12 @@
 """`.flow` — a walkthrough whose screens and edges are PARAMETERISED: `dimensions` (named, finite,
 ordered value sets), `derived` dimensions (first-match-wins rules), `screens` with `variants` over
 that space and `edges` (unconditional `to`, or a `dispatch` of when/to branches; `sets` writes
-dimension values), `entries` (start events), `sources` for file panels. The `when` grammar: a bare
-value equals, `[a, b]` one-of, `"*"` any, `"!x"` not-equal; a LIST of mappings is alternatives.
+dimension values) and `entries` (start events). The `when` grammar: a bare value equals, `[a, b]`
+one-of, `"*"` any, `"!x"` not-equal; a LIST of mappings is alternatives.
+
+WHAT A STATE SHOWS is in the file or beside it as an image: a `screenshot` (a key of an image in
+this flow's own assets folder) or a `frame` written in under the flow's `frames:`, at one of its
+views. A panel names no other document.
 
 FILE SHAPE: two YAML documents separated by a line that is exactly `---`. Doc 1 is the model
 (hand-authored); doc 2 the views (saved parameter sets and layout) — checked structurally only.
@@ -42,14 +46,6 @@ def split_file(content: str) -> tuple[str, str]:
         if re.match(r"^---\s*$", line):
             return "\n".join(lines[:i]), "\n".join(lines[i + 1:])
     return content, ""
-
-
-def _read_sources(raw: Any) -> list[str]:
-    if is_list(raw):
-        return [n for n in (_clean(s.get("name")) for s in _objects(raw)) if n]
-    if is_obj(raw):
-        return [str(n) for n in raw.keys() if str(n)]
-    return []
 
 
 Domain = dict[str, set]
@@ -111,7 +107,7 @@ def _validate_sets(raw: Any, dims: Domain, where: str, problems: list[str]) -> N
             problems.append(f'{where}.{dim} value "{js_str(val)}" is not in dimension "{dim}".')
 
 
-def _validate_content(raw: dict, where: str, sources: set[str], problems: list[str]) -> None:
+def _validate_content(raw: dict, where: str, frames: set[str], problems: list[str]) -> None:
     if defined(get(raw, "screenshot")) and not is_str(raw["screenshot"]):
         problems.append(f"{where}.screenshot must be a string Storage key.")
     if defined(get(raw, "screenshots")) and (not is_list(raw["screenshots"]) or any(not is_str(k) for k in raw["screenshots"])):
@@ -119,7 +115,7 @@ def _validate_content(raw: dict, where: str, sources: set[str], problems: list[s
     if not defined(get(raw, "content")):
         return
     if not is_list(raw["content"]):
-        problems.append(f"{where}.content must be an array of panels (`{{ screenshot: <key> }}` or `{{ file: <path> }}`).")
+        problems.append(f"{where}.content must be an array of panels (`{{ screenshot: <key> }}` or `{{ frame: <name>, view: <view> }}`).")
         return
     for i, item in enumerate(raw["content"]):
         cw = f"{where}.content[{i}]"
@@ -130,24 +126,22 @@ def _validate_content(raw: dict, where: str, sources: set[str], problems: list[s
         if not is_obj(item):
             problems.append(f"{cw} must be a string Storage key or an object.")
             continue
-        has_file = _clean(item.get("file")) != ""
+        for k in ("file", "source", "agent"):
+            if defined(get(item, k)):
+                problems.append(f"{cw}.{k} is gone — a panel is a `frame` of this flow at one of its views, or a screenshot beside it.")
+        has_frame = _clean(item.get("frame")) != ""
         has_shot = _clean(item.get("screenshot")) != ""
-        if has_file and has_shot:
-            problems.append(f"{cw} sets both `file` and `screenshot` — a panel is one or the other.")
-        elif not has_file and not has_shot:
-            problems.append(f"{cw} needs a `file` (another file to render) or a `screenshot` (a Storage key).")
+        if has_frame and has_shot:
+            problems.append(f"{cw} sets both `frame` and `screenshot` — a panel is one or the other.")
+        elif not has_frame and not has_shot:
+            problems.append(f"{cw} needs a `frame` (one of this flow’s own frames) or a `screenshot` (a Storage key).")
         if defined(get(item, "label")) and not is_str(item["label"]):
             problems.append(f"{cw}.label must be a string.")
-        if not has_file:
-            for k in ("source", "agent"):
-                if defined(get(item, k)):
-                    problems.append(f"{cw}.{k} only applies to a `file` panel.")
+        if not has_frame:
             continue
-        src = _clean(item.get("source"))
-        if src and src not in sources:
-            problems.append(f'{cw}.source "{src}" is not a declared source. Add it under top-level `sources:`.')
-        if defined(get(item, "agent")) and not is_str(item["agent"]):
-            problems.append(f"{cw}.agent must be a directory agent uuid.")
+        name = _clean(item.get("frame"))
+        if name not in frames:
+            problems.append(f'{cw}.frame "{name}" is not one of this flow’s frames. Write it under top-level `frames:`.')
 
 
 def _scalars(values: Any) -> set:
@@ -162,20 +156,10 @@ def _validate_body(doc: dict, prefix: str, problems: list[str]) -> None:
     if defined(sm) and sm not in ("screen", "entries"):
         problems.append(f"{prefix}`start_mode` must be `screen` or `entries`.")
 
-    source_names: set[str] = set()
-    if defined(get(doc, "sources")):
-        if not is_list(doc["sources"]) and not is_obj(doc["sources"]):
-            problems.append(f"{prefix}`sources` must be an array of `{{ name, path }}` or a mapping of name → path.")
-        else:
-            for name in _read_sources(doc["sources"]):
-                if name in source_names:
-                    problems.append(f'{prefix}`sources` names "{name}" twice.')
-                source_names.add(name)
-            if is_list(doc["sources"]) and len(_objects(doc["sources"])) != len(doc["sources"]):
-                problems.append(f"{prefix}`sources` entries must be objects with a `name`.")
-    default_source = _clean(get(doc, "default_source")) if defined(get(doc, "default_source")) else ""
-    if default_source and default_source not in source_names:
-        problems.append(f'{prefix}`default_source` "{default_source}" is not a declared source.')
+    for key in ("sources", "default_source"):
+        if defined(get(doc, key)):
+            problems.append(f"{prefix}`{key}` is gone — a panel is a `frame` of this flow at one of its views, or a screenshot beside it.")
+    frame_names = {str(n) for n in rec(get(doc, "frames")).keys() if str(n)}
 
     dims: Domain = {}
     if defined(get(doc, "dimensions")):
@@ -288,7 +272,7 @@ def _validate_body(doc: dict, prefix: str, problems: list[str]) -> None:
             scoped = {**dims, **screen_locals.get(id_, {})}
             if defined(get(raw, "description")) and not is_str(raw["description"]):
                 problems.append(f"{where}.description must be a string.")
-            _validate_content(raw, where, source_names, problems)
+            _validate_content(raw, where, frame_names, problems)
             if defined(get(raw, "variants")):
                 if not is_list(raw["variants"]):
                     problems.append(f"{where}.variants must be an array.")
@@ -301,7 +285,7 @@ def _validate_body(doc: dict, prefix: str, problems: list[str]) -> None:
                         if not is_str(get(v, "label")) or not v["label"].strip():
                             problems.append(f"{vw}.label is required (a non-empty string).")
                         _validate_when(get(v, "when"), scoped, f"{vw}.when", problems)
-                        _validate_content(v, vw, source_names, problems)
+                        _validate_content(v, vw, frame_names, problems)
 
     initial = doc["initial"] if is_str(get(doc, "initial")) else ""
     if initial and initial not in screen_ids:
@@ -487,7 +471,7 @@ def validate_flow_file(content: str) -> list[str]:
     return problems[:40]
 
 
-def check(text: str, file: str | None = None) -> CheckResult:
+def check(text: str) -> CheckResult:
     model_text, _ = split_file(text)
     try:
         parsed = _yaml.load(model_text) if model_text.strip() else {}
@@ -500,4 +484,4 @@ def check(text: str, file: str | None = None) -> CheckResult:
     screens = _objects(get(doc, "screens"))
     states = sum(len(_objects(get(s, "variants"))) for s in screens)
     frames = sum(1 for v in rec(get(doc, "frames")).values() if is_obj(v))
-    return CheckResult(problems, f"{len(screens)} screens, {states} states" + (f", {frames} inline frames" if frames else ""))
+    return CheckResult(problems, f"{len(screens)} screens, {states} states" + (f", {frames} frames" if frames else ""))

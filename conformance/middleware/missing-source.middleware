@@ -1,3 +1,0 @@
-title: Missing
-source: nowhere.csv
-rules: [{where: [], set: {a: 1}}]

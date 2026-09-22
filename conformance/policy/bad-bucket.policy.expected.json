@@ -1,7 +1,7 @@
 {
   "ok": false,
   "problems": [
-    "a run names both `policy` and `items` — one without the other is a bucket policy missing its cases",
+    "`policy:` — a run applied a policy to a list in another file; a `.pipeline` holds the list, the rules that transform it and the views over it, in one file",
     "no `title` — a name for the rules",
     "param 1: no `key`",
     "param p: duplicate key",

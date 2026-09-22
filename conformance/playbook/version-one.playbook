@@ -1,0 +1,26 @@
+version: 1
+title: Written as it once was
+decisions:
+  - key: push
+    label: Push?
+    values: [{key: yes, label: Yes}, {key: no, label: No}]
+events:
+  - key: e1
+    label: First
+    content:
+      - {file: steps.brief, label: Steps, by: [push]}
+      - {file: plain.md}
+topics:
+  - key: t1
+    label: Topic
+    when: [push=yes]
+    content:
+      - {file: topic.md}
+rules:
+  - event: e1
+    when: [push=yes]
+    status: ready
+    process: Do it
+    sets: [push=no]
+view:
+  locks: [push=yes]

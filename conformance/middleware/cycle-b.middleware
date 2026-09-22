@@ -1,3 +1,0 @@
-title: B
-source: cycle-a.middleware
-rules: [{where: [], set: {b: 1}}]

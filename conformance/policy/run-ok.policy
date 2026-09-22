@@ -1,7 +1,0 @@
-title: A run
-policy: pitches.policy
-items: pitches.list
-map:
-  amount: amount
-  sector: [label, sector]
-date: 2026-09-21

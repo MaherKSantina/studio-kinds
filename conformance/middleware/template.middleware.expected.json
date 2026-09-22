@@ -1,7 +1,0 @@
-{
-  "ok": false,
-  "problems": [
-    "could not read rows.jsonl"
-  ],
-  "summary": "over rows.jsonl (0 rows): rule 1 → 0"
-}

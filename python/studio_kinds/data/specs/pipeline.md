@@ -2,7 +2,7 @@
 
 ## The engine's account
 
-The check is `python/studio_kinds/kinds/pipeline.py` in the studio-kinds repository; the account below is the Studio's engine's own (`packages/filekinds/src/lib/pipelineDoc.ts`), which the check reproduces.
+The check is `python/studio_kinds/kinds/pipeline.py` in the studio-kinds repository; the account below is that engine's own.
 
 The `.pipeline` kind — ONE curated list, the stages that transform it, and
 the views that show the result, all in one file. The items are the list as
@@ -28,7 +28,7 @@ Authoring shape (YAML, lenient — a half-written file still renders):
     - {id: 3e7a5c88-1b2d-4f0e-8a6c-d94b1e2f7c03, name: Beach Cabin, price: 1200, sleeps: 4}
   stages:                                      # in order; each is `key` + ONE verb
     - key: corrections
-      rules:                                   # a middleware's rules: pick items, set fields
+      rules:                                   # pick items by id or clause, set fields
         - item: 9b2f6d1c-4e0a-4c7b-9a1d-2f5e8c3b7a10   # one id or a list — the short form of a clause on `id`
           set: {price: 850}
           when: [method=anecdotal]             # the circumstance: off the table once another answer is taken
@@ -47,11 +47,10 @@ Authoring shape (YAML, lenient — a half-written file still renders):
       filter: [{field: sleeps, op: gte, value: 6}]      # hides for this view only
       sort: [{field: price, dir: asc}]
 
-Rules are the middleware's (middlewareDoc.ts): `where` clauses (all must
-hold; none = every item), `set` (dot paths allowed) or `key`/`value`, a
-`note`; a rule that matches no item is a problem. `item:` names items by
-id and is refused when no item has it. A filter, a sort and a view are the
-table policy's rules (tablePolicy.ts): the same clause vocabulary, `sort`
+A rule is `where` clauses (all must hold; none = every item), `set` (dot
+paths allowed) or `key`/`value`, and a `note`; a rule that matches no item
+is a problem. `item:` names items by id and is refused when no item has
+it. A filter, a sort and a view take the same clause vocabulary, `sort`
 keys with `dir`, `columns` (`"*"` = every other column, after the named
 ones), `hide`, `limit`. A stage with no verb, or two, is a problem, as is
 a duplicate `key`, an item without an `id`, an id twice.
@@ -70,53 +69,11 @@ one the row carries (the later rule's) first, the others beside it — and
 once an answer is taken only the value under it is left. A ref to a
 decision or an answer the file does not declare is a problem.
 
-Read from elsewhere: a `.jsonl`'s `$sources`, a `.middleware`'s `source`
-and `studio-check --collect` take `stays.pipeline` (the output),
-`stays.pipeline#<stage>` (the rows as of that stage) or
-`stays.pipeline#<view>` (a view's rows and columns), nothing taken.
+`studio-check --collect stays.pipeline` copies the output — or
+`stays.pipeline#<view>` a view's rows and columns, nothing taken — into a
+`.collection` of its own to decide over, one row at a time. That is a
+copy, not a link: the collection then holds the rows.
 
-## Also (tablePolicy.ts)
-
-The TABLE role of a `.policy` (`role: table`) — a policy over ROWS: which
-to keep, in which order, which columns. The file holds RULES only and
-knows NOTHING about the data: no source, no title for the rows, no header
-labels. The rows come from the `.jsonl` that applies it — its directive
-lines name the sources, this policy, and everything said about the data
-(see dataRows.ts) — read live on every open and never cached, so several
-`.jsonl` files can share one policy and none can drift from its data.
-
-Authoring shape (YAML, lenient — a half-written file still renders):
-
-  role: table
-  title, description?                # a name for the RULES ("within the price band, cheapest first"), never the data
-  where:                            # EVERY clause must hold (AND); a row failing one is out
-    - {field: available_for_dates, op: is_true}
-    - {field: best_offer.price_total_aud, op: between, value: [600, 2000]}
-  sort:                             # first key first; a later key breaks ties
-    - {field: best_offer.price_total_aud, dir: asc}
-    - {field: distance_from_narooma_km, dir: asc}
-  columns: [name, sleeps, best_offer.price_total_aud, "*"]   # shown, in THIS order; omitted = every
-                                    # column the rows carry; "*" = every other column, after these
-  hide: [images]                    # subtracted from the columns shown
-  limit: 100                        # at most this many rows
-
-A `field` is a key of the row, or a DOT PATH into nested objects
-(`best_offer.price_total_aud`), everywhere a field is named. The ops are
-the suite's one clause vocabulary (policyDoc.ts): equals, not_equals,
-contains, not_contains, starts_with, ends_with, matches (regex), gt, gte,
-lt, lte, between ([low, high]), in / not_in (a list), is_empty, not_empty,
-is_true, is_false — text ops case-insensitive and taking one value or a
-LIST (any of them; none of them for the not_ ops: {field: name, op:
-contains, value: [caravan, truck]}), numeric ops never true for an empty
-field. An unknown op, a sort direction that is not asc/desc, a
-column no row carries are PROBLEMS the checker and the view report, not
-silent drops.
-
-Apply it from a `.jsonl` beside it — the title and the header labels
-belong THERE, with the data:
-
-  {"$sources": ["accommodation.json#properties"], "$policy": "cheapest.policy"}
-  {"$title": "Stays by price", "$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)"}}
 
 ## A fresh document (what the Studio creates)
 

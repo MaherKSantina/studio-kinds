@@ -1,6 +1,11 @@
 role: order
 title: Order
-tags: tags.policy
+tags:
+  - key: platform
+    label: Platform
+    derive:
+      - {value: ios, when: [{param: text, op: contains, value: iOS}]}
+      - {value: android}
 order:
-  - {when: {platform: ios}}
+  - {when: [platform=ios]}
   - {when: []}

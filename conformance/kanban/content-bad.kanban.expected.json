@@ -1,0 +1,17 @@
+{
+  "ok": false,
+  "problems": [
+    "`source:` is gone — a board's tasks are its own; write them under `tasks`",
+    "task not-a-mapping: `content` is not a mapping — write `kind` and `doc`",
+    "task no-kind: `content` has no `kind` — say which kind renders it (brief, playbook, md, …)",
+    "task no-doc: `content` has no `doc` — the document itself, as a file of that kind would hold it",
+    "task varies: `content` has `by` — a task holds one document written in; a board has no answers to vary by and names no file",
+    "task varies: `content` has `docs` — a task holds one document written in; a board has no answers to vary by and names no file",
+    "task varies: `content` has `file` — a task holds one document written in; a board has no answers to vary by and names no file",
+    "task md-not-string: an `md` document is its text — write it as a block string",
+    "task unknown-kind (widget): not a kind the Studio knows — `--kinds` lists them",
+    "task broken-inside (kanban): `columns` is empty — a board needs at least one status",
+    "task broken-inside (kanban): task no key: no `key` — the stable key `needs` edges point at"
+  ],
+  "summary": "7 tasks in 1 row, 1 column, 5 documents"
+}

@@ -1,5 +1,5 @@
 version: 2
-title: How a version-1 brief works
+title: How a brief works
 description: A titled tree of sections, each with a one-line description, a markdown body and, where it holds one, a document of another kind written in — what the parser keeps, what a click shows, where a brief turns up inside other kinds, and what the checker judges.
 decisions:
   - key: width
@@ -35,7 +35,7 @@ events:
               | `sections` | the tree: a list of sections, each the same shape at any depth |
 
               `features` and `items` are read in place of `sections`, so a features payload pasted
-              in as-is is a brief. There is no version line: every brief is version 1.
+              in as-is is a brief. There is no version line: a brief has one shape.
           - title: A section
             body: |
               ```yaml

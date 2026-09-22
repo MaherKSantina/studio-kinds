@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "problems": [
+    "`role: table` — rules over rows belong to the `.pipeline` that holds the rows: a stage's `filter` and `sort`, a view's `columns`",
+    "no `cases` — the ordered switch; `cases: []` claims nothing"
+  ],
+  "summary": "0 params, 0 cases, 0 buckets"
+}

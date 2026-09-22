@@ -1,3 +1,4 @@
+source: stays.jsonl
 fields: [name]
 items:
   - {id: 1, name: A}

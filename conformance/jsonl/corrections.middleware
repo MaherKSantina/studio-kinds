@@ -1,5 +1,0 @@
-title: Corrections
-source: data.json#properties
-rules:
-  - where: [{field: name, op: equals, value: Room}]
-    set: {price: 1500}

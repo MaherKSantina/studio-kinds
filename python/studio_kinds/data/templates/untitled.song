@@ -1,5 +1,19 @@
 title: untitled
+tempo: 120
+time: 4/4
+clips:
+  - name: beat
+    grid: 16
+    lanes:
+      - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
+  - name: bass
+    notes:
+      - {pitch: C2, start: 0, length: 1}
 tracks:
-  - name: Track 1
+  - name: Drums
+    channel: 10
     clips:
-      - {file: untitled.clip, at: 0, repeat: 4}
+      - {clip: beat, at: 0, repeat: 4}
+  - name: Bass
+    clips:
+      - {clip: bass, repeat: 4}

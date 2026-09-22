@@ -1,6 +1,9 @@
-"""`.collection` — a SNAPSHOT of rows to decide over, one at a time: the rows copied in (`items`,
-each with an `id`), the view's `fields`, `stats` and `labels`, and `decisions` — a log of `up`,
-`down`, `hide`, `show`, each with a reason.
+"""`.collection` — rows to decide over, one at a time: the rows themselves (`items`, each with an
+`id`), the `fields` shown on a card, the `stats` shown big, the `labels` their headers take, and
+`decisions` — a log of `up`, `down`, `hide`, `show`, each with a reason.
+
+The rows are the collection's own: copied in when it was made and standing still afterwards, so a
+decision and the row it was taken about never drift apart.
 
 The check: an id used twice, a decision with no item, an unknown op, an item not in the collection,
 a missing reason (a `show` needs none).
@@ -10,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .. import _yaml
-from .._js import arr, get, is_num, js_str, opt_str, rec, MISSING
+from .._js import arr, defined, get, is_num, js_str, opt_str, rec, MISSING
 from . import CheckResult
 
 OPS = ("up", "down", "hide", "show")
@@ -30,6 +33,8 @@ def parse(text: str) -> Collection:
     except _yaml.YamlError as e:
         raw = {}
         problems.append(f"YAML: {e}")
+    if defined(get(raw, "source")):
+        problems.append("`source:` is gone — a collection holds its items; nothing points back at where they were copied from")
     items: list[dict] = []
     ids: list[float] = []
     for i, x in enumerate(arr(get(raw, "items"))):
@@ -61,7 +66,7 @@ def parse(text: str) -> Collection:
     return Collection(items, decisions, problems)
 
 
-def check(text: str, file: str | None = None) -> CheckResult:
+def check(text: str) -> CheckResult:
     y = _yaml.error_line(text)
     if y:
         return CheckResult([y])

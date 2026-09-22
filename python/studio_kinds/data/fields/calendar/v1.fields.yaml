@@ -8,10 +8,34 @@ fields:
   - field: description
     type: string
     description: One line under the title.
-  - field: board
-    type: path
-    required: true
-    description: The `.kanban` this lens reads, resolved against this file's folder; its edges, durations and due date produce the schedule.
   - field: due
     type: date
-    description: Overrides the board's own due date as the anchor.
+    required: true
+    description: The day everything must be done by — the anchor the schedule chains backward from. `YYYY-MM-DD`, bare or quoted.
+  - field: tasks
+    type: list of task
+    required: true
+    description: The dated work; every date shown is derived from the edges and durations, never authored.
+  - field: tasks[].key
+    type: string
+    required: true
+    description: The stable key `needs` edges point at.
+  - field: tasks[].title
+    type: string
+    required: true
+    description: The chip's heading.
+  - field: tasks[].note
+    type: string
+    description: One line under the title.
+  - field: tasks[].body
+    type: markdown
+    description: The task's own prose.
+  - field: tasks[].needs
+    type: list of task key
+    description: Prerequisites, each the `key` of another task in this calendar. A key no task has, the task itself, or a cycle is a problem to the checker.
+  - field: tasks[].duration
+    type: number
+    description: Calendar days the task takes (default 1) — weekends are days too; there is no holiday calendar.
+  - field: tasks[].due
+    type: date
+    description: A per-task cap, tighter than the calendar's. `YYYY-MM-DD`, bare or quoted.

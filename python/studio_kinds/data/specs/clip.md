@@ -2,7 +2,7 @@
 
 ## The engine's account
 
-The check is `python/studio_kinds/kinds/clip.py` in the studio-kinds repository; the account below is the Studio's engine's own (`packages/filekinds/src/lib/clipDoc.ts`), which the check reproduces.
+The check is `python/studio_kinds/kinds/clip.py` in the studio-kinds repository; the account below is that engine's own.
 
 The `.clip` kind — the NOTES of one MIDI clip, as a document. What a
 DAW keeps behind a clip's piano roll, written down: which pitches sound
@@ -52,7 +52,7 @@ into the next. Each hit lasts one step unless the lane gives `length:`
 Nothing here is informational text: `title` is the heading, everything
 else is what the notes are.
 
-## Also (midiFile.ts)
+## Also — the MIDI file
 
 Standard MIDI Files, written and read — the bytes a `.clip` or a `.song`
 exports (`<stem>.mid`), and the same bytes read back so a test, or a

@@ -1,5 +1,0 @@
-title: Chain
-source: ok.middleware
-rules:
-  - where: [{field: type, op: equals, value: Camper}]
-    set: {price: 850}

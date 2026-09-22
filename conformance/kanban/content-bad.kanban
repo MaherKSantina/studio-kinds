@@ -1,0 +1,25 @@
+title: Broken documents
+source: tasks/
+columns: [To do]
+tasks:
+  - key: not-a-mapping
+    title: Not a mapping
+    content: "a string"
+  - key: no-kind
+    title: No kind
+    content: {doc: hi}
+  - key: no-doc
+    title: No doc
+    content: {kind: md}
+  - key: varies
+    title: Varies
+    content: {kind: md, doc: hi, by: [d], docs: {d=a: x}, file: beside.md}
+  - key: md-not-string
+    title: Md not string
+    content: {kind: md, doc: {a: 1}}
+  - key: unknown-kind
+    title: Unknown kind
+    content: {kind: widget, doc: {}}
+  - key: broken-inside
+    title: Broken inside
+    content: {kind: kanban, doc: {title: b, columns: [], tasks: [{title: no key}]}}

@@ -1,0 +1,7 @@
+role: table
+title: Cheapest first
+where:
+  - {field: available, op: is_true}
+sort:
+  - {field: price, dir: asc}
+columns: [name, price, "*"]

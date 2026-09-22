@@ -1,5 +1,5 @@
 version: 2
-title: How a version-1 collection works
+title: How a collection works
 description: A snapshot of a view's rows to decide over one at a time — how it is made, how a decision is logged and the order derived from the log, what an edit to a fact is instead, and where the file is written.
 decisions:
   - key: persist
@@ -30,7 +30,6 @@ events:
             body: |
               | key | what it is |
               |---|---|
-              | `source` | the `.jsonl` view the items were copied from |
               | `to` | where directions go (the view asks once) |
               | `fields` | the facts shown for each item, in order; dot paths allowed |
               | `stats` | the fields shown as the big cards |
@@ -51,11 +50,11 @@ events:
               The log is never applied to the items: the order shown is DERIVED — an item's rank is
               its ups minus its downs, items sort by rank descending with ties in copied order, and
               an item whose last hide/show is a hide is hidden (kept in the file, shown on request).
-              A later step reads the reasons to write the policy that produces the same order.
+              A later step reads the reasons to write the rules that produce the same order.
           - title: Why the snapshot
             body: |
               The rows are COPIED in with the view's fields and labels, so the collection stands
-              still while the data, the policy and the middleware move on. A fact edited here —
+              still while whatever it was copied from moves on. A fact edited here —
               a commute time looked up, a picture chosen as `featured` — changes the item itself,
               with no decision and no reason: a decision is about the item's standing, an edit is
               about what is known of it.
@@ -71,7 +70,7 @@ events:
     label: A view is collected
     trigger: chosen
     domain: Making
-    detail: The rows a .jsonl view shows are copied into a new .collection beside it — from the view's Collect button or from the command line.
+    detail: The rows a table shows are COPIED into a new .collection — from the Collect button or from the command line.
     content:
       key: collect
       label: What the copy takes
@@ -82,9 +81,9 @@ events:
         `studio-check --collect x.jsonl [name.collection]` writes `x.collection` (or the name
         given) beside the view.
 
-        Both take the rows the view SHOWS — the file's own rows plus every `$sources` file's,
-        through the table policy when the view names one — with `source` set to the view's file
-        name, `fields` the policy's columns (else the first row's keys), `labels` the view's
+        Both take the rows the table SHOWS — copied in, so the collection holds them and
+        nothing points back — with
+        `fields` the columns shown (else the first row's keys), `labels` the table's
         `$labels`, `stats` the fields numeric in some row followed by the first field that is a
         link, and every row copied whole with `id` 1, 2, 3… in the order shown. `decisions` starts
         empty. Nothing in the view is changed.
@@ -244,7 +243,7 @@ events:
               the page alike.
           - title: Not checked
             body: |
-              That `source` exists. That the `fields` and `stats` name keys the items carry (a
+              That the `fields` and `stats` name keys the items carry (a
               missing one shows as "—"). That `featured` is one of the item's pictures (it is
               ignored, and the first picture stands in).
   - key: authored
@@ -257,19 +256,19 @@ events:
       kind: guide
       doc:
         title: Work a collection
-        description: From a view to a log of reasons — then the policy that reproduces the order.
+        description: From a table to a log of reasons — then the rules that reproduce the order.
         steps:
           - key: view
             label: Get the view right first
             detail: |
-              The `.jsonl` view's sources, policy and labels are what the copy takes. A field
+              The table's columns and labels are what the copy takes. A field
               missing from the view is missing from every item.
           - key: collect
             label: Collect it
             after: [view]
             detail: |
-              "Collect" on the view, or `studio-check --collect x.jsonl`. The template
-              (`studio-check --template collection`) is only the shape — `source`, `to`,
+              "Collect" on the table, or `studio-check --collect x.jsonl`. The template
+              (`studio-check --template collection`) is only the shape — `to`,
               `fields`, empty `items` and `decisions` — for a collection made by hand.
           - key: to
             label: Set the destination
@@ -284,8 +283,8 @@ events:
               One item at a time in the flow: a reason, then Up, Down or Hide. A reason is what the
               next step reads; the count of decisions without one sits in the strip in amber.
           - key: policy
-            label: Write the policy from the reasons
+            label: Write the rules from the reasons
             after: [decide]
             detail: |
-              Read the log's reasons and write the ranking or table policy that produces the same
+              Read the log's reasons and write the ranking, or the pipeline stages, that produce the same
               order over the live view — the collection stays as the record of why.

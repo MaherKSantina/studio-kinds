@@ -273,7 +273,7 @@ def summary(doc: Clip) -> str:
     return f"{len(doc.notes)} notes · {num_str(bars)} bar{'' if bars == 1 else 's'} · {num_str(doc.tempo)} bpm · {time_text(doc.time)}{r}"
 
 
-def check(text: str, file: str | None = None) -> CheckResult:
+def check(text: str) -> CheckResult:
     y = _yaml.error_line(text)
     if y:
         return CheckResult([y])

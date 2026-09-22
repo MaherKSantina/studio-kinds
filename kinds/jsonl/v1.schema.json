@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/jsonl/v1.schema.json",
   "title": "jsonl (one line)",
-  "description": "DATA ROWS: one JSON object per line (a file whose whole text is one JSON array of objects is accepted too). This schema describes ONE LINE: a row, or a DIRECTIVE — a line whose keys all start with `$` — that composes the rows live from other files.",
+  "description": "DATA ROWS: one JSON object per line (a file whose whole text is one JSON array of objects is accepted too). This schema describes ONE LINE: a row, or a DIRECTIVE — a line whose keys all start with `$` — saying what is known about these rows.",
   "x-studio-file": "one JSON object per line; this schema describes a line",
   "type": "object",
   "if": {
@@ -12,45 +12,15 @@
     "minProperties": 1
   },
   "then": {
-    "description": "A directive line. Several may be split across lines; `$sources` and `$labels` accumulate, a second scalar replaces the first.",
+    "description": "A directive line: what is known about the rows in this file. Several may be split across lines; `$labels` accumulates, a second scalar replaces the first.",
     "properties": {
-      "$sources": {
-        "type": "array",
-        "items": {
-          "oneOf": [
-            {
-              "type": "string",
-              "description": "`file`, or `file#key` for the list a .json object holds under `key`."
-            },
-            {
-              "type": "object",
-              "properties": {
-                "file": {
-                  "type": "string"
-                },
-                "path": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "file"
-              ]
-            }
-          ]
-        },
-        "description": "Files whose rows are read live: a .json array or object, a .jsonl, a .csv, a .middleware (its chain followed), a .pipeline (`#stage` or `#view`)."
-      },
-      "$policy": {
-        "type": "string",
-        "description": "The table policy (`role: table`) the rows pass through.",
-        "x-studio-file": "policy"
-      },
       "$title": {
         "type": "string",
-        "description": "The view's title."
+        "description": "The table's title."
       },
       "$description": {
-        "type": "string"
+        "type": "string",
+        "description": "One line under the title."
       },
       "$labels": {
         "type": "object",

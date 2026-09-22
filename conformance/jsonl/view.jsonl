@@ -1,3 +1,0 @@
-{"$sources": ["data.json#properties", "more.csv", "corrections.middleware"], "$policy": "cheapest.policy"}
-{"$title": "Stays by price", "$labels": {"price": "Total (AUD)"}}
-{"name": "Raw line", "price": 800, "available": true}

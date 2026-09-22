@@ -1,11 +1,15 @@
 """The kinds, by extension: a label, and the check — the engine that reads a document of the kind
-and names every problem, exactly as the Studio's own engines did.
+and names every problem.
 
-Thirteen are the AUTHORING kinds, each with a check, a spec, a book, a field table and a template:
-brief, playbook, kanban, calendar, policy, flow, jsonl, middleware, pipeline, collection, clip, song
-and md (nothing to validate). The rest are the Studio's own — written by its editors, read by its
-views — and are known here by name only: a document of one written inside a brief or a playbook is
-accepted without a check.
+Twelve are the AUTHORING kinds, each with a check, a spec, a book, a field table and a template:
+brief, playbook, kanban, calendar, policy, flow, jsonl, pipeline, collection, clip, song and md
+(nothing to validate). The rest are the Studio's own — written by its editors, read by its views —
+and are known here by name only: a document of one written inside a brief or a playbook is accepted
+without a check.
+
+A check takes the document's TEXT and nothing else: every kind is one self-contained file, so no
+engine has a folder to read, and a document written inside another is checked the same way as one
+that is a file of its own.
 """
 from __future__ import annotations
 
@@ -21,7 +25,7 @@ class CheckResult:
     summary: str | None = None
 
 
-Check = Callable[[str, "str | None"], CheckResult]
+Check = Callable[[str], CheckResult]
 
 
 @dataclass(frozen=True)
@@ -34,15 +38,15 @@ class Kind:
 
 
 def _lazy(module: str, name: str = "check") -> Check:
-    def run(text: str, file: str | None = None) -> CheckResult:
+    def run(text: str) -> CheckResult:
         import importlib
-        return getattr(importlib.import_module(f"studio_kinds.kinds.{module}"), name)(text, file)
+        return getattr(importlib.import_module(f"studio_kinds.kinds.{module}"), name)(text)
     return run
 
 
 AUTHORING: tuple[str, ...] = (
-    "brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "middleware", "pipeline",
-    "collection", "clip", "song", "md",
+    "brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "pipeline", "collection",
+    "clip", "song", "md",
 )
 
 KINDS: dict[str, Kind] = {
@@ -67,7 +71,6 @@ KINDS: dict[str, Kind] = {
     "moves": Kind("moves", "Moves", None, True),
     "tablediff": Kind("tablediff", "Table diff", None, True),
     "jsonl": Kind("jsonl", "Data", _lazy("jsonl")),
-    "middleware": Kind("middleware", "Middleware", _lazy("middleware")),
     "pipeline": Kind("pipeline", "Pipeline", _lazy("pipeline")),
     "collection": Kind("collection", "Collection", _lazy("collection")),
     "clip": Kind("clip", "Clip", _lazy("clip")),
@@ -90,7 +93,7 @@ def doc_text(d: object) -> str:
     return d if isinstance(d, str) else _yaml.dump(d if d is not None else {})
 
 
-def check_written(kind: str, doc: object, file: str | None) -> tuple[bool, CheckResult]:
+def check_written(kind: str, doc: object) -> tuple[bool, CheckResult]:
     """A document written inside another, checked by its own kind: `(known, result)`.
 
     A kind the registry does not know is `(False, …)`; a kind of the Studio's own has no check
@@ -101,4 +104,4 @@ def check_written(kind: str, doc: object, file: str | None) -> tuple[bool, Check
         return False, CheckResult()
     if not k.check:
         return True, CheckResult()
-    return True, k.check(doc_text(doc), file)
+    return True, k.check(doc_text(doc))

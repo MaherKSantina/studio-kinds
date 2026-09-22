@@ -11,7 +11,7 @@ documents as text:
   studio-check --fields <ext> [N]       the path of the kind's FIELD TABLE — every field, its type, whether it is required
   studio-check --json <file ...>        machine-readable results
   studio-check --collect <file.jsonl|file.pipeline[#view]> [name.collection]
-                                        copy the rows a .jsonl view, or a pipeline (its output, or one view), shows into a .collection beside it
+                                        copy the rows a .jsonl, or a pipeline (its output, or one view), holds into a .collection of their own
   studio-check --midi <file.clip|file.song> [name.mid]
                                         write the document's notes as a Standard MIDI File beside it
 
@@ -26,7 +26,7 @@ import sys
 from typing import Any
 
 from . import (AUTHORING, KINDS, Result, __version__, book_path, check_path, fields_path, latest_version,
-               schema_path, spec, template)
+               schema_path, spec, template, versions)
 
 USAGE = ("studio-check <file|folder|glob ...> | --spec <ext> | --template <ext> | --kinds | --schema <ext> [N] | "
          "--book <ext> [N] | --books | --fields <ext> [N] | --json <file ...> | "
@@ -72,18 +72,22 @@ def _version_arg(args: list[str], ext: str, i: int = 2) -> int | None:
     if len(args) <= i:
         return latest_version(ext)
     s = args[i].lower().lstrip("v")
-    if not s.isdigit() or int(s) < 1 or int(s) > latest_version(ext):
+    if not s.isdigit() or int(s) not in versions(ext):
         return None
     return int(s)
 
 
 def _collect(args: list[str]) -> int:
+    """A `.collection` of rows to decide over, copied out of a `.jsonl` or a `.pipeline` view.
+
+    The copy is a handover, not a link: the new file holds the rows themselves and says nothing
+    about where they came from.
+    """
     from ._yaml import dump
-    from .kinds.jsonl import disk_reader, parse_data_rows, read_source_rows, resolve_ref
+    from .kinds.jsonl import parse_data_rows
     from .kinds.pipeline import parse as parse_pipeline, rows_at, run as run_pipeline
-    from .kinds.policy import apply_table, parse_table, role_of
     from ._rows import value_at, columns_of
-    from ._js import is_num, MISSING
+    from ._js import is_num
     ref = args[1] if len(args) > 1 else ""
     h = ref.rfind("#")
     src = os.path.abspath(ref[:h] if h > 0 else ref) if ref else ""
@@ -92,11 +96,11 @@ def _collect(args: list[str]) -> int:
         _err("usage: --collect <file.jsonl|file.pipeline[#view]> [name.collection]")
         return 2
 
-    def dump_collection(rows: list[dict], source: str, fields: list[str], labels: dict[str, str]) -> str:
+    def dump_collection(rows: list[dict], fields: list[str], labels: dict[str, str]) -> str:
         numeric = [f for f in fields if any(is_num(value_at(r, f)) for r in rows)]
         link = next((f for f in fields if any(isinstance(value_at(r, f), str) and value_at(r, f).lower().startswith(("http://", "https://")) for r in rows)), None)
         stats = [*numeric, *([link] if link else [])]
-        out: dict[str, Any] = {"source": source, "fields": fields}
+        out: dict[str, Any] = {"fields": fields}
         if stats:
             out["stats"] = stats
         if labels:
@@ -115,27 +119,15 @@ def _collect(args: list[str]) -> int:
         out = os.path.join(os.path.dirname(src), args[2]) if len(args) > 2 else src[:-len(".pipeline")] + ".collection"
         fields = at.columns if at.columns is not None else [c for c in columns_of(at.rows) if c != "id"]
         with open(out, "w", encoding="utf-8", newline="\n") as f:
-            f.write(dump_collection(at.rows, os.path.basename(src), fields, doc.labels))
+            f.write(dump_collection(at.rows, fields, doc.labels))
         _out(f"{os.path.basename(out)}: {len(at.rows)} items from {os.path.basename(src)}{ref[h:] if h > 0 else ''}")
         return 0
     d = parse_data_rows(text)
-    rows = list(d.rows)
-    labels = (d.compose.labels if d.compose and d.compose.labels else {})
-    columns: list[str] | None = None
-    for s in (d.compose.sources if d.compose else []):
-        rows.extend(read_source_rows(s, src, disk_reader).rows)
-    kept = rows
-    if d.compose and d.compose.policy:
-        ptext = open(resolve_ref(src, d.compose.policy), encoding="utf-8").read()
-        if role_of(ptext) == "table":
-            parsed = parse_table(ptext)
-            r = apply_table(parsed, rows, parsed.problems)
-            kept, columns = r.rows, r.columns
+    labels = (d.about.labels if d.about and d.about.labels else {})
     out = os.path.join(os.path.dirname(src), args[2]) if len(args) > 2 else src[:-len(".jsonl")] + ".collection"
-    fields = columns if columns is not None else list(kept[0].keys()) if kept else []
     with open(out, "w", encoding="utf-8", newline="\n") as f:
-        f.write(dump_collection(kept, os.path.basename(src), fields, labels))
-    _out(f"{os.path.basename(out)}: {len(kept)} items from {os.path.basename(src)}")
+        f.write(dump_collection(d.rows, d.columns, labels))
+    _out(f"{os.path.basename(out)}: {len(d.rows)} items from {os.path.basename(src)}")
     return 0
 
 
@@ -158,9 +150,12 @@ def _midi(args: list[str]) -> int:
         if not d.notes:
             problems.append("no notes — nothing to export")
     else:
-        song = load_song(parse_song(text), src)
+        doc = parse_song(text)
+        song = load_song(doc)
         data = write_midi(MidiSpec(song.tempo, song.time, [MidiTrack(t.channel, notes_of(t.notes), t.name) for t in song.tracks], song.title or stem))
-        summary, problems = song_summary(song), list(song.problems)
+        summary, problems = song_summary(song, len(doc.clips)), list(song.problems)
+        if not any(t.notes for t in song.tracks):
+            problems.append("no notes — nothing to export")
     for p in problems:
         _err(f"      {p}")
     if any(p.startswith("no notes") for p in problems):
@@ -192,7 +187,7 @@ def main(argv: list[str] | None = None) -> int:
     if args[0] == "--books":
         rows = []
         for ext in AUTHORING:
-            for v in range(1, latest_version(ext) + 1):
+            for v in versions(ext):
                 p = book_path(ext, v)
                 rows.append({"ext": ext, "version": v, "path": p, "fields": fields_path(ext, v), "schema": schema_path(ext, v),
                              "exists": os.path.exists(p), "fieldsExist": os.path.exists(fields_path(ext, v)),
@@ -213,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         version = _version_arg(args, ext)
         if version is None:
-            _err(f".{ext} has versions 1 to {latest_version(ext)}")
+            _err(f".{ext} has version{'' if len(versions(ext)) == 1 else 's'} {', '.join(str(v) for v in versions(ext))}")
             return 2
         p = {"--book": book_path, "--fields": fields_path, "--schema": schema_path}[args[0]](ext, version)
         if not os.path.exists(p):

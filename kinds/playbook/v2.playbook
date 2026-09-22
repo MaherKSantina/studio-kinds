@@ -1,5 +1,5 @@
 version: 2
-title: How a version-2 playbook works
+title: How a playbook works
 description: The playbook as one file — decisions and events, every document in it, and a walk that answers on screen and writes nothing.
 events:
   - key: always
@@ -147,39 +147,36 @@ events:
               list · a `file` on an entry.
           - title: Where the engine lives
             body: |
-              `packages/filekinds/src/lib/playbookDoc.ts` — `parsePlaybook`, `dumpPlaybook`,
-              `versionProblems`, `inlineProblems`, `variationOf`, `variationKeys`, `writtenDoc`,
-              `contentKey`, `contentPath`, `contentText`, and the derivation: `meets`,
-              `activeDecisions`, `impliedLocks`, `pruneLocks`, `take`, `rulesOf`
-              (at version 2, each event as its own rule — its `when` and `hint`),
-              `ruleFor`, `canArise`, `eventsAt`. Its header comment is what
-              `studio-check --spec playbook` prints.
-              `docVersion.ts` beside it reads the version line. The walk is
-              `components/playbook/PlaybookWalk.tsx`, the session state is `PlaybookPreview.tsx`,
-              the checker is `python/studio_kinds/kinds/playbook.py`. The engine is mirrored to the public
-              `studio-kinds` repository by `pnpm kinds:sync`.
+              `python/studio_kinds/kinds/playbook.py` — `parse`, `read_version`,
+              `legacy_problems`, `written_problems`, `variation_keys`, `written_docs`,
+              `content_entries`; its header comment is what `studio-check --spec playbook` prints,
+              and the shape is `kinds/playbook/v2.schema.json`. In the Studio the derivation is
+              `playbookDoc.ts` (`meets`, `activeDecisions`, `impliedLocks`, `pruneLocks`, `take`,
+              `rulesOf` — each event as its own rule, its `when` and `hint` — `ruleFor`,
+              `canArise`, `eventsAt`); the walk is `components/playbook/PlaybookWalk.tsx` and the
+              session state `PlaybookPreview.tsx`.
   - key: opened
     label: The file is opened
     trigger: imposed
     domain: Opening
-    detail: parsePlaybook reads the YAML once; the walk is drawn with every decision unanswered.
+    detail: The YAML is read once; the walk is drawn with every decision unanswered.
     content:
       key: parse
       label: What the parser keeps
       kind: md
       doc: |
-        `readDocVersion` reads `version:` off the root, then `parsePlaybook` reads `title`,
-        `description`, `decisions` and `events`. On each event, `when` and `hint` are kept
-        when present. For each event's `content`:
+        The version line is read off the root, then `title`, `description`, `decisions` and
+        `events`. On each event, `when` and `hint` are kept when present. For each event's
+        `content`:
 
         - `key`, `label` — kept when present.
         - `kind` — lower-cased, a leading dot dropped (`.brief` and `brief` are the same).
         - `by` — kept when present.
         - `doc` / `docs` — kept as parsed YAML, whatever shape; the kind's own engine judges it.
 
-        Dropped, and named by `versionProblems`: an entry that names a `file`, an entry with
-        neither `doc` nor `docs`. A `content` list is read as its first entry so the walk still
-        shows something, and the list is named.
+        Dropped, and named: an entry that names a `file` — the document goes in the book — and
+        an entry with neither `doc` nor `docs`. A `content` list is read as its first entry so
+        the walk still shows something, and the list is named.
 
         Parsing never throws: an unreadable file opens as an empty playbook, an unknown key is
         ignored, `trigger` defaults to `imposed`, a missing `key` is slugged from the label. The
@@ -265,12 +262,12 @@ events:
           - title: In order
             body: |
               1. Parse — a YAML error is the only problem reported.
-              2. `versionProblems` — the version line, then a `content` list, a `file` on an
-                 entry.
-              3. `legacyProblems` — keys the format no longer has: `library`, `compare`, topic
-                 `variants`, `materials`, `scales`, `view.against`, `view.tab`, `view.thresholds`.
-              4. `variationProblems` — every decision in every `by` is a decision of this book.
-              5. `inlineProblems` — `doc`/`docs` without `kind`; both on one entry; `by` on a
+              2. The version line.
+              3. `legacy_problems` — keys the format no longer has: a `content` list, a `file` on
+                 an entry, `topics`, `rules`, `view`, `status` and `sets` on an event, `inputs`,
+                 `library`, `compare`, `materials`, `scales`.
+              4. `variation_problems` — every decision in every `by` is a decision of this book.
+              5. `written_problems` — `doc`/`docs` without `kind`; both on one entry; `by` on a
                  `doc`; `docs` without `by`; a `docs` set that is not exactly the closed set of
                  its `by` answers; an `md` document that is not a string.
               6. Each document through its own kind's check, named

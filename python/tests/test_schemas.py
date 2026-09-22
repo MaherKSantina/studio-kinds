@@ -18,7 +18,7 @@ import pytest
 jsonschema = pytest.importorskip("jsonschema")
 from jsonschema import Draft202012Validator  # noqa: E402
 
-from studio_kinds import AUTHORING, _yaml, latest_version, schema_path  # noqa: E402
+from studio_kinds import AUTHORING, _yaml, schema_path, versions  # noqa: E402
 from studio_kinds.kinds.flow import split_file  # noqa: E402
 
 HERE = os.path.dirname(__file__)
@@ -47,7 +47,7 @@ def to_json(v):
 
 
 def schemas() -> list[tuple[str, int]]:
-    return [(ext, v) for ext in AUTHORING for v in range(1, latest_version(ext) + 1)]
+    return [(ext, v) for ext in AUTHORING for v in versions(ext)]
 
 
 @pytest.mark.parametrize("ext,version", schemas(), ids=[f"{e}-v{v}" for e, v in schemas()])
@@ -98,7 +98,7 @@ def test_ok_document_validates(path: str) -> None:
     else:
         doc = _yaml.load(text)
         instances = [to_json(doc)]
-        version = doc.get("version", 1) if isinstance(doc, dict) and ext == "playbook" else 1
+        version = versions(ext)[-1] if ext == "playbook" else 1
     with open(schema_path(ext, version), encoding="utf-8") as f:
         validator = Draft202012Validator(json.load(f))
     for instance in instances:

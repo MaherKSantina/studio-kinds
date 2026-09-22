@@ -1,16 +1,6 @@
 version: 2
-title: How a version-1 data works
-description: Data rows, one JSON object per line, shown as a paged, searchable, sortable table with the columns found — or, with a directive line, a live view composed from other files through a table policy.
-decisions:
-  - key: form
-    label: What is in the file?
-    values:
-      - key: raw
-        label: Rows
-        detail: JSON objects, one per line (or one JSON array of them). The table is the file.
-      - key: composed
-        label: A directive line
-        detail: "A line whose keys start with `$` — `$sources`, `$policy`, `$title`, `$description`, `$labels` — makes the file a live view over other files."
+title: How a data file works
+description: Data rows, one JSON object per line, shown as a paged, searchable, sortable table with the columns found — and, on directive lines, what is known about those rows.
 events:
   - key: always
     label: Always
@@ -23,7 +13,7 @@ events:
       kind: brief
       doc:
         title: The shape of the file
-        description: Not YAML — JSON Lines, with directive lines for a composed view.
+        description: Not YAML — JSON Lines, with directive lines for what is known about the rows.
         sections:
           - title: A row
             body: |
@@ -36,111 +26,74 @@ events:
           - title: Directive lines
             body: |
               ```json
-              {"$sources": ["accommodation.json#properties", "more.jsonl", "fixes.middleware"], "$policy": "cheapest.policy"}
               {"$title": "Stays by price", "$description": "Thu 1 - Mon 5 Oct, 4 nights, two adults"}
               {"$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)"}}
               ```
 
               | directive | what it is |
               |---|---|
-              | `$sources` | the files the rows are read from on every open: a `.json` (`#key` naming its list, else its longest list of objects), a `.jsonl` (its raw lines), a `.csv` or `.tsv` (first row the header), or a `.middleware` (its source, amended) — resolved against this file's folder |
-              | `$policy` | the table policy (`role: table`) the rows pass through: kept, ordered, cut to its columns |
-              | `$title`, `$description` | the view's own words |
+              | `$title`, `$description` | the table's own words |
               | `$labels` | header names by field, dot paths included |
 
-              Directive lines may be split; `$sources` and `$labels` accumulate, a second scalar
-              replaces the first with a note. Raw lines beside a directive are added to the
-              composed rows. Either key alone works: sources without a policy is the union of the
-              files; a policy without sources applies to the raw lines. Nothing is cached — the
-              file holds the references, never the result, so it can never drift from its data;
-              what is said ABOUT the data lives here, the policy names rules only.
+              A line whose keys start with `$` is a directive, not a row. They may be split;
+              `$labels` accumulates, a second scalar replaces the first with a note.
+          - title: The rows are this file's
+            body: |
+              The table is the file: the rows are here, and what is said about them is here too,
+              so a copy of the file is a copy of the table and the two can never drift. A list
+              curated from several places at several times — rows amended, filtered and sorted by
+              rules — is a `.pipeline`, which holds its items and its stages in one file the same
+              way.
           - title: Where the engine lives
             body: |
-              `packages/filekinds/src/lib/dataRows.ts` — `parseDataRows`, `parseSourceRef`,
-              `rowsOfSource`, `cellText`, `valueAt`, `searchIndex`, `matchingRows`,
-              `compareValues`, `sortRows`, `pageOf`; its header comment is what `studio-check
-              --spec jsonl` prints, with `tablePolicy.ts` beside it. The chain reader is
-              `dataSources.ts` (`readSourceRows`, `chainText`). The view is
-              `components/data/DataTableView.tsx` (`DataGrid`, the composed view, the Collect
-              button) with `RowDialog.tsx` and `cells.tsx`; the checker is `python/studio_kinds/kinds/jsonl.py`.
+              `python/studio_kinds/kinds/jsonl.py` — `parse_data_rows`, `About`, with `_rows.py`
+              beside it for `cell_text`, `value_at`, `columns_of` and `compare_values`; its header
+              comment is what `studio-check --spec jsonl` prints, and the shape of a line is
+              `kinds/jsonl/v1.schema.json`. The view is `components/data/DataTableView.tsx`
+              (`DataGrid`, the Collect button) with `RowDialog.tsx` and `cells.tsx`.
   - key: opened
     label: The file is opened
     trigger: imposed
     domain: Opening
-    detail: parseDataRows reads every line and never throws; the grid is drawn — or the sources are read first.
-    hint: Say what is in the file — rows draw at once; a directive line reads other files first.
+    detail: Every line is read and nothing throws; the grid is drawn from the rows the file holds.
     content:
       key: draw
       label: What is read, and what is drawn
       kind: brief
-      by: [form]
-      docs:
-        form=raw:
-          title: What is read, and what is drawn
-          description: The lines, then the grid.
-          sections:
-            - title: The parse
-              body: |
-                Blank lines are skipped. A line that is not JSON, or not an object, is a problem
-                named by its line — `line 12: Unexpected token…`, `line 12: not a JSON object` —
-                and the row is skipped. A text starting with `[` is tried as one array first. The
-                columns are gathered from the rows kept.
-            - title: The grid
-              body: |
-                A strip: `N rows · N columns`, and `N match` while a search is on; "Search every
-                field" (every word must match, case-insensitive, applied 150 ms after typing,
-                Escape clears); rows per page (25, 50, 100, 250; 50 to start) and a pager
-                `from–to of total`. Problems under it: `N lines skipped: line 12: …`. Then the
-                table: a `#` column with the row's original number, one column per key, headers
-                sortable, cells in monospace truncated at 360px with the whole text on hover; a
-                cell that is a link opens in the browser and has a copy button beside it.
-            - title: Empty
-              body: |
-                No rows and problems: "No rows could be read — one JSON object per line is the
-                shape." with up to eight of them and the text underneath. No rows and no problems:
-                "No rows — one JSON object per line." The file's text shows in either case.
-        form=composed:
-          title: What is read, and what is drawn
-          description: The directive, the sources in order, the policy, then the grid with a lead.
-          sections:
-            - title: The directive
-              body: |
-                A `$` line is not a row. Named problems: `a directive line carries no row fields —
-                "k" ignored`, `unknown directive "$x" (known: …)`, `$policy must be a file ref`,
-                `$title must be text`, `a second $policy — this one applies`, `$labels must be an
-                object of field: label`, `$labels."f" must be text`, `$sources must be a list of
-                files`, `$sources entry N is not a file ref`.
-            - title: Reading the sources
-              body: |
-                "Reading a.json, b.jsonl…" while `readSourceRows` reads each source in order,
-                resolved against this file's folder. A `.csv`/`.tsv` takes its first row as the
-                header ("the csv has no header row" otherwise). A `.json` object gives the list at
-                `#key` (`"key" is not a list in x.json`; `x.json#key: some entries are not objects`)
-                or its longest list of objects (`x.json holds no list of objects — name one with
-                #key`). A `.jsonl` gives its raw lines — a source that composes rows itself is
-                not followed: `x.jsonl composes rows itself — only its raw lines were read`. A
-                `.middleware` is followed to its own source, up to eight deep, a cycle refused
-                (`a cycle — it is already being read (a → b)`), and its rules applied on the way
-                back. An unreadable file: `could not read x`. The raw lines of this file are
-                appended after every source.
-            - title: The policy
-              body: |
-                `$policy` is read from beside this file and must be `role: table` — otherwise
-                `x.policy is not a table policy (role: y) — the rows show as they are`; unreadable,
-                `could not read x.policy`. `applyTablePolicy` keeps the rows every `where` clause
-                holds for (dot paths reach into nested objects; text ops case-insensitive; numeric
-                ops never true for an empty field), sorts by the keys in order (ties keep the
-                source order), cuts to `limit`, and picks the columns: the listed ones in order,
-                `"*"` standing for every other column after them, `hide` subtracted; without
-                `columns`, every column the rows carry. Then it names `column "x": no row carries
-                it` and `sort "x": no row carries it`.
-            - title: The grid and its lead
-              body: |
-                The same grid, headed by a lead: the `$title` (else the file's name) · `N rows` or
-                `N of M rows` · `from <chain> (N rows, N amended), …` · `+ N raw lines` · `through
-                x.policy` · the rules in one line (`2 filters · sorted by price asc, then km asc ·
-                first 100`, in the view's labels) · the Collect button. Headers show `$labels`.
-                Every problem — the directive's, the sources', the policy's — is in the strip.
+      doc:
+        title: What is read, and what is drawn
+        description: The lines, then the grid.
+        sections:
+          - title: The parse
+            body: |
+              Blank lines are skipped. A line that is not JSON, or not an object, is a problem
+              named by its line — `line 12: Unexpected token…`, `line 12: not a JSON object` —
+              and the row is skipped. A text starting with `[` is tried as one array first. The
+              columns are gathered from the rows kept.
+          - title: The directive
+            body: |
+              A `$` line is not a row. Named problems: `a directive line carries no row fields —
+              "k" ignored`, `unknown directive "$x" (known: $title, $description, $labels)`,
+              `$title must be text`, `a second $title — this one applies`, `$labels must be an
+              object of field: label`, `$labels."f" must be text`. `$sources` and `$policy` are
+              named as gone: the rows a table shows are the file's own, and rules over rows live
+              in the `.pipeline` that holds them.
+          - title: The grid
+            body: |
+              A strip: `N rows · N columns`, and `N match` while a search is on; "Search every
+              field" (every word must match, case-insensitive, applied 150 ms after typing,
+              Escape clears); rows per page (25, 50, 100, 250; 50 to start) and a pager
+              `from–to of total`. Problems under it: `N lines skipped: line 12: …`. Then the
+              table: a `#` column with the row's original number, one column per key, headers
+              sortable and named by `$labels`, cells in monospace truncated at 360px with the
+              whole text on hover; a cell that is a link opens in the browser and has a copy
+              button beside it. The heading is the `$title`, else the file's name, with the
+              `$description` under it.
+          - title: Empty
+            body: |
+              No rows and problems: "No rows could be read — one JSON object per line is the
+              shape." with up to eight of them and the text underneath. No rows and no problems:
+              "No rows — one JSON object per line." The file's text shows in either case.
   - key: searched
     label: The rows are searched, sorted or paged
     trigger: chosen
@@ -159,30 +112,11 @@ events:
         rows goes back to page one and closes the dialog. Clicking a row opens it in full — every
         column and its value, with previous and next over the rows in their current order and the
         row as JSON to copy. Row numbers are the rows' original positions. Nothing is written.
-  - key: chain-changed
-    label: A file in the chain changes on disk
-    trigger: imposed
-    arity: many
-    domain: Reading
-    when: [form=composed]
-    detail: Any file read — a source, a middleware behind it, the policy — fires studio:fs-changed and the view reads again.
-    content:
-      key: rewatch
-      label: What is re-read
-      kind: md
-      doc: |
-        The composed view remembers every file it read — the sources, each middleware in a chain
-        and the raw file under it, the policy — and listens for `studio:fs-changed` on any of
-        them: a scrape re-run, a correction added, a rule changed, and the rows are read again and
-        the policy re-applied. This file's own change (the desktop watcher, the web folder's
-        events, VS Code's text document) re-parses the directive and reads again too. The search,
-        the sort and the page are state and stay.
   - key: changed-on-disk
     label: The file changes on disk
     trigger: imposed
     arity: many
     domain: Reading
-    when: [form=raw]
     detail: The host re-reads; the grid re-parses and goes back to page one.
     content:
       key: reread
@@ -191,46 +125,47 @@ events:
       doc: |
         The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
         events or VS Code's text document deliver the new text, and the Studio re-reads unless its
-        autosave is dirty, saving or in error. The rows and columns are re-parsed; a new set of
-        rows returns the grid to page one and closes the row dialog; the search and the sort
-        stay.
+        autosave is dirty, saving or in error. The rows and columns are re-parsed — everything the
+        table shows is in the new text, so there is nothing else to wait for. A new set of rows
+        returns the grid to page one and closes the row dialog; the search and the sort stay.
   - key: collected
     label: The rows are collected
     trigger: chosen
     domain: Elsewhere
-    detail: The rows the view shows are copied into a .collection beside it, to decide over one at a time.
+    detail: The rows are COPIED into a .collection to decide over one at a time — a handover, not a link.
     content:
       key: collect
       label: What Collect writes
       kind: md
       doc: |
-        The Collect button sits in a composed view's lead when the host has a writer. It asks
-        for a name (`<stem>.collection`, checked against the folder's files) and writes, beside
-        this file, a collection whose `source` is this file's name, whose `fields` are the
-        columns shown, whose `labels` are the `$labels`, whose `stats` are the numeric fields and
-        the first link, and whose items are the rows shown with ids 1, 2, 3… in order — then opens
-        it. `studio-check --collect x.jsonl [name.collection]` writes the same from the command
-        line, for a raw file too.
+        The Collect button sits in the grid's lead when the host has a writer. It asks for a name
+        (`<stem>.collection`, checked against the folder's files) and writes a collection whose
+        `fields` are the columns shown, whose `labels` are the `$labels`, whose `stats` are the
+        numeric fields and the first link, and whose items are the rows shown with ids 1, 2, 3…
+        in order — then opens it. `studio-check --collect x.jsonl [name.collection]` writes the
+        same from the command line. The rows are copied in: the collection then holds them, and
+        nothing points back here, so a decision and the row it was taken about cannot drift apart.
   - key: read-elsewhere
-    label: Another file reads it
+    label: Another document holds rows like these
     trigger: imposed
     arity: many
     domain: Elsewhere
-    detail: A .jsonl is a source to other views, to a middleware, and to a collection.
+    detail: Every kind that shows rows holds its own.
     content:
       key: elsewhere
-      label: Who reads a data file
+      label: The other row-shaped kinds
       kind: md
       doc: |
-        - Another `.jsonl` names it in `$sources` and takes its raw lines (never its directive).
-        - A `.middleware` names it as `source` and amends its rows on the way to a view.
-        - A `.collection` records it as `source` — the file the items were copied from.
-        - A table `.policy` never names it; the policy is named from here.
+        - A `.pipeline` holds its items, the stages that amend, filter and sort them, and the
+          views over the output — one curated list in one file.
+        - A `.collection` holds the rows copied out of a table to decide over, one at a time.
+        - A `.policy` holds rules and knows nothing about any rows; what the rows ARE is said
+          where the rows are.
   - key: checked
     label: studio-check runs on it
     trigger: imposed
     domain: Writing
-    detail: One file in, one verdict out — on the command line a composed view is read the way the viewer reads it.
+    detail: One file in, one verdict out — the engine's own problems are the check.
     content:
       key: checker
       label: What the checker does
@@ -239,26 +174,20 @@ events:
         title: What the checker does
         description: Not YAML, so the engine's own problems are the check.
         sections:
-          - title: Rows
+          - title: Rows and directives
             body: |
-              `parseDataRows`: every skipped line is a problem. Summary `N rows × N columns`, on the
-              command line and the page alike.
-          - title: A composed view, on the command line
+              Every skipped line is a problem, named by its line; every directive that cannot be
+              read is one too, and `$sources`/`$policy` are named as gone with what holds the rows
+              and the rules now. Summary: `N rows × N columns`, and `, N labelled` when `$labels`
+              names any.
+          - title: Nothing beside it
             body: |
-              The sources are read from the disk beside the file — chains followed, middlewares
-              applied — and the policy read and applied; every problem the viewer would show is
-              reported, plus `policy x: not found beside this file` and `policy x: role is y, not
-              table`. Summary: `composed: N of M rows from <chain> (N rows), … + N raw through
-              x.policy`.
-          - title: A composed view, on the page
-            body: |
-              The directive is parsed and nothing is read: summary `N rows × N columns + N
-              sources`, and a note `composed from files not checked — this check has no folder:
-              a.json, x.policy`.
+              There is nothing beside the file to read, so the verdict is the same wherever the
+              file is checked — on this machine, on another, or pasted into a page.
           - title: Not checked
             body: |
-              That the columns are consistent across rows. That a `$labels` field exists. That a
-              source's rows carry what the policy sorts by (the viewer says so).
+              That the columns are consistent across rows. That a `$labels` field is a field any
+              row carries.
   - key: authored
     label: A data file is written
     trigger: chosen
@@ -269,13 +198,7 @@ events:
       kind: guide
       doc:
         title: Write a data file
-        description: Rows from a producer, or a view composed from files that already exist.
-        decisions:
-          - key: want
-            label: What do you want?
-            values:
-              - { key: rows, label: A table of rows }
-              - { key: view, label: A live view over other files }
+        description: Rows from a producer, and the words that name them.
         steps:
           - key: template
             label: Start from the template
@@ -289,28 +212,20 @@ events:
           - key: rows
             label: Write or produce the rows
             after: [template]
-            when: [want=rows]
             detail: |
-              One object per line, no trailing commas, no blank objects. Keep keys the same across
-              rows; a key that appears once is a mostly-empty column.
-          - key: sources
-            label: Name the sources
-            after: [template]
-            when: [want=view]
+              One object per line, no trailing commas, no blank objects — a `JSON.stringify(row)`
+              per line from whatever produced the data. Keep keys the same across rows; a key that
+              appears once is a mostly-empty column.
+          - key: about
+            label: Name the table
+            after: [rows]
             detail: |
-              Replace the rows with one line: `{"$sources": ["data.json#items"], "$title": "…"}`.
-              Name a `.middleware` instead of the raw file when corrections exist.
-          - key: policy
-            label: Add the table policy
-            after: [sources]
-            when: [want=view]
-            detail: |
-              Write `x.policy` with `role: table` beside the file — `where`, `sort`, `columns`,
-              `limit` — and add `"$policy": "x.policy"` to the directive. Header names go in
-              `$labels` here, never in the policy.
+              A directive line for what is known about these rows: `{"$title": "Stays by price"}`
+              and `{"$labels": {"best_offer.price_total_aud": "Total (4 nights, AUD)"}}`.
           - key: check
             label: Check it
-            after: [rows, policy]
+            after: [about]
             detail: |
-              `studio-check new.jsonl` — every skipped line is named; a composed view is read from
-              disk and its policy's problems reported. Then open it and search.
+              `studio-check new.jsonl` — every skipped line and every unreadable directive is
+              named, and the summary counts the rows, the columns and the labelled fields. Then
+              open it and search.

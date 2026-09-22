@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/policy/v1.schema.json",
   "title": "policy",
-  "description": "Rules in one of several roles, picked by `role`: absent (a bucket policy, or a run when `policy` and `items` are both present), `tags`, `order`, `table`.",
+  "description": "Rules in one of three roles, picked by `role`: absent (a bucket policy), `tags`, `order`. The file holds the rules and the dimensions they read; it names no other file.",
   "type": "object",
   "properties": {
     "role": {
@@ -10,29 +10,12 @@
         "bucket",
         "tags",
         "decisions",
-        "order",
-        "run",
-        "table"
+        "order"
       ],
       "description": "Which document this file holds."
     }
   },
   "allOf": [
-    {
-      "if": {
-        "properties": {
-          "role": {
-            "const": "table"
-          }
-        },
-        "required": [
-          "role"
-        ]
-      },
-      "then": {
-        "$ref": "#/$defs/table"
-      }
-    },
     {
       "if": {
         "properties": {
@@ -72,7 +55,6 @@
           "properties": {
             "role": {
               "enum": [
-                "table",
                 "tags",
                 "decisions",
                 "order"
@@ -85,18 +67,7 @@
         }
       },
       "then": {
-        "if": {
-          "required": [
-            "policy",
-            "items"
-          ]
-        },
-        "then": {
-          "$ref": "#/$defs/run"
-        },
-        "else": {
-          "$ref": "#/$defs/bucket"
-        }
+        "$ref": "#/$defs/bucket"
       }
     }
   ],
@@ -619,57 +590,6 @@
         "cases"
       ]
     },
-    "run": {
-      "type": "object",
-      "description": "A run: a policy applied to a list through a column map.",
-      "properties": {
-        "role": {
-          "enum": [
-            "run"
-          ]
-        },
-        "title": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "policy": {
-          "type": "string",
-          "description": "Path of the `.policy` to apply."
-        },
-        "items": {
-          "type": "string",
-          "description": "Path of the `.list` whose rows are the items."
-        },
-        "map": {
-          "type": "object",
-          "description": "Policy param key → list column(s); `label` means the row's own label.",
-          "additionalProperties": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            ]
-          }
-        },
-        "date": {
-          "type": "string",
-          "description": "The day this run schedules, `YYYY-MM-DD`.",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-        }
-      },
-      "required": [
-        "policy",
-        "items"
-      ]
-    },
     "tags": {
       "type": "object",
       "description": "A tags policy: dimensions derived from an item's params.",
@@ -825,7 +745,7 @@
     },
     "order": {
       "type": "object",
-      "description": "An order policy: a ranking over tag combinations.",
+      "description": "An order policy: the dimensions it reads, written in, and a ranking over their combinations.",
       "properties": {
         "role": {
           "enum": [
@@ -839,9 +759,112 @@
           "type": "string"
         },
         "tags": {
-          "type": "string",
-          "description": "Ref of the tags policy it consumes.",
-          "x-studio-file": "policy"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "key": {},
+                        "label": {
+                          "type": "string"
+                        },
+                        "detail": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "derive": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "value": {},
+                    "label": {
+                      "type": "string"
+                    },
+                    "when": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/clause"
+                      }
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                },
+                "description": "Ordered rules over the params; the first that holds tags; no conditions = the default."
+              },
+              "from": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "value": {},
+                    "label": {
+                      "type": "string"
+                    },
+                    "when": {
+                      "oneOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "description": "A ref `decision=answer` — the decision's key, `=`, the answer's key.",
+                            "pattern": "^[^=]+=.+$"
+                          }
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                },
+                "description": "For a computed dimension: ordered rules over the answers of dimensions declared above."
+              }
+            },
+            "required": [
+              "key"
+            ]
+          },
+          "description": "The dimensions this ranking reads, written in — the same shape a tags policy declares."
         },
         "order": {
           "type": "array",
@@ -877,104 +900,9 @@
       },
       "required": [
         "role",
+        "tags",
         "order"
       ]
-    },
-    "table": {
-      "type": "object",
-      "description": "A table policy: which rows to keep, in which order, which columns. It names no source and no labels — the `.jsonl` that applies it does.",
-      "properties": {
-        "role": {
-          "enum": [
-            "table"
-          ]
-        },
-        "title": {
-          "type": "string",
-          "description": "A name for the rules, never the data."
-        },
-        "description": {
-          "type": "string"
-        },
-        "where": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/fieldClause"
-          },
-          "description": "Every clause must hold (AND); a row failing one is out."
-        },
-        "sort": {
-          "type": "array",
-          "items": {
-            "description": "A sort key: `{field, dir}` (`dir` asc, the default, or desc), or the field name alone.",
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "field": {
-                    "type": "string",
-                    "description": "A key of the row, or a dot path."
-                  },
-                  "dir": {
-                    "enum": [
-                      "asc",
-                      "desc"
-                    ]
-                  }
-                },
-                "required": [
-                  "field"
-                ]
-              }
-            ]
-          },
-          "description": "First key first; a later key breaks ties."
-        },
-        "columns": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "The columns shown, in this order; omitted = every column the rows carry; `\"*\"` = every other column, after these."
-        },
-        "hide": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Subtracted from the columns shown."
-        },
-        "limit": {
-          "type": "number",
-          "description": "At most this many rows; a positive number.",
-          "exclusiveMinimum": 0
-        }
-      },
-      "required": [
-        "role"
-      ],
-      "not": {
-        "anyOf": [
-          {
-            "required": [
-              "rename"
-            ]
-          },
-          {
-            "required": [
-              "source"
-            ]
-          },
-          {
-            "required": [
-              "sources"
-            ]
-          }
-        ]
-      }
     }
   }
 }

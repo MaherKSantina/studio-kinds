@@ -51,4 +51,4 @@ def test_case(case: str) -> None:
 
 
 def test_corpus_present() -> None:
-    assert len(CASES) >= 100
+    assert len(CASES) >= 75

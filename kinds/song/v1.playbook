@@ -1,6 +1,6 @@
 version: 2
-title: How a version-1 song works
-description: Clips placed on tracks — an arrangement that reads its clips live, draws the tracks against the bars, opens a clip on click, and exports one multi-track MIDI file for Ableton Live.
+title: How a song works
+description: An arrangement, whole — the clips written into the song, the tracks that place them by name, the piano roll under a track, and one multi-track MIDI file for Ableton Live.
 decisions:
   - key: host
     label: Where does an export land?
@@ -23,101 +23,116 @@ events:
       kind: brief
       doc:
         title: The shape of the file
-        description: Tracks of placements; every clip is a file beside the song.
+        description: The clips the song is made of, and the tracks that place them.
         sections:
           - title: Top-level keys
             body: |
               | key | what it is | default |
               |---|---|---|
               | `title` | the heading | none |
-              | `tempo` | beats per minute | the first clip's, else 120 |
-              | `time` | the time signature | the first clip's, else 4/4 |
+              | `tempo` | beats per minute | the first placed clip's, else 120 |
+              | `time` | the time signature | the first placed clip's, else 4/4 |
+              | `clips` | the clips the song is made of, each written in under a `name` | |
               | `tracks` | the arrangement — one MIDI track each on export | |
-          - title: A track and its placements
+          - title: The clips, and the tracks that place them
             body: |
               ```yaml
+              clips:                                          # the clips this song is made of
+                - name: drums                                 # what a placement calls it
+                  grid: 16                                    # then the clip's own fields
+                  lanes:
+                    - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
+                - name: bass
+                  notes:
+                    - {pitch: C2, start: 0, length: 0.75}
               tracks:
                 - name: Drums
                   channel: 10                                 # optional; the first clip's own otherwise
                   clips:
-                    - {file: drums.clip, at: 0, repeat: 8}    # from bar 0, eight times back to back
-                    - {file: fill.clip, at: 7}
+                    - {clip: drums, at: 0, repeat: 8}         # from bar 0, eight times back to back
                 - name: Bass
                   clips:
-                    - {file: bass.clip, repeat: 4}            # no `at` = right after the previous clip on this track
-                    - {file: bass.clip, repeat: 4, transpose: 5}
+                    - {clip: bass, repeat: 4}                 # no `at` = right after the previous placement
+                    - {clip: bass, repeat: 4, transpose: 5}
               ```
+
+              A clip is written in under a `name`, then its own fields — `notes`, `lanes`, `grid`,
+              `bars`, `tempo`, `time`, `channel`, `velocity`, `naming`: everything the `.clip` kind
+              holds. A placement calls one by that name, so the riff above is written once and
+              played twice, a fourth apart, and the song exports with nothing beside it.
 
               Bars count from 0 at the song's start, in the song's time signature. `at` is where a
               placement begins (default: where the previous one on the track ended, or 0), `repeat`
               how many times the clip plays back to back (default 1), `transpose` semitones added
-              to every pitch (default 0). Clip refs are relative to the song's folder. A track with
-              no `name` is "Track N".
+              to every pitch (default 0). A track with no `name` is "Track N".
           - title: Where the engine lives
             body: |
-              `packages/filekinds/src/lib/songDoc.ts` — `parseSong`, `loadSong`, `songMidiSpec`,
-              `songSummary`; its header comment is what `studio-check --spec song` prints, with
-              `clipDoc.ts` and `midiFile.ts` beside it. The view is `components/music/SongView.tsx`
-              over `PianoRoll.tsx` and `ExportMidiButton.tsx`; the checker is `python/studio_kinds/kinds/song.py`.
+              `python/studio_kinds/kinds/song.py` — `parse`, `load`, `summary`; its header
+              comment is what `studio-check --spec song` prints, with `clip.py` for the written
+              clips and `_midi.py` for the export. The shape is `kinds/song/v1.schema.json`. The
+              view is `components/music/SongView.tsx` over `PianoRoll.tsx` and
+              `ExportMidiButton.tsx`.
   - key: opened
     label: The file is opened
     trigger: imposed
     domain: Opening
-    detail: parseSong reads the YAML once and never throws; then every clip is read from the store and the arrangement is laid out in beats.
+    detail: The YAML is read once and never throws; the clips are already here, so the arrangement is laid out in beats at once.
     content:
       key: load
       label: What is parsed, what is read, and what is drawn
       kind: brief
       doc:
         title: What is parsed, what is read, and what is drawn
-        description: A lenient parse, a live read of the clips, then the arrangement.
+        description: A lenient parse, then the arrangement.
         sections:
           - title: The parse
             body: |
               A YAML error is the first problem and the song is otherwise empty. Named problems:
-              `tempo: x is not a bpm`, `time: x is not a time signature like 4/4`, `tracks: must be
-              a list`, `track <name>: channel x is not 1–16`, `track <name>: clips must be a list`,
-              and per placement `track <name>, clip N: no file` (the placement is dropped), `at x
-              is not a bar` (a number, at least 0), `repeat x is not a count` (a whole number, at
-              least 1), `transpose x is not a number of semitones`. A bad value falls back to its
-              default; the rest of the song still renders and exports.
-          - title: Reading the clips
+              `tempo: x is not a bpm`, `time: x is not a time signature like 4/4`, `clips: must
+              be a list of clips, each with a `name``, `clip N: no `name``, `clip <name>: the name
+              is already another clip's`, `clip <name>: no notes`, a written clip's own problems
+              under `clip <name>: …`, `tracks: must be a list`, `track <name>: channel x is not
+              1–16`, `track <name>: clips must be a list`, and per placement `track <name>, clip N:
+              no `clip`` (the placement is dropped), `no clip called "x" — this song holds a, b`,
+              `at x is not a bar` (a number, at least 0), `repeat x is not a count` (a whole
+              number, at least 1), `transpose x is not a number of semitones`. A bad value falls
+              back to its default; the rest of the song still renders and exports.
+          - title: Laying it out
             body: |
-              "Loading the clips…" while `loadSong` reads each placement's file through the store,
-              resolved against the song's folder, once per path. A clip that cannot be read is
-              `track <name>: x.clip is not there`. The song's tempo and time signature are its own,
-              else the first clip read, else 120 and 4/4. Per track a cursor runs: a placement
+              Every clip is already in the file, so there is nothing to load and nothing to wait
+              for. The song's tempo and time signature are its own,
+              else the first placed clip's, else 120 and 4/4. Per track a cursor runs: a placement
               starts at `at` × beats per bar, else at the cursor; it lasts the clip's bars (in the
-              clip's own signature; one bar for a missing clip) times `repeat`, and the cursor
-              moves to its end. The song's length is the last end, rounded up to a bar. A track's
-              channel is its own, else its first clip's, else 1. Every pass of every clip
+              clip's own signature; one bar for a placement naming no clip) times `repeat`, and the
+              cursor moves to its end. The song's length is the last end, rounded up to a bar. A
+              track's channel is its own, else its first clip's, else 1. Every pass of every clip
               contributes its notes, shifted and transposed; a pitch pushed outside 0–127 is
-              dropped. A clip with problems adds `track <name>: x.clip has N problems of its own`.
+              dropped.
           - title: What is drawn
             body: |
-              The title and `N tracks · N bars · N notes · N bpm · 4/4`, with Export .mid (disabled
-              when no track has a note). The problems in red. "No tracks yet — give it `tracks:`
-              with `clips:`." when there are none. Then the arrangement: a gutter with each track's
-              colour, name and note count; a ruler numbering the bars (every fourth, or every one
-              when there is room); on each track a block per placement, as long as it plays,
-              labelled `<stem> ×N +T`, its repeats marked off with dashed lines, a thumbnail of its
-              notes inside, and a dashed red block reading `x.clip — not there` for a missing
-              clip. A short song stretches to fill the pane, at no less than ten pixels a beat.
+              The title and `N clips · N tracks · N bars · N notes · N bpm · 4/4`, with Export
+              .mid (disabled when no track has a note). The problems in red. "No tracks yet — give
+              it `tracks:` with `clips:`." when there are none. Then the arrangement: a gutter with
+              each track's colour, name and note count; a ruler numbering the bars (every fourth,
+              or every one when there is room); on each track a block per placement, as long as it
+              plays, labelled `<name> ×N +T`, its repeats marked off with dashed lines, a thumbnail
+              of its notes inside, and a dashed red block reading `x — no such clip` for a
+              placement naming none. A short song stretches to fill the pane, at no less than ten
+              pixels a beat.
   - key: block-clicked
     label: A placement is clicked
     trigger: chosen
     arity: many
     domain: Reading
-    detail: The host opens the clip file.
+    detail: The clip's own piano roll opens, from the text in this file.
     content:
       key: open
       label: What opens
       kind: md
       doc: |
-        The block hands the clip's absolute path to the host's `onOpenPath` — the Studio
-        navigates to the clip, and its roll opens — so the song is a map of its clips. A host
-        that passes no `onOpenPath` draws the block without a pointer and a click does nothing.
-        Hovering a block says `x.clip · bar N for N bars · transposed T — open it`.
+        The block opens the clip it names — the roll of that clip, drawn from the clip written in
+        this file, so it opens at once and nothing is read from disk. Closing it returns to the
+        arrangement. Hovering a block says `<name> · bar N for N bars · transposed T — open it`.
   - key: track-clicked
     label: A track's name is clicked
     trigger: chosen
@@ -166,22 +181,22 @@ events:
     label: studio-check --midi runs on it
     trigger: chosen
     domain: Exporting
-    detail: The same bytes from the command line, the clips read from disk.
+    detail: The same bytes from the command line, from the one file.
     content:
       key: cli
       label: What the command does
       kind: md
       doc: |
-        `studio-check --midi x.song [name.mid]` parses the song, reads its clips from the disk
-        beside it, prints every problem to stderr, writes `x.mid` (or the name given) in the
-        song's folder and prints `x.mid: <summary> (N bytes)`. The exit status is 1 whenever there
-        were problems — a missing clip among them — even though the file was written.
+        `studio-check --midi x.song [name.mid]` parses the song, prints every problem to stderr,
+        writes `x.mid` (or the name given) in the song's folder and prints `x.mid: <summary> (N
+        bytes)`. The exit status is 1 whenever there were problems, even though the file was
+        written.
   - key: changed-on-disk
     label: The file changes on disk
     trigger: imposed
     arity: many
     domain: Reading
-    detail: The host re-reads; the song re-parses and reads its clips again — but only when this file changed.
+    detail: The host re-reads and the song re-parses; everything it draws came with the text.
     content:
       key: reread
       label: What is re-read
@@ -189,38 +204,40 @@ events:
       doc: |
         The desktop watcher (250 ms debounce, `studio:fs-changed`), the web folder entry's server
         events or VS Code's text document deliver the new text, and the Studio re-reads unless its
-        autosave is dirty, saving or in error. The song re-parses and `loadSong` runs again over
-        every clip. A CLIP edited while the song sits open is not re-read until the song's own
-        text or path changes, or it is reopened. The selected track stays selected by index.
+        autosave is dirty, saving or in error. The song re-parses and lays out again — the clips
+        came with the text, so a note changed anywhere in the file shows at once. The selected
+        track stays selected by index.
   - key: checked
     label: studio-check runs on it
     trigger: imposed
     domain: Writing
-    detail: One file in, one verdict out — on the command line the clips are read too.
+    detail: One file in, one verdict out — the clips are in it.
     content:
       key: checker
       label: What the checker does
       kind: brief
       doc:
         title: What the checker does
-        description: Two checks that differ by what they can reach.
+        description: The order it runs in, and what it leaves alone.
         sections:
-          - title: On the command line
+          - title: In order
             body: |
               1. Parse the YAML — a parse error is the only problem reported.
-              2. `parseSong`, then `loadSong` with the clips read from disk beside the file — so a
-                 missing clip and a clip's own problems are problems here.
-
-              The summary is the view's line: `N tracks · N bars · N notes · N bpm · 4/4`.
-          - title: On the page
+              2. The parse: the clips (a missing or duplicate name, a clip with no notes, and each
+                 written clip's own problems through the `.clip` engine) and the tracks (a
+                 placement naming no clip or one this song does not hold, a bad `at`, `repeat` or
+                 `transpose`).
+              3. Lay it out, and report the summary the view shows: `N clips · N tracks · N bars ·
+                 N notes · N bpm · 4/4`.
+          - title: Nothing beside it
             body: |
-              `parseSong` only. The summary is `N tracks, N clips`, and the clips are named under
-              notes: `clips not read — this check has no folder: a.clip, b.clip`.
+              Every note the song plays is in the file, so the verdict and the export are the same
+              wherever it is read — on this machine, on another, or pasted into a page.
           - title: Not checked
             body: |
               Overlaps between placements on one track (they simply sound together). A `transpose`
-              that pushes every note out of range (the notes are dropped, quietly). Whether the
-              clips' signatures agree with the song's.
+              that pushes every note out of range (the notes are dropped, quietly). Whether a
+              written clip's signature agrees with the song's.
   - key: authored
     label: A song is written
     trigger: chosen
@@ -233,35 +250,50 @@ events:
         title: Write a song
         description: From the template to an arrangement — the clips first, then the placements.
         steps:
-          - key: clips
-            label: Have the clips
-            detail: |
-              One `.clip` per part in the song's folder, each checked. The song takes its tempo
-              and signature from the first clip it reads when it gives none.
           - key: template
             label: Start from the template
-            after: [clips]
             detail: |
               `studio-check --template song > new.song`:
 
               ```yaml
-              title: new
+              title: untitled
+              tempo: 120
+              time: 4/4
+              clips:
+                - name: beat
+                  grid: 16
+                  lanes:
+                    - {name: Kick, pitch: C2, steps: "x...x...x...x..."}
+                - name: bass
+                  notes:
+                    - {pitch: C2, start: 0, length: 1}
               tracks:
-                - name: Track 1
+                - name: Drums
+                  channel: 10
                   clips:
-                    - {file: new.clip, at: 0, repeat: 4}
+                    - {clip: beat, at: 0, repeat: 4}
+                - name: Bass
+                  clips:
+                    - {clip: bass, repeat: 4}
               ```
-          - key: tracks
-            label: Lay out the tracks
+          - key: clips
+            label: Write the clips in
             after: [template]
             detail: |
-              One track per instrument, `channel` where the DAW needs one (drums on 10). Place
-              clips with `at` in bars, or leave it off to chain them; `repeat` for loops,
-              `transpose` for the same riff elsewhere.
+              One entry per part under `clips:`, each a `name` and then the clip's own fields —
+              notes for a line, lanes for a kit. Write a part once even when it plays many times.
+              A clip of its own is a `.clip` file; a clip of this song lives here.
+          - key: tracks
+            label: Lay out the tracks
+            after: [clips]
+            detail: |
+              One track per instrument, `channel` where the DAW needs one (drums on 10). Place a
+              clip by `clip: <name>` with `at` in bars, or leave `at` off to chain them; `repeat`
+              for loops, `transpose` for the same riff elsewhere.
           - key: check
             label: Check it, then export
             after: [tracks]
             detail: |
-              `studio-check new.song` reads the clips and prints the summary and every problem.
-              Open it and press Export .mid, or `studio-check --midi new.song`, then drop `new.mid`
-              on Ableton Live's Arrangement.
+              `studio-check new.song` prints the summary and every problem, the written clips'
+              included. Open it and press Export .mid, or `studio-check --midi new.song`, then
+              drop `new.mid` on Ableton Live's Arrangement.

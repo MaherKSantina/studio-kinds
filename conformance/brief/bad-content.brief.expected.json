@@ -15,7 +15,7 @@
     "section Nested › Broken board (kanban): no `title` — the board's heading",
     "section Nested › Broken board (kanban): `columns` is empty — a board needs at least one status",
     "section Nested › Broken board (kanban): task a: needs `zz` — no task has that key",
-    "section Nested › Broken book (playbook): event e: inline content has `doc` but no `kind` — say which kind renders it (brief, guide, md, …)"
+    "section Nested › Broken book (playbook): event e: the content has `doc` but no `kind` — say which kind renders it (brief, kanban, md, …)"
   ],
   "summary": "10 sections, 7 documents"
 }

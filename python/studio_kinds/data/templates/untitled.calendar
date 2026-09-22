@@ -1,4 +1,11 @@
 title: "untitled"
-description: "A lens over one board: the schedule its dependency edges, durations and due date produce. Nothing is stored here — it recomputes on every open."
-board: board.kanban   # a ref resolved against this file's folder
-# due: 2026-12-31     # optional — overrides the board's own due date
+description: "The schedule these edges, durations and the due date produce. No date is written down — every one is derived."
+due: 2026-12-31
+tasks:
+  - key: first
+    title: The first thing
+    duration: 5
+  - key: second
+    title: What follows it
+    needs: [first]
+    duration: 2

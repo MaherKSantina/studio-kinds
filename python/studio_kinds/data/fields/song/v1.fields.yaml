@@ -10,6 +10,17 @@ fields:
   - field: time
     type: string | [number, number]
     description: Time signature; default the first clip's.
+  - field: clips
+    type: list of clip
+    required: true
+    description: The clips this song is made of, each a clip document written in under a `name`; a riff played twice is written once and placed twice.
+  - field: clips[].name
+    type: string
+    required: true
+    description: What a placement calls this clip; unique.
+  - field: clips[].<clip fields>
+    type: clip
+    description: "The clip's own fields — `notes`, `lanes`, `grid`, `bars`, `tempo`, `time`, `channel`, `velocity`, `naming`: see the `.clip` field table."
   - field: tracks
     type: list of track
     required: true
@@ -25,10 +36,10 @@ fields:
     type: list of placement
     required: true
     description: The clips placed on the track.
-  - field: tracks[].clips[].file
-    type: path
+  - field: tracks[].clips[].clip
+    type: clip name
     required: true
-    description: A `.clip` relative to the song's folder.
+    description: The `name` of one of this song's own clips; a name no clip has is a problem to the checker.
   - field: tracks[].clips[].at
     type: number
     description: The bar the placement begins; default right after the previous one on the track, or 0.

@@ -3,9 +3,9 @@ description: [x]
 start_mode: sideways
 sources:
   - {name: dup, path: a}
-  - {name: dup, path: b}
-  - notobject
 default_source: ghost
+frames:
+  real: {title: Real, nodes: [], views: [{name: One}]}
 dimensions:
   ok: [a, b]
   empty: []
@@ -54,10 +54,11 @@ screens:
     content:
       - ""
       - 5
-      - {file: a, screenshot: b}
+      - {frame: real, screenshot: b}
       - {label: x}
       - {screenshot: k, label: 5, source: s, agent: a}
-      - {file: f, source: ghost, agent: 5}
+      - {frame: ghost, view: One}
+      - {file: f}
     variants:
       - notobject
       - {label: "", when: {ok: a}, content: [{file: f, source: ghost}]}

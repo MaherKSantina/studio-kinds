@@ -5,9 +5,8 @@ dimensions:
   member: [true, false]
 defaults:
   shipping: free
-sources:
-  - {name: v1, path: /v1}
-default_source: v1
+frames:
+  cart: {title: Cart, nodes: [], views: [{name: Full}]}
 derived:
   - name: express
     values: [yes, no]
@@ -19,7 +18,7 @@ screens:
   - id: cart
     title: Cart
     content:
-      - {file: cart.brief, source: v1, label: The cart}
+      - {frame: cart, view: Full, label: The cart}
       - shot-1
     locals:
       mode: [unset, edit]

@@ -1,3 +1,9 @@
+clips:
+  - name: riff
+    tempo: 90
+    time: 3/4
+    notes:
+      - {pitch: C3, start: 0, length: 1}
 tracks:
   - clips:
-      - {file: drums.clip}
+      - {clip: riff}

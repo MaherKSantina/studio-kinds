@@ -1,10 +1,6 @@
 kind: collection
 version: 1
 fields:
-  - field: source
-    type: path
-    required: true
-    description: The `.jsonl` view the items were copied from.
   - field: to
     type: string
     description: Where directions go.
