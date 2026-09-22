@@ -24,6 +24,7 @@ import { validateFlowFile } from "filekinds/src/lib/flowOps.ts";
 import { parseGuide } from "filekinds/src/lib/guideDoc.ts";
 import { kanbanProblems, kanbanSummary, parseKanban } from "filekinds/src/lib/kanbanDoc.ts";
 import { parseMiddleware } from "filekinds/src/lib/middlewareDoc.ts";
+import { parsePipeline, pipelineSummary, runPipeline } from "filekinds/src/lib/pipelineDoc.ts";
 import {
   PLAYBOOK_LATEST, byEntries, contentEntries, docText, inlineEntries, inlineProblems, legacyProblems,
   parsePlaybook, variationProblems, variationsOf, versionProblems, writtenDocs,
@@ -234,6 +235,17 @@ export const KINDS: Record<string, KindDef> = {
       const problems = asProblems(d.problems);
       if (!d.source) return result("middleware", [...problems, { message: "no source" }], { summary: `${d.rules.length} rules, no source` });
       return result("middleware", problems, { summary: `${d.rules.length} rules over ${d.source.file}`, notes: [`source not read — this check has no folder: ${d.source.file}`] });
+    },
+  },
+  // A pipeline carries its items itself, so the whole of it is checked here: every stage run, every view applied, nothing taken.
+  pipeline: {
+    label: "Pipeline", extension: "pipeline", offered: true,
+    check: (text) => {
+      const y = yamlProblem(text);
+      if (y) return result("pipeline", [y]);
+      const d = parsePipeline(text);
+      const run = runPipeline(d);
+      return result("pipeline", asProblems(run.problems), { summary: pipelineSummary(d, run) });
     },
   },
   collection: {

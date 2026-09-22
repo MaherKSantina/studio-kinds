@@ -62,7 +62,7 @@ for (const b of after.filter((b) => b.exists)) {
 
 // The FIELD TABLES — kinds/<ext>/v<N>.fields.yaml, the schema as a table — for every kind the page
 // offers, at every version: present, YAML, a `fields` list whose entries each name a `field`.
-const OFFERED = ["brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "middleware", "collection", "clip", "song", "md"];
+const OFFERED = ["brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "middleware", "pipeline", "collection", "clip", "song", "md"];
 let badFields = 0;
 for (const b of after.filter((b) => OFFERED.includes(b.ext))) {
   const rel = path.relative(root, b.fields);

@@ -22,8 +22,8 @@ export function claudePreamble(folder: string): string {
   return `# ${name ? `${name} — ` : ""}Studio documents
 
 Every file in this folder and below is a Studio document picked by its extension — \`.brief\`,
-\`.playbook\`, \`.kanban\`, \`.calendar\`, \`.policy\`, \`.flow\`, \`.jsonl\`, \`.middleware\`, \`.collection\`,
-\`.clip\`, \`.song\` — and \`.md\` for anything else. The folder shows in the Studio (the web
+\`.playbook\`, \`.kanban\`, \`.calendar\`, \`.policy\`, \`.flow\`, \`.jsonl\`, \`.middleware\`, \`.pipeline\`,
+\`.collection\`, \`.clip\`, \`.song\` — and \`.md\` for anything else. The folder shows in the Studio (the web
 front door over a folder, the desktop app, VS Code's Studio editor).
 
 For anything touching these files, open the \`studio-files\` skill — the event **A Studio document is

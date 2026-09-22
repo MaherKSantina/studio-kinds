@@ -55,7 +55,7 @@ events:
     expect(r.problems.map((p) => p.message)).toEqual([
       "event g: Map: an `md` document is its text — write it as a block string",
       "event e: Inner (playbook): `version: 9` — this Studio knows playbook up to version 2; read as 2, so newer content may not show",
-      "event f: Typo (brife): not a kind this check knows — one of brief, playbook, kanban, calendar, policy, flow, jsonl, middleware, collection, clip, song, md, guide",
+      "event f: Typo (brife): not a kind this check knows — one of brief, playbook, kanban, calendar, policy, flow, jsonl, middleware, pipeline, collection, clip, song, md, guide",
     ]);
   });
 
@@ -158,6 +158,6 @@ events:
     expect(kindForFile("A.Brief")).toBe("brief");
     expect(kindForFile("notes.md")).toBe("md");
     expect(kindForFile("x.frame")).toBeUndefined();
-    expect(Object.keys(KINDS)).toEqual(["brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "middleware", "collection", "clip", "song", "md", "guide"]);
+    expect(Object.keys(KINDS)).toEqual(["brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "middleware", "pipeline", "collection", "clip", "song", "md", "guide"]);
   });
 });

@@ -114,6 +114,7 @@ const TableR = lazyViewer("table", lazy(() => import("../components/table/TableV
 const DataR = lazyViewer("jsonl", lazy(() => import("../components/data/DataTableView")));
 const MiddlewareR = lazyViewer("middleware", lazy(() => import("../components/middleware/MiddlewareView")));
 const CollectionR = lazyViewer("collection", lazy(() => import("../components/collection/CollectionView")));
+const PipelineR = lazyViewer("pipeline", lazy(() => import("../components/pipeline/PipelineView")));
 const PulseR = lazyViewer("pulse", lazy(() => import("../components/pulse/PulseView")));
 const MovesR = lazyViewer("moves", lazy(() => import("../components/moves/MovesView")));
 const ProgramR = lazyViewer("program", lazy(() => import("../components/program/ProgramView")));
@@ -217,6 +218,11 @@ export const FILE_KINDS: FileKindDef[] = [
   // gallery flow with each item's images, facts, link and directions; push
   // up / push down / hide with a reason, appended to the file's log at once.
   { key: "collection", label: "Collection", extensions: ["collection"], studioPath: STUDIO, Renderer: CollectionR },
+  // PIPELINE — one curated list in the file, the stages that transform it
+  // (rules that set fields, a filter, a sort — each under a circumstance the
+  // decisions name) and the views that show the output. The rows as of any
+  // stage, and the logic that made them, one click apart; nothing cached.
+  { key: "pipeline", label: "Pipeline", extensions: ["pipeline"], studioPath: STUDIO, Renderer: PipelineR },
   // CODE AS EXECUTION — a bounded transformer with a declared store contract
   // (inputs in, outputs back) and a Run button. The journey references it as
   // a step; the person presses play; the result is an ordinary node.

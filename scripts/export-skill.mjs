@@ -20,7 +20,7 @@ if (!event?.content?.doc) { console.error(`no "studio-document" event with a doc
 const frontmatter = [
   "---",
   "name: studio-files",
-  "description: Author and edit Studio documents on DISK — every kind of the Digital Symphony suite (.brief, .playbook, .kanban, .calendar, .policy, .flow, .jsonl, .middleware, .collection, .clip, .song, and .md for anything else) — in any folder the Studio opens. Use whenever a task touches one of these files by extension, asks to create, change or validate one, mentions the Studio, the desktop app or the VS Code preview, or asks WHICH file type to use for something.",
+  "description: Author and edit Studio documents on DISK — every kind of the Digital Symphony suite (.brief, .playbook, .kanban, .calendar, .policy, .flow, .jsonl, .middleware, .pipeline, .collection, .clip, .song, and .md for anything else) — in any folder the Studio opens. Use whenever a task touches one of these files by extension, asks to create, change or validate one, mentions the Studio, the desktop app or the VS Code preview, or asks WHICH file type to use for something.",
   "---",
   "",
 ];

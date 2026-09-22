@@ -52,10 +52,10 @@ view's sources) is listed under `notes`, not read; `studio-check` on a machine r
 ## The kinds
 
 A kind is a YAML file whose extension picks its engine (`packages/filekinds/src/lib/<kind>Doc.ts`).
-Twelve are the **authoring kinds** — the ones "Which kind for what" in the
+Thirteen are the **authoring kinds** — the ones "Which kind for what" in the
 [studio-files skill](skills/studio-files/SKILL.md) hands out, the page offers and a folder's `CLAUDE.md`
-names: `brief`, `playbook`, `kanban`, `calendar`, `policy`, `flow`, `jsonl`, `middleware`, `collection`,
-`clip`, `song` and `md`. The rest of `studio-check --kinds` (`frame`, `plan`, `guide`, `list`, `points`,
+names: `brief`, `playbook`, `kanban`, `calendar`, `policy`, `flow`, `jsonl`, `middleware`, `pipeline`,
+`collection`, `clip`, `song` and `md`. The rest of `studio-check --kinds` (`frame`, `plan`, `guide`, `list`, `points`,
 `definition`, `memory`, `project`, `schema`, `workup`, `program`, `pulse`, `moves`, `tablediff`) are the
 Studio's own — written by its editors, read by its views, not meant to be authored by hand.
 

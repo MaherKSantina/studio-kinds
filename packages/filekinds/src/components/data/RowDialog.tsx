@@ -72,6 +72,8 @@ export interface RowDialogProps {
   columns: string[];
   labels?: Record<string, string>;
   onMove: (at: number | null) => void;
+  /** More about the row, under its fields — what the host knows beyond them. */
+  extra?: (row: DataRow) => React.ReactNode;
 }
 
 /** The shown columns first, in the grid's order, then every other field the row carries. */
@@ -83,7 +85,7 @@ export function orderFields(fields: [string, unknown][], columns: string[]): [st
   }).map((x) => x.f);
 }
 
-export function RowDialog({ rows, ordered, at, columns, labels = {}, onMove }: RowDialogProps) {
+export function RowDialog({ rows, ordered, at, columns, labels = {}, onMove, extra }: RowDialogProps) {
   const index = at === null ? null : ordered[at];
   const row = index === null || index === undefined ? null : rows[index];
   const fields = useMemo(() => (row ? orderFields(flattenRow(row), columns) : []), [row, columns]);
@@ -113,6 +115,7 @@ export function RowDialog({ rows, ordered, at, columns, labels = {}, onMove }: R
               </React.Fragment>
             ))}
           </dl>
+          {row && extra?.(row)}
         </div>
         <div className="flex shrink-0 items-center gap-2 border-t pt-3">
           <Button size="sm" variant="outline" onClick={() => onMove(at! - 1)} disabled={!prev} aria-label="Previous row"><ChevronLeft /> Previous</Button>

@@ -14,8 +14,8 @@
  *   studio-check --fields <ext> [N]       the path of the kind's FIELD TABLE at version N — kinds/<ext>/v<N>.fields.yaml:
  *                                         every field, its type, whether it is required, what it is
  *   studio-check --json <file ...>        machine-readable results
- *   studio-check --collect <file.jsonl> [name.collection]
- *                                         copy the rows a .jsonl view shows into a .collection beside it
+ *   studio-check --collect <file.jsonl|file.pipeline[#view]> [name.collection]
+ *                                         copy the rows a .jsonl view, or a pipeline (its output, or one view), shows into a .collection beside it
  *   studio-check --midi <file.clip|file.song> [name.mid]
  *                                         write the document's notes as a Standard MIDI File beside it
  *
@@ -51,6 +51,7 @@ import { parseTableDiff } from "../../../packages/filekinds/src/lib/tableDiff";
 import { parseDataRows } from "../../../packages/filekinds/src/lib/dataRows";
 import { chainText, readSourceRows } from "../../../packages/filekinds/src/lib/dataSources";
 import { applyMiddleware, parseMiddleware } from "../../../packages/filekinds/src/lib/middlewareDoc";
+import { parsePipeline, pipelineSummary, rowsAt, runPipeline, shownColumns } from "../../../packages/filekinds/src/lib/pipelineDoc";
 import { collectionFromRows, collectionSummary, dumpCollection, parseCollection } from "../../../packages/filekinds/src/lib/collectionDoc";
 import { applyTablePolicy } from "../../../packages/filekinds/src/lib/tablePolicy";
 import { parsePolicyKindFile } from "../../../packages/filekinds/src/lib/policyChain";
@@ -298,6 +299,17 @@ const KINDS: Record<string, Kind> = {
       return { problems, summary: `over ${chainText(src)}: ${r.matches.map((m, i) => `rule ${i + 1} → ${m.length}`).join(", ") || "no rules"}` };
     },
   },
+  // A pipeline carries its items itself: every stage runs and every view is applied, nothing taken, and the counts are printed.
+  pipeline: {
+    label: "Pipeline", spec: "pipelineDoc.ts", also: ["tablePolicy.ts"],
+    check: (text) => {
+      const y = yamlError(text);
+      if (y) return { problems: [y] };
+      const d = parsePipeline(text);
+      const run = runPipeline(d);
+      return { problems: run.problems, summary: pipelineSummary(d, run) };
+    },
+  },
   collection: {
     label: "Collection", spec: "collectionDoc.ts",
     check: (text) => {
@@ -391,7 +403,7 @@ async function main(argv: string[]): Promise<number> {
   const json = argv.includes("--json");
   const args = argv.filter((a) => a !== "--json");
   if (!args.length || args[0] === "--help" || args[0] === "-h") {
-    console.log("studio-check <file|folder|glob ...> | --spec <ext> | --template <ext> | --kinds | --book <ext> [N] | --books | --fields <ext> [N] | --json <file ...> | --collect <file.jsonl> [name] | --midi <file.clip|file.song> [name.mid]");
+    console.log("studio-check <file|folder|glob ...> | --spec <ext> | --template <ext> | --kinds | --book <ext> [N] | --books | --fields <ext> [N] | --json <file ...> | --collect <file.jsonl|file.pipeline[#view]> [name] | --midi <file.clip|file.song> [name.mid]");
     return 0;
   }
   if (args[0] === "--kinds") {
@@ -453,8 +465,20 @@ async function main(argv: string[]): Promise<number> {
     return problems.length ? 1 : 0;
   }
   if (args[0] === "--collect") {
-    const src = args[1] ? resolve(args[1]) : "";
-    if (!src || !existsSync(src) || extname(src).toLowerCase() !== ".jsonl") { console.error("usage: --collect <file.jsonl> [name.collection]"); return 2; }
+    const hash = (args[1] ?? "").lastIndexOf("#");
+    const src = args[1] ? resolve(hash > 0 ? args[1].slice(0, hash) : args[1]) : "";
+    const ext = extname(src).toLowerCase();
+    if (!src || !existsSync(src) || (ext !== ".jsonl" && ext !== ".pipeline")) { console.error("usage: --collect <file.jsonl|file.pipeline[#view]> [name.collection]"); return 2; }
+    if (ext === ".pipeline") {
+      // The output, or one view's rows and columns; the labels are the file's own.
+      const doc = parsePipeline(readFileSync(src, "utf8"));
+      const at = rowsAt(runPipeline(doc), hash > 0 ? args[1].slice(hash + 1) : undefined);
+      if (at.problems.length) { console.error(at.problems.join("\n")); return 1; }
+      const out = args[2] ? resolve(dirname(src), args[2]) : src.replace(/\.pipeline$/i, ".collection");
+      writeFileSync(out, dumpCollection(collectionFromRows(at.rows, { source: basename(src), fields: at.columns ?? shownColumns(at.rows), labels: doc.labels })));
+      console.log(`${basename(out)}: ${at.rows.length} items from ${basename(src)}${hash > 0 ? args[1].slice(hash) : ""}`);
+      return 0;
+    }
     const d = parseDataRows(readFileSync(src, "utf8"));
     const rows = [...d.rows];
     const labels = d.compose?.labels ?? {};

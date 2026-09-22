@@ -5,7 +5,7 @@
  */
 import {
   Activity, AlignLeft, AppWindow, ArrowRightLeft, BookOpen, Boxes, Brain, CalendarDays, CircleDot, Database, File as FileIcon, FileText, Folder, Frame,
-  GalleryHorizontal, GitCompareArrows, List as ListIcon, ListChecks, ListMusic, Music, Package, Replace, Route, Shapes, SlidersHorizontal, Kanban, SquareTerminal, Stethoscope, Table, Waypoints, Workflow,
+  GalleryHorizontal, GitCompareArrows, Layers, List as ListIcon, ListChecks, ListMusic, Music, Package, Replace, Route, Shapes, SlidersHorizontal, Kanban, SquareTerminal, Stethoscope, Table, Waypoints, Workflow,
 } from "lucide-react";
 import { isStructuredName } from "crosscut";
 import { previewForPath } from "../lib/filePreviews";
@@ -32,6 +32,7 @@ export const KIND_ICONS: Record<string, React.ComponentType<{ className?: string
   jsonl: Database,
   middleware: Replace,
   collection: GalleryHorizontal,
+  pipeline: Layers,
   program: SquareTerminal,
   tablediff: GitCompareArrows,
   pulse: Activity,

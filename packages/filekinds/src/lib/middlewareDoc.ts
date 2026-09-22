@@ -33,9 +33,9 @@
  * with no clauses matches every row.
  */
 import yaml from "js-yaml";
-import { OPS, clauseHolds, parseClauses, type PolicyClause } from "./policyDoc";
+import { clauseHolds, type PolicyClause } from "./policyDoc";
 import { parseSourceRef, type DataRow, type SourceRef } from "./dataRows";
-import { clauseInput } from "./tablePolicy";
+import { clauseInput, readClauses } from "./tablePolicy";
 
 export interface MiddlewareRule {
   /** ALL must hold; none = every row. */
@@ -58,6 +58,16 @@ const rec = (x: unknown): Record<string, unknown> => (x && typeof x === "object"
 const arr = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
 const str = (x: unknown): string | undefined => (typeof x === "string" ? x : undefined);
 
+/** One rule as written — its clauses, its set (`set:` and `key`/`value` merged) and its note; `at` names
+ *  it in a problem ("rule 2", "stage corrections rule 2"). A pipeline's rules are read here too. */
+export function readRule(o: Record<string, unknown>, problems: string[], at: string): MiddlewareRule {
+  const where = readClauses(o.where, problems, `${at} where`);
+  const set: Record<string, unknown> = { ...rec(o.set) };
+  if (typeof o.key === "string" && o.key.trim()) set[o.key.trim()] = o.value;
+  if (!Object.keys(set).length) problems.push(`${at}: sets nothing — give it set: {field: value} or key/value`);
+  return { where, set, ...(str(o.note) ? { note: str(o.note)! } : {}) };
+}
+
 /** Lenient parse — never throws; what cannot be read is a problem, not a crash. */
 export function parseMiddleware(text: string): MiddlewareDoc {
   let raw: Record<string, unknown> = {};
@@ -67,24 +77,7 @@ export function parseMiddleware(text: string): MiddlewareDoc {
   const source = raw.source === undefined ? null : parseSourceRef(raw.source);
   if (raw.source !== undefined && !source) problems.push("source: not a file ref");
 
-  const rules: MiddlewareRule[] = [];
-  arr(raw.rules).forEach((r, i) => {
-    const o = rec(r);
-    const n = i + 1;
-    const clausesRaw: Record<string, unknown>[] = arr(o.where).map((c) => {
-      const co = rec(c);
-      return { ...co, param: str(co.param) ?? str(co.field) };
-    });
-    clausesRaw.forEach((c, j) => {
-      if (!c.param) problems.push(`rule ${n} where ${j + 1}: no field`);
-      else if (c.op === undefined) problems.push(`rule ${n} where ${j + 1}: no op`);
-      else if (!OPS.has(str(c.op) as PolicyClause["op"])) problems.push(`rule ${n} where ${j + 1}: unknown op "${String(c.op)}"`);
-    });
-    const set: Record<string, unknown> = { ...rec(o.set) };
-    if (typeof o.key === "string" && o.key.trim()) set[o.key.trim()] = o.value;
-    if (!Object.keys(set).length) problems.push(`rule ${n}: sets nothing — give it set: {field: value} or key/value`);
-    rules.push({ where: parseClauses(clausesRaw), set, ...(str(o.note) ? { note: str(o.note)! } : {}) });
-  });
+  const rules = arr(raw.rules).map((r, i) => readRule(rec(r), problems, `rule ${i + 1}`));
   if (raw.rules !== undefined && !Array.isArray(raw.rules)) problems.push("rules: must be a list");
 
   return {

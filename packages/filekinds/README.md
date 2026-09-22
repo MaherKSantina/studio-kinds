@@ -8,7 +8,7 @@ crosscut and the tools:
 
 Kinds today: markdown, playbook, plan, guide, brief, points, workup, project,
 list, kanban, calendar, html, pdf, definition, frame, flow, policy, schema,
-memory, csv/xlsx, jsonl (data rows — raw, or composed live through a policy's table role), middleware (rows amended on their way to a view), collection (a snapshot to decide over), program, tablediff, pulse, moves, clip (the notes of one MIDI clip, a piano roll) and song (clips on tracks, an arrangement) — both export a Standard MIDI File beside themselves, the song's multi-track for Ableton. Every text kind is
+memory, csv/xlsx, jsonl (data rows — raw, or composed live through a policy's table role), middleware (rows amended on their way to a view), pipeline (one curated list, its stages and its views, in one file), collection (a snapshot to decide over), program, tablediff, pulse, moves, clip (the notes of one MIDI clip, a piano roll) and song (clips on tracks, an arrangement) — both export a Standard MIDI File beside themselves, the song's multi-track for Ableton. Every text kind is
 authored in the one **Studio** (`apps/studio` in this workspace, mounted at /studio);
 binary kinds (pdf, xlsx) are viewed only. The catalog Storybook runs on :9140
 (`npm run storybook`) and is served on the domain at **/kinds/** as a static

@@ -43,10 +43,24 @@ export interface DataGridProps {
   problems?: string[];
   /** The host's own line at the left of the count (a policy's title, the sources). */
   lead?: React.ReactNode;
+  /** A mark on a cell, for a host that knows where a value came from (a pipeline): shown changed, with a badge. */
+  mark?: (row: DataRow, column: string) => CellMark | undefined;
+  /** More about a row, under its fields in the row dialog (a pipeline's trail). */
+  rowExtra?: (row: DataRow) => React.ReactNode;
   height?: number | string;
 }
 
-export function DataGrid({ rows, columns, labels = {}, problems = [], lead, height = "100%" }: DataGridProps) {
+export interface CellMark {
+  /** The cell is shown as changed. */
+  changed?: boolean;
+  /** A word beside the value — the circumstance it holds under. */
+  badge?: string;
+  /** Other values on the table for this cell, each with its own word — a contested cell; shown after the value, muted. */
+  others?: { text: string; badge?: string }[];
+  title?: string;
+}
+
+export function DataGrid({ rows, columns, labels = {}, problems = [], lead, mark, rowExtra, height = "100%" }: DataGridProps) {
   const index = useMemo(() => searchIndex(rows, columns), [rows, columns]);
 
   const [query, setQuery] = useState("");
@@ -123,9 +137,17 @@ export function DataGrid({ rows, columns, labels = {}, problems = [], lead, heig
                 <td className="border bg-sidebar px-1.5 py-0.5 text-right text-xs text-muted-foreground">{i + 1}</td>
                 {columns.map((c) => {
                   const t = cellText(valueAt(rows[i], c));
+                  const m = mark?.(rows[i], c);
                   return (
-                    <td key={c} className="max-w-[360px] overflow-hidden truncate whitespace-nowrap border px-2 py-0.5" title={isUrl(t) ? undefined : t}>
+                    <td key={c} className={cn("max-w-[360px] overflow-hidden truncate whitespace-nowrap border px-2 py-0.5", m?.changed && "bg-amber-50")}
+                      title={m?.title ?? (isUrl(t) ? undefined : t)}>
                       <CellContent text={t} />
+                      {m?.badge && <Badge text={m.badge} />}
+                      {m?.others?.map((o, j) => (
+                        <span key={j} className="ml-2 text-muted-foreground">
+                          <span className="text-muted-foreground/60">· </span>{o.text}{o.badge && <Badge text={o.badge} muted />}
+                        </span>
+                      ))}
                     </td>
                   );
                 })}
@@ -139,9 +161,14 @@ export function DataGrid({ rows, columns, labels = {}, problems = [], lead, heig
           </p>
         )}
       </div>
-      <RowDialog rows={rows} ordered={ordered} at={at} columns={columns} labels={labels} onMove={setAt} />
+      <RowDialog rows={rows} ordered={ordered} at={at} columns={columns} labels={labels} onMove={setAt} extra={rowExtra} />
     </div>
   );
+}
+
+/** The word beside a value — the circumstance it holds under. */
+function Badge({ text, muted }: { text: string; muted?: boolean }) {
+  return <span className={cn("ml-1.5 rounded px-1 align-middle font-sans text-[10px] leading-4", muted ? "bg-muted text-muted-foreground" : "bg-accent text-foreground/80")}>{text}</span>;
 }
 
 /* ── composed rows: the sources and the policy read live ─────────────────── */
@@ -153,6 +180,8 @@ interface Composed {
   notes: string[];
   /** Every file read — the sources, the chains behind them, the policy — to watch for changes. */
   files: string[];
+  /** The columns the one source says it shows (a pipeline's view); found from the rows otherwise. */
+  columns?: string[];
   problems: string[];
 }
 
@@ -172,12 +201,14 @@ function useComposed(base: string, data: DataRows): Composed | null {
       const notes: string[] = [];
       const files: string[] = [];
       const problems: string[] = [];
+      let columns: string[] | undefined;
       for (const s of compose.sources) {
         const got = await readSourceRows(s, base, readAbs);
         rows.push(...got.rows);
         problems.push(...got.problems);
         files.push(...got.files);
         notes.push(chainText(got));
+        columns = compose.sources.length === 1 && !data.rows.length ? got.columns : undefined;
       }
       let policy: TablePolicyDoc | null = null;
       if (compose.policy) {
@@ -189,7 +220,7 @@ function useComposed(base: string, data: DataRows): Composed | null {
           else problems.push(`${compose.policy} is not a table policy (role: ${parsed.role}) — the rows show as they are`);
         } catch { problems.push(`could not read ${compose.policy}`); }
       }
-      if (live) setOut({ rows: [...rows, ...data.rows], policy, notes, files, problems });
+      if (live) setOut({ rows: [...rows, ...data.rows], policy, notes, files, problems, ...(columns ? { columns } : {}) });
     })();
     return () => { live = false; };
   }, [base, compose, data.rows, version]);
@@ -240,7 +271,7 @@ function ComposedView({ data, base, height, onOpenPath }: { data: DataRows; base
   const result = useMemo(() => {
     if (!out) return null;
     if (out.policy) return applyTablePolicy(out.policy, out.rows);
-    return { rows: out.rows, total: out.rows.length, columns: columnsOf(out.rows), problems: [] as string[] };
+    return { rows: out.rows, total: out.rows.length, columns: out.columns ?? columnsOf(out.rows), problems: [] as string[] };
   }, [out]);
   if (!out || !result) {
     return <div style={{ height }} className="p-4 text-sm text-muted-foreground">Reading {compose.sources.map((s) => s.file).join(", ") || "the rows"}…</div>;

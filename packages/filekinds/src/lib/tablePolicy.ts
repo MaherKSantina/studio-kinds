@@ -64,49 +64,60 @@ const arr = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
 const str = (x: unknown): string | undefined => (typeof x === "string" ? x : undefined);
 const strList = (x: unknown): string[] => (typeof x === "string" ? [x] : arr(x).map(str).filter((s): s is string => !!s));
 
-/** Lenient parse — never throws; what cannot be read is a problem, not a crash. */
-export function parseTablePolicy(text: string): TablePolicyDoc {
-  let raw: Record<string, unknown> = {};
-  const problems: string[] = [];
-  try { raw = rec(yaml.load(text)); } catch (e) { problems.push(`YAML: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`); }
-
-  // `field` is the table's word for policyDoc's `param`; both are read.
-  const clausesRaw: Record<string, unknown>[] = arr(raw.where).map((c) => {
+/** The clauses of a list as written, checked: `field` (the table's word for policyDoc's `param`; both are read)
+ *  and an op from the vocabulary. `at` names the list in a problem — "where", "rule 2 where", "stage band filter". */
+export function readClauses(raw: unknown, problems: string[], at: string): PolicyClause[] {
+  const clausesRaw: Record<string, unknown>[] = arr(raw).map((c) => {
     const o = rec(c);
     return { ...o, param: str(o.param) ?? str(o.field) };
   });
   clausesRaw.forEach((o, i) => {
-    if (!o.param) problems.push(`where ${i + 1}: no field`);
-    else if (o.op === undefined) problems.push(`where ${i + 1}: no op`);
-    else if (!OPS.has(str(o.op) as PolicyClause["op"])) problems.push(`where ${i + 1}: unknown op "${String(o.op)}"`);
+    if (!o.param) problems.push(`${at} ${i + 1}: no field`);
+    else if (o.op === undefined) problems.push(`${at} ${i + 1}: no op`);
+    else if (!OPS.has(str(o.op) as PolicyClause["op"])) problems.push(`${at} ${i + 1}: unknown op "${String(o.op)}"`);
   });
-  const where = parseClauses(clausesRaw);
+  return parseClauses(clausesRaw);
+}
+
+/** The rules over rows every host reads the same way — a table policy, a pipeline's filter, sort and views:
+ *  the clauses under `key` (`where`, or a pipeline's `filter`), `sort`, `columns`, `hide`, `limit`.
+ *  `at` prefixes each problem with where the rules sit ("stage band"). */
+export function readTableRules(raw: Record<string, unknown>, problems: string[], key = "where", at = ""): Pick<TablePolicyDoc, "where" | "sort" | "columns" | "hide" | "limit"> {
+  const p = at ? `${at} ` : "";
+  const where = readClauses(raw[key], problems, `${p}${key}`);
 
   const sort: TableSort[] = [];
   arr(raw.sort).forEach((s, i) => {
     const o = typeof s === "string" ? { field: s } : rec(s);
     const field = str(o.field) ?? str(o.param);
     const dir = str(o.dir) ?? "asc";
-    if (!field) { problems.push(`sort ${i + 1}: no field`); return; }
-    if (dir !== "asc" && dir !== "desc") { problems.push(`sort ${i + 1}: dir must be asc or desc, not "${dir}"`); return; }
+    if (!field) { problems.push(`${p}sort ${i + 1}: no field`); return; }
+    if (dir !== "asc" && dir !== "desc") { problems.push(`${p}sort ${i + 1}: dir must be asc or desc, not "${dir}"`); return; }
     sort.push({ field, dir });
   });
 
-  if (raw.rename !== undefined) problems.push("rename: header labels belong to the .jsonl that applies this policy ($labels), not to the rules");
-  if (raw.source !== undefined || raw.sources !== undefined) problems.push("source: the data is named by the .jsonl that applies this policy ($sources), not by the rules");
   const limitRaw = raw.limit;
   const limit = typeof limitRaw === "number" && limitRaw > 0 ? Math.floor(limitRaw) : undefined;
-  if (limitRaw !== undefined && limit === undefined) problems.push("limit: must be a positive number");
+  if (limitRaw !== undefined && limit === undefined) problems.push(`${p}limit: must be a positive number`);
   const columns = raw.columns === undefined ? undefined : strList(raw.columns);
+  return { where, sort, ...(columns ? { columns } : {}), hide: strList(raw.hide), ...(limit !== undefined ? { limit } : {}) };
+}
+
+/** Lenient parse — never throws; what cannot be read is a problem, not a crash. */
+export function parseTablePolicy(text: string): TablePolicyDoc {
+  let raw: Record<string, unknown> = {};
+  const problems: string[] = [];
+  try { raw = rec(yaml.load(text)); } catch (e) { problems.push(`YAML: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`); }
+
+  const rules = readTableRules(raw, problems);
+  if (raw.rename !== undefined) problems.push("rename: header labels belong to the .jsonl that applies this policy ($labels), not to the rules");
+  if (raw.source !== undefined || raw.sources !== undefined) problems.push("source: the data is named by the .jsonl that applies this policy ($sources), not by the rules");
 
   return {
     role: "table",
     title: str(raw.title) ?? "",
     ...(str(raw.description) ? { description: str(raw.description)! } : {}),
-    where, sort,
-    ...(columns ? { columns } : {}),
-    hide: strList(raw.hide),
-    ...(limit !== undefined ? { limit } : {}),
+    ...rules,
     problems,
   };
 }

@@ -1,0 +1,302 @@
+version: 2
+title: How a version-1 pipeline works
+description: One curated list in the file, the stages that transform it and the views that show the output — the rows as of any stage and the logic behind them one click apart; applied on every open, never cached, never written back.
+events:
+  - key: always
+    label: Always
+    trigger: imposed
+    domain: Always
+    detail: What holds at every moment — the shape of the file, what a stage and a view are, what a circumstance is, why it exists, and where the engine lives.
+    content:
+      key: shape
+      label: The shape of the file
+      kind: brief
+      doc:
+        title: The shape of the file
+        description: The items, the stages in order, the views; the decisions the circumstances name.
+        sections:
+          - title: Top-level keys
+            body: |
+              | key | what it is |
+              |---|---|
+              | `title` | the heading; the file's name stands in |
+              | `decisions` | a playbook's decisions — `key`, `label`, `values: [{key, label}]` — the circumstances a `when` can name |
+              | `labels` | header names by field, for every view |
+              | `items` | the list, in the file: every item a mapping with an `id` (a uuid) — its identity, what a rule names |
+              | `stages` | in order; each `key` + ONE verb — `rules`, `filter` or `sort` — and an optional `label` and `when` |
+              | `views` | the output shown: each `key`, `label`, and `filter`, `sort`, `columns`, `hide`, `limit`, `when` |
+          - title: A stage
+            body: |
+              ```yaml
+              stages:
+                - key: corrections
+                  rules:                                   # a middleware's rules: pick items, set fields
+                    - item: 9b2f6d1c-4e0a-4c7b-9a1d-2f5e8c3b7a10   # one id or a list — the short form of a clause on `id`
+                      set: {price: 850}
+                      when: [method=anecdotal]             # the circumstance
+                    - where: [{field: name, op: contains, value: cabin}]
+                      set: {type: Cabin}
+                - key: band
+                  filter: [{field: price, op: lte, value: 2000}]    # every clause must hold; the rest are dropped for good
+                - key: cheapest
+                  sort: [{field: price, dir: asc}]         # first key first
+              ```
+
+              A rule is the middleware's: `where` clauses (all must hold; none = every item), `set`
+              (a key may be a dot path) or `key`/`value`, a `note`; `item` names items by id. The
+              clause vocabulary is the suite's one: `equals`, `not_equals`, `contains`,
+              `not_contains`, `starts_with`, `ends_with`, `matches`, `gt`, `gte`, `lt`, `lte`,
+              `between`, `in`, `not_in`, `is_empty`, `not_empty`, `is_true`, `is_false`. A filter
+              drops for the stages after it and for the output; a sort orders, first key first.
+          - title: A view
+            body: |
+              ```yaml
+              views:
+                - key: by-price
+                  label: By price
+                  columns: [name, sleeps, price, "*"]     # in this order; "*" = every other column, after these
+                - key: groups
+                  label: Sleeps 6+
+                  filter: [{field: sleeps, op: gte, value: 6}]      # hides for this view only
+                  sort: [{field: price, dir: asc}]
+              ```
+
+              A view is the table policy's rules over the output — `filter`, `sort`, `columns`,
+              `hide`, `limit` together — and nothing else; the first view is what opens. No
+              views: one plain view, every column, the output's order.
+          - title: A circumstance
+            body: |
+              `when` — on a rule, a stage or a view — is a list of refs `decision=answer` into
+              `decisions`. It holds while no answer taken contradicts it: nothing taken, everything
+              applies and a later rule wins; `method=measured` taken, a rule under
+              `method=anecdotal` is off the table. The answers are taken on the page for the
+              session and never saved. A value a rule set carries its refs as the badge on the
+              cell and in the field's trail; one key set under two circumstances shows both values
+              until an answer decides — the way to say "measured 5, the host says 6" in one row.
+          - title: Why
+            body: |
+              A list curated from several places at several times: the items are what was known
+              first, and what came later — a page opened, a call made, a friend's word — is a stage
+              with a rule per thing learned, each under the circumstance it was learned in. The
+              items are never edited by a stage, so the list as of any stage is there to look at,
+              and the logic that made it is beside it. Everything is one file: paste it, check it,
+              render it with nothing else on disk.
+          - title: Where the engine lives
+            body: |
+              `packages/filekinds/src/lib/pipelineDoc.ts` — `parsePipeline`, `runPipeline`,
+              `holdsUnder`, `trail`, `rowsAt`, `pipelineSummary`; its header comment is what
+              `studio-check --spec pipeline` prints, with `tablePolicy.ts` beside it. The rules
+              are `middlewareDoc.ts`'s (`readRule`, `applyMiddleware`), the filter, sort and views
+              `tablePolicy.ts`'s (`readTableRules`, `applyTablePolicy`), the clauses
+              `policyDoc.ts`'s. The view is `components/pipeline/PipelineView.tsx`, over the data
+              grid and the row dialog; the checker is `apps/cli/src/check.ts`, the page's
+              `apps/page/src/check.ts`.
+  - key: opened
+    label: The file is opened
+    trigger: imposed
+    domain: Opening
+    detail: parsePipeline reads the YAML once and never throws; runPipeline applies every stage and every view, nothing taken; the items open first.
+    content:
+      key: draw
+      label: What is parsed, what is run, and what is drawn
+      kind: brief
+      doc:
+        title: What is parsed, what is run, and what is drawn
+        description: A lenient parse, the stages run in order, the rail and the pane.
+        sections:
+          - title: The parse
+            body: |
+              A YAML error is the first problem. Then: `decisions: must be a list`, `decision x: no
+              values`, `labels.x: must be text`; per item `item N: no id` (it is given `#N` so the
+              rest still runs) and `item N: id x is item M's too`; per stage `stage N: no key`,
+              `stage x: key twice`, `stage x: no verb — give it rules, filter or sort`, `stage x:
+              filter and sort — one verb per stage`, `stage x when: no decision "d"` or `d has no
+              answer "a"`, and the rules' own — `stage x rule N where M: no field` / `no op` /
+              `unknown op "z"`, `stage x rule N: sets nothing`, `stage x rule N: item y is no
+              item`, `stage x rule N when: …`; a filter's or sort's `stage x filter M: …`, `stage
+              x sort M: …`; per view `view N: no key`, `view x: key twice`, `view x: a stage has
+              this key`, and its rules' problems.
+          - title: The run
+            body: |
+              The stages in order, each on the rows the one before it left: a `rules` stage runs
+              the rules on the table (their `when` holds under the answers taken) as one
+              middleware, so a later rule sees an earlier rule's value — every cell set is marked
+              with the rule's circumstance and the claim joins the field's trail; a `rules` stage
+              rule matching nothing is `stage x rule N matches no item`; a `filter` stage keeps
+              the rows every clause holds for and remembers the dropped; a `sort` stage orders
+              (a key no row carries is a problem). A stage whose `when` is contradicted is
+              skipped — the rows pass through. Then every view over the output: the table policy
+              applied, `id` shown only when named in `columns`.
+          - title: What is drawn
+            body: |
+              The heading (the title, else the file's name), `N items · N stages · N out`, the
+              problem count (every problem in its tooltip), and the decisions as pills when the
+              file has any. Down the left, the rail: **Items** with their count; every stage with
+              its label and what it did — `rules · 3 set`, `filter · 12 → 9`, `sort · 9`,
+              `skipped` — greyed when skipped, an amber count where it has problems; a line; then
+              **Output** with its count and the number of views. The pane opens on the items: the
+              grid of every field but `id`, with the header labels, cells a stage sets carrying
+              their circumstance as a badge.
+  - key: stage-clicked
+    label: A stage is clicked
+    trigger: chosen
+    arity: many
+    domain: Reading
+    detail: The rows as of that stage, or its logic — Rows and Logic, a switch at the right of the pane's head.
+    content:
+      key: stage
+      label: Rows and Logic
+      kind: brief
+      doc:
+        title: Rows and Logic
+        description: Two ways to look at one stage.
+        sections:
+          - title: Rows
+            body: |
+              The grid as of this stage: the cells this stage set on amber, each with its
+              circumstance as a badge and, on hover, the stage that set it; cells earlier stages
+              set keep their badges. A key two rules set under different circumstances is
+              CONTESTED while nothing taken decides it: the cell shows the value the row carries
+              (the later rule's) with its badge, then every other value on the table, muted, with
+              its own — `5 Method = Measured · 6 Method = Anecdotal`; an answer taken leaves one.
+              A skipped stage says so above the grid and shows the rows unchanged. The stage's own
+              problems sit above the grid.
+          - title: Logic
+            body: |
+              By the verb. `rules` — a numbered list: "where item Family Room and price greater
+              than 800" (or "every item"), "set price = 850", "under Method = Anecdotal", the note,
+              and a button carrying the count — `3 items` — that opens the items this rule set,
+              as of this stage, the set fields first; "matches no item" in amber; "off the table
+              under the answers taken" greyed. `filter` — "keep where price at most 2000", "kept 9
+              of 12" and a button `3 items dropped` that opens them. `sort` — "sorted by price
+              asc, then km asc" in the header labels' words.
+  - key: answer-taken
+    label: An answer is taken
+    trigger: chosen
+    arity: many
+    domain: Reading
+    detail: A pill clicked — the pipeline runs again under the answers taken; clicking the taken pill clears it.
+    content:
+      key: answers
+      label: What changes
+      kind: md
+      doc: |
+        A rule, a stage or a view whose `when` names another answer to a taken decision goes off
+        the table: its sets are not made, its filter and sort do not run, its tab is struck
+        through. Everything under the taken answer, and everything under nothing, stays. The
+        counts on the rail, the badges, the trails and the views follow. Nothing is written: the
+        file opens with nothing taken every time.
+  - key: output-clicked
+    label: Output is clicked
+    trigger: chosen
+    arity: many
+    domain: Reading
+    detail: The views as tabs, one grid at a time.
+    content:
+      key: output
+      label: What the output shows
+      kind: md
+      doc: |
+        The views' labels as tabs, the first open; above the grid the view's label and its rules
+        in a line — "2 filters · sorted by price asc · first 100" — in the header labels' words.
+        The grid is the view's rows in its columns, badges on the cells a stage set. A view off
+        the table under the answers taken is struck through and, opened, says which answer it
+        holds under. With no views the grid is the output in every column.
+  - key: row-clicked
+    label: A row is clicked
+    trigger: chosen
+    arity: many
+    domain: Reading
+    detail: The row dialog — every field, then the item's id and the trail of every field a stage set.
+    content:
+      key: dialog
+      label: What the dialog shows
+      kind: md
+      doc: |
+        Every field of the row in full, the grid's columns first; under them the item's `id`
+        with a copy button, and for every field a stage set, its trail: `900 (item) → 850
+        (corrections · rule 1 · Method = Anecdotal)`. Arrows walk the rows as the grid shows them.
+  - key: named-as-source
+    label: Another file reads it
+    trigger: imposed
+    arity: many
+    domain: Elsewhere
+    detail: A .jsonl's $sources, a .middleware's source and --collect take the file, a stage or a view; nothing taken.
+    content:
+      key: elsewhere
+      label: Who reads a pipeline
+      kind: md
+      doc: |
+        - A `.jsonl` lists `stays.pipeline` in `$sources` for the output, `stays.pipeline#band`
+          for the rows as of that stage, `stays.pipeline#by-price` for a view's rows — and, as
+          the only source, its columns; the lead shows `(N rows, N amended)`; a key that is no
+          stage and no view is a problem.
+        - A `.middleware` names it as `source` and amends its rows in turn.
+        - `studio-check --collect stays.pipeline` or `stays.pipeline#by-price` copies the rows
+          into a `.collection` beside it, with the file's labels.
+        - Every run is with nothing taken.
+  - key: checked
+    label: studio-check runs on it
+    trigger: imposed
+    domain: Writing
+    detail: The whole file is checked wherever it is — its items are its own, so the page's check is the checker's.
+    content:
+      key: checker
+      label: What the checker does
+      kind: brief
+      doc:
+        title: What the checker does
+        description: One file in, one verdict out — the same on the command line and on the page.
+        sections:
+          - title: The check
+            body: |
+              1. Parse the YAML — a parse error is the only problem reported.
+              2. `parsePipeline` — its problems.
+              3. `runPipeline`, nothing taken — every stage's and every view's problems.
+
+              Summary: `12 items → corrections (rules · 3 set; rule 1 → 1, rule 2 → 1, rule 3 → 8)
+              → band (filter · 12 → 9) → cheapest (sort · 9) → 9 out · views: by-price 9, groups
+              2 · 1 decision`.
+          - title: Not checked
+            body: |
+              Whether a rule matches the item it was written for rather than several. Whether a
+              set field is one a view shows. What the file looks like under an answer taken.
+  - key: authored
+    label: A pipeline is written
+    trigger: chosen
+    domain: Writing
+    content:
+      key: write
+      label: Writing one
+      kind: guide
+      doc:
+        title: Write a pipeline
+        description: From the template to a list with its stages and views.
+        steps:
+          - key: template
+            label: Start from the template
+            detail: |
+              `studio-check --template pipeline > stays.pipeline`: one decision, one item, a
+              stage of each verb, one view. Replace the item with the list, one mapping each,
+              every one with a fresh uuid as its `id`.
+          - key: stage
+            label: Add a stage per thing learned
+            after: [template]
+            detail: |
+              A `rules` stage for what a place said about particular items — `item:` the id,
+              `set:` the fields as they should be, `when:` the circumstance if it has one; a
+              `filter` to drop what is out; a `sort` for the order. One verb per stage; the key
+              is its identity — keep it once written.
+          - key: view
+            label: Say how the output shows
+            after: [stage]
+            detail: |
+              A view per representation: its `columns` in order, a `filter` that hides for this
+              view only, a `sort`. `labels` at the top name the headers for every view.
+          - key: check
+            label: Check it
+            after: [view]
+            detail: |
+              `studio-check stays.pipeline` prints every stage's counts; a rule that matches no
+              item, an item a rule names that is not there, a ref to no decision — each is a
+              problem to fix.

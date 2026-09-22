@@ -35,6 +35,7 @@ export const TEMPLATE_KINDS: ReadonlyArray<{ ext: string; what: string }> = [
   { ext: "jsonl", what: "data rows — one JSON object per line, shown as a paged, searchable table with the columns found; a {\"$sources\": [...], \"$policy\": \"x.policy\"} line composes them live from other files through a table policy" },
   { ext: "middleware", what: "rows amended on their way to a view — a source, and rules that pick rows by clauses and set fields on them; a .jsonl names it among its $sources" },
   { ext: "collection", what: "a snapshot of a view's rows to decide over one at a time — images, facts, link, directions; push up / down / hide with a reason (Collect on a .jsonl view, or check --collect)" },
+  { ext: "pipeline", what: "one curated list in the file — items with ids — the stages that transform it (rules that set fields, a filter, a sort, each under a circumstance) and the views that show the output" },
   { ext: "clip", what: "the notes of one MIDI clip — pitches by name or number, beats, velocities, drum lanes as step strings; a piano roll, exported as a .mid" },
   { ext: "song", what: "clips placed on tracks — an arrangement, exported as one multi-track .mid for Ableton" },
 ];
@@ -302,6 +303,32 @@ function middlewareText(): string {
   ].join("\n");
 }
 
+/** The shape and nothing else: one item, one decision, one stage of each verb, one view — what each is lives in the spec (pipelineDoc.ts). */
+function pipelineText(): string {
+  return [
+    `decisions:`,
+    `  - key: method`,
+    `    label: Method`,
+    `    values: [{key: measured, label: Measured}, {key: anecdotal, label: Anecdotal}]`,
+    `items:`,
+    `  - {id: 8c1f2b6e-3d4a-4e5f-9a0b-1c2d3e4f5a6b, name: First item, price: 100}`,
+    `stages:`,
+    `  - key: corrections`,
+    `    rules:`,
+    `      - item: 8c1f2b6e-3d4a-4e5f-9a0b-1c2d3e4f5a6b`,
+    `        set: {price: 90}`,
+    `        when: [method=anecdotal]`,
+    `  - key: band`,
+    `    filter: [{field: price, op: lte, value: 1000}]`,
+    `  - key: cheapest`,
+    `    sort: [{field: price, dir: asc}]`,
+    `views:`,
+    `  - key: all`,
+    `    label: All`,
+    ``,
+  ].join("\n");
+}
+
 const clipText = (stem: string) => [
   `title: ${stem}`,
   `tempo: 120`,
@@ -366,6 +393,7 @@ export function fileTemplate(path: string, title?: string, content?: string): st
     case "jsonl": return jsonlText();
     case "middleware": return middlewareText();
     case "collection": return collectionText();
+    case "pipeline": return pipelineText();
     case "clip": return clipText(stem);
     case "song": return songText(stem);
     default: return body;

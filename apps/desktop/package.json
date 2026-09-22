@@ -151,6 +151,11 @@
         "role": "Editor"
       },
       {
+        "ext": "pipeline",
+        "name": "Studio pipeline",
+        "role": "Editor"
+      },
+      {
         "ext": "collection",
         "name": "Studio collection",
         "role": "Editor"

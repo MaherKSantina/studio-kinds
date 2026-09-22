@@ -38,7 +38,7 @@ not read. `studio-check` on a machine reads them.
 Status 200 for a known kind (whatever the verdict), 400 for an unknown kind or a body with no kind,
 405 for a method other than GET/POST/OPTIONS, 413 over the size.
 
-Kinds: `brief`, `playbook`, `kanban`, `calendar`, `policy`, `flow`, `jsonl`, `middleware`,
+Kinds: `brief`, `playbook`, `kanban`, `calendar`, `policy`, `flow`, `jsonl`, `middleware`, `pipeline`,
 `collection`, `clip`, `song`, `md` — the ones the page offers — and `guide`, checked when written
 inside a playbook.
 

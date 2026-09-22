@@ -3,7 +3,8 @@ import DataTableView from "../src/components/data/DataTableView";
 import PolicyView from "../src/components/policy/PolicyView";
 import MiddlewareView from "../src/components/middleware/MiddlewareView";
 import CollectionView from "../src/components/collection/CollectionView";
-import { STAYS_COLLECTION, STAYS_JSONL, STAYS_MIDDLEWARE, STAYS_POLICY, useFixtureFs } from "./fixtures";
+import PipelineView from "../src/components/pipeline/PipelineView";
+import { STAYS_COLLECTION, STAYS_JSONL, STAYS_MIDDLEWARE, STAYS_PIPELINE, STAYS_POLICY, useFixtureFs } from "./fixtures";
 
 useFixtureFs();
 
@@ -63,6 +64,16 @@ export const Middleware: StoryObj = {
 export const ComposedThroughMiddleware: StoryObj = {
   name: "Composed through the middleware — the chain read live",
   render: () => <div style={{ height: "100vh" }}><DataTableView content={STAYS_JSONL.replace("accommodation.json#properties", "corrections.middleware")} path="/Narooma/stays-corrected.jsonl" /></div>,
+};
+
+export const Pipeline: StoryObj = {
+  name: "A pipeline — one curated list, its stages and its views; the pills are session-only",
+  render: () => <div style={{ height: "100vh" }}><PipelineView content={STAYS_PIPELINE} path="/Narooma/stays.pipeline" /></div>,
+};
+
+export const ComposedFromPipeline: StoryObj = {
+  name: "Composed from a pipeline's view — the .jsonl reads its rows and columns",
+  render: () => <div style={{ height: "100vh" }}><DataTableView content={'{"$sources": ["stays.pipeline#by-price"], "$title": "Stays, out of the pipeline"}\n'} path="/Narooma/stays-out.jsonl" /></div>,
 };
 
 export const Collection: StoryObj = {

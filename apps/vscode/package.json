@@ -102,6 +102,9 @@
             "filenamePattern": "*.middleware"
           },
           {
+            "filenamePattern": "*.pipeline"
+          },
+          {
             "filenamePattern": "*.collection"
           },
           {
@@ -136,7 +139,7 @@
       "editor/title": [
         {
           "command": "studio.openPreview",
-          "when": "resourceExtname =~ /^\\.(frame|flow|playbook|plan|guide|brief|points|policy|project|list|kanban|calendar|definition|memory|schema|workup|program|tablediff|pulse|moves|jsonl|middleware|collection|clip|song)$/ && activeCustomEditorId != studio.document",
+          "when": "resourceExtname =~ /^\\.(frame|flow|playbook|plan|guide|brief|points|policy|project|list|kanban|calendar|definition|memory|schema|workup|program|tablediff|pulse|moves|jsonl|middleware|pipeline|collection|clip|song)$/ && activeCustomEditorId != studio.document",
           "group": "navigation"
         },
         {
@@ -148,7 +151,7 @@
       "explorer/context": [
         {
           "command": "studio.open",
-          "when": "resourceExtname =~ /^\\.(frame|flow|playbook|plan|guide|brief|points|policy|project|list|kanban|calendar|definition|memory|schema|workup|program|tablediff|pulse|moves|jsonl|middleware|collection|clip|song)$/",
+          "when": "resourceExtname =~ /^\\.(frame|flow|playbook|plan|guide|brief|points|policy|project|list|kanban|calendar|definition|memory|schema|workup|program|tablediff|pulse|moves|jsonl|middleware|pipeline|collection|clip|song)$/",
           "group": "navigation@10"
         }
       ]

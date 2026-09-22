@@ -50,7 +50,7 @@ describe("planProjectOps", () => {
       'create_file: "/Elsewhere/x.md" is outside the project (/Coding Mock Interview)',
       'create_file: "../x.md" climbs out of its folder',
       'create_file "login.frame": it already exists — nothing is overwritten',
-      'create_file "plan": give it an extension (.md, .frame, .flow, .brief, .list, .kanban, .policy, .playbook, .plan, .guide, .points, .project, .memory, .definition, .calendar, .schema, .workup, .program, .pulse, .moves, .tablediff, .jsonl, .middleware, .collection, .clip, .song)',
+      'create_file "plan": give it an extension (.md, .frame, .flow, .brief, .list, .kanban, .policy, .playbook, .plan, .guide, .points, .project, .memory, .definition, .calendar, .schema, .workup, .program, .pulse, .moves, .tablediff, .jsonl, .middleware, .collection, .pipeline, .clip, .song)',
       'rename "ghost.md": nothing there to rename',
       'rename "login.frame": give a plain new name, no slashes',
       'create_file "signin.frame": it already exists — nothing is overwritten',

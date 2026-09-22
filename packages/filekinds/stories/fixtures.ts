@@ -278,6 +278,62 @@ rules:
     set: {distance_from_narooma_km: 27}
 `;
 
+/** The Narooma pipeline — the same stays curated in one file: items with ids, the stages, the views. */
+export const STAYS_PIPELINE = `title: Stays
+decisions:
+  - key: method
+    label: Method
+    values: [{key: measured, label: Measured}, {key: anecdotal, label: Anecdotal}]
+labels: {price: "Total (4 nights, AUD)", km: "km from Narooma", url: Link}
+items:
+  - {id: 9b2f6d1c-4e0a-4c7b-9a1d-2f5e8c3b7a10, name: Spa Unit, location: Narooma, sleeps: 2, price: 980, km: 1, available: true, url: "https://example.test/stay/1?checkin=2026-10-01"}
+  - {id: 3e7a5c88-1b2d-4f0e-8a6c-d94b1e2f7c03, name: Family Room, location: Dalmeny, sleeps: 4, price: 900, km: 6, available: true, url: "https://example.test/stay/2?checkin=2026-10-01"}
+  - {id: 5d0c1a77-9e8f-4b21-a3c4-6f7e8d9c0b1a, name: Beach Cabin, location: Bermagui, sleeps: 4, price: 1200, km: 27, available: true, url: "https://example.test/stay/3?checkin=2026-10-01"}
+  - {id: 7a1b2c3d-4e5f-4061-8a9b-0c1d2e3f4a5b, name: The Manor, location: Tilba, sleeps: 10, price: 3400, km: 18, available: true, url: "https://example.test/stay/4?checkin=2026-10-01"}
+  - {id: 0f9e8d7c-6b5a-4493-b2a1-f0e9d8c7b6a5, name: River Shack, location: Narooma, sleeps: 3, price: 640, km: 2, available: true, url: "https://example.test/stay/5?checkin=2026-10-01"}
+  - {id: c4d5e6f7-a8b9-4c0d-9e1f-2a3b4c5d6e7f, name: Headland House, location: Mystery Bay, sleeps: 8, price: 1900, km: 12, available: true, url: "https://example.test/stay/6?checkin=2026-10-01"}
+stages:
+  - key: corrections
+    label: Seen on the pages
+    rules:
+      - item: 9b2f6d1c-4e0a-4c7b-9a1d-2f5e8c3b7a10
+        set: {available: false}
+        when: [method=measured]
+        note: Airbnb page, 15 Sep — not available for these dates
+      - item: 3e7a5c88-1b2d-4f0e-8a6c-d94b1e2f7c03
+        set: {sleeps: 6}
+        when: [method=anecdotal]
+        note: The host said the lounge sleeps two more
+      - item: 3e7a5c88-1b2d-4f0e-8a6c-d94b1e2f7c03
+        set: {sleeps: 5}
+        when: [method=measured]
+        note: The listing's floor plan, 16 Sep — four beds and a sofa bed
+      - where: [{field: location, op: equals, value: Bermagui}]
+        set: {km: 30}
+        when: [method=measured]
+  - key: band
+    label: Within the band
+    filter:
+      - {field: available, op: is_true}
+      - {field: price, op: between, value: [600, 2000]}
+  - key: cheapest
+    label: Cheapest first
+    sort: [{field: price, dir: asc}, {field: km, dir: asc}]
+views:
+  - key: by-price
+    label: By price
+    columns: [name, location, sleeps, price, km, url]
+  - key: groups
+    label: Sleeps 6+
+    filter: [{field: sleeps, op: gte, value: 6}]
+    columns: [name, sleeps, price, url]
+  - key: close
+    label: Close by
+    filter: [{field: km, op: lte, value: 10}]
+    sort: [{field: km, dir: asc}]
+    columns: [name, km, price, url]
+`;
+
 export const STAYS_COLLECTION = `source: stays.jsonl
 to: Narooma NSW
 fields: [name, location, sleeps, best_offer.price_total_aud, distance_from_narooma_km, best_offer.url]
@@ -388,6 +444,8 @@ const fs = memoryFs({
   "/Narooma/stays.policy": STAYS_POLICY,
   "/Narooma/stays.jsonl": STAYS_JSONL,
   "/Narooma/corrections.middleware": STAYS_MIDDLEWARE,
+  "/Narooma/stays.pipeline": STAYS_PIPELINE,
+  "/Narooma/stays-out.jsonl": '{"$sources": ["stays.pipeline#by-price"], "$title": "Stays, out of the pipeline"}\n',
   "/Narooma/stays-corrected.jsonl": STAYS_JSONL.replace("accommodation.json#properties", "corrections.middleware"),
   "/Books": null,
   "/Books/fixture.playbook": PLAYBOOK,
