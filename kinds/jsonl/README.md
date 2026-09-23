@@ -24,7 +24,7 @@ What holds at every moment — the shape of a line, what a directive is, and whe
 
 ### The shape of the file
 
-*Not YAML — JSON Lines, with directive lines for what is known about the rows.*
+Not YAML — JSON Lines, with directive lines for what is known about the rows.
 
 #### A row
 
@@ -74,7 +74,7 @@ Every line is read and nothing throws; the grid is drawn from the rows the file 
 
 ### What is read, and what is drawn
 
-*The lines, then the grid.*
+The lines, then the grid.
 
 #### The parse
 
@@ -170,7 +170,7 @@ One file in, one verdict out — the engine's own problems are the check.
 
 ### What the checker does
 
-*Not YAML, so the engine's own problems are the check.*
+Not YAML, so the engine's own problems are the check.
 
 #### Rows and directives
 
@@ -195,7 +195,7 @@ row carries.
 
 ### Write a data file
 
-*Rows from a producer, and the words that name them.*
+Rows from a producer, and the words that name them.
 
 #### Start from the template
 

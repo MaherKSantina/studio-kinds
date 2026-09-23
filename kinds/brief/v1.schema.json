@@ -15,7 +15,7 @@
     },
     "description": {
       "type": "string",
-      "description": "One line under the title."
+      "description": "A one-line summary of the brief, read and kept on a dump. The viewer does not draw it: only a section's description is drawn."
     },
     "sections": {
       "type": "array",
@@ -36,7 +36,7 @@
         },
         "description": {
           "type": "string",
-          "description": "One line under the section's title."
+          "description": "One line about the section, drawn under its name in the content pane."
         },
         "body": {
           "type": "string",

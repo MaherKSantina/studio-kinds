@@ -32,7 +32,7 @@ What holds at every moment — the shape of the file, what an item is, how links
 
 ### The shape of the file
 
-*Items, links, and a mode.*
+Items, links, and a mode.
 
 #### Top-level keys
 
@@ -160,7 +160,7 @@ The project as production — hierarchy by containment, arrows for what produced
 
 ### What the dialogs show
 
-*Three windows onto the same graph.*
+Three windows onto the same graph.
 
 #### The DAG
 
@@ -256,7 +256,7 @@ One file in, one verdict out — the parser never refuses.
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -275,7 +275,7 @@ exists. An item with none of `file`, `node`, `project`, `items`.
 
 ### Write a project
 
-*From the template to a folder with a front door.*
+From the template to a folder with a front door.
 
 #### Start from the template
 

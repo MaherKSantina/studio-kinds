@@ -24,7 +24,7 @@ What holds at every moment — the shape of the file, why no date is authored, a
 
 ### The shape of the file
 
-*Tasks and a due date are authored; every date shown is a fact about the edges.*
+Tasks and a due date are authored; every date shown is a fact about the edges.
 
 #### Top-level keys
 
@@ -78,7 +78,7 @@ The file is parsed, the schedule computed backward from the due date, and the mo
 
 ### What is derived, and what is drawn
 
-*Three steps between the file and the grid.*
+Three steps between the file and the grid.
 
 #### The parse
 
@@ -149,7 +149,7 @@ One file in, one verdict out — the parser never refuses, so the checker names 
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -174,7 +174,7 @@ checker sees the file alone, which is all there is.
 
 ### Write a calendar
 
-*A due date, the work, and what waits for what.*
+A due date, the work, and what waits for what.
 
 #### Start from the template
 

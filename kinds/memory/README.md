@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, what a unit is, the struct
 
 ### The shape of the file
 
-*A lens, not a container — it owns no nodes.*
+A lens, not a container — it owns no nodes.
 
 #### Top-level keys
 
@@ -224,7 +224,7 @@ One file in, one verdict out — the parser never refuses.
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -248,7 +248,7 @@ units.
 
 ### Write a memory
 
-*An empty file already works; decisions come when the folders stop being the right split.*
+An empty file already works; decisions come when the folders stop being the right split.
 
 #### Start from the template
 

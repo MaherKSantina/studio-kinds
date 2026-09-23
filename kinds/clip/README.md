@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, how time and pitch are wri
 
 ### The shape of the file
 
-*Nothing in a clip is informational text; every key is what the notes are.*
+Nothing in a clip is informational text; every key is what the notes are.
 
 #### Top-level keys
 
@@ -101,7 +101,7 @@ parseClip reads the YAML once and never throws; what cannot be read is a problem
 
 ### What the parser keeps, what it names, and what is drawn
 
-*A lenient parse with a problem list, then a piano roll.*
+A lenient parse with a problem list, then a piano roll.
 
 #### The parse
 
@@ -209,7 +209,7 @@ One file in, one verdict out — the parser's own problem list is the verdict.
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -231,7 +231,7 @@ than a bar (it simply stops). A `title` that is not a string (read as none).
 
 ### Write a clip
 
-*From the template to a roll and a .mid — one file, nothing beside it until the export.*
+From the template to a roll and a .mid — one file, nothing beside it until the export.
 
 #### Start from the template
 

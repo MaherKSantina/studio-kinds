@@ -35,7 +35,7 @@ What holds at every moment — how the role is picked, the shape of each, why st
 
 ### The shapes of the file
 
-*Six documents share the extension; the keys decide which one it is.*
+Six documents share the extension; the keys decide which one it is.
 
 #### How the role is picked
 
@@ -294,7 +294,7 @@ One file in, one verdict out — only the role's keys are read.
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -315,7 +315,7 @@ declare (the full union is used). A stage's refs, embeds and pins.
 
 ### Write a definition
 
-*The template is a staged journey; the process roles are written by hand.*
+The template is a staged journey; the process roles are written by hand.
 
 #### Start from the template
 

@@ -24,7 +24,7 @@ What holds at every moment — the shape of the file, what a point is, the roles
 
 ### The shape of the file
 
-*Stages, connections and points; every key a claim with citations.*
+Stages, connections and points; every key a claim with citations.
 
 #### Top-level keys
 
@@ -104,7 +104,7 @@ parsePoints reads the YAML once and never throws; the trail is laid out, one pan
 
 ### What the parser keeps, and what is drawn
 
-*The stages as positions on a trail; the points as a filtered list.*
+The stages as positions on a trail; the points as a filtered list.
 
 #### The parse
 
@@ -227,7 +227,7 @@ One file in, one verdict out — the parser never refuses.
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -247,7 +247,7 @@ unknown stage or role. A point dropped for having no id.
 
 ### Write a points store
 
-*Identity first; shape and citations as the literature says what things are.*
+Identity first; shape and citations as the literature says what things are.
 
 #### Start from the template
 

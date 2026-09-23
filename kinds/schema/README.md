@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, why ids are the contract, 
 
 ### The shape of the file
 
-*A type, a title, and entries whose ids never change.*
+A type, a title, and entries whose ids never change.
 
 #### Top-level keys
 
@@ -141,7 +141,7 @@ Every stream's arrivals fold to a current picture, and the stream-status table j
 
 ### The fold, and the golden table
 
-*One entity assembled from streams, each judged by its driver.*
+One entity assembled from streams, each judged by its driver.
 
 #### The fold
 
@@ -209,7 +209,7 @@ One file in, one verdict out — the parser never refuses.
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -228,7 +228,7 @@ generically). Whether the content half exists — only the node view says so.
 
 ### Write a schema
 
-*From the template to a node folder that joins.*
+From the template to a node folder that joins.
 
 #### Make the node folder
 

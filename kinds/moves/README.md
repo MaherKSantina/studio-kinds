@@ -24,7 +24,7 @@ What holds at every moment — the two halves of the file, what an event is, and
 
 ### The shape of the file
 
-*A pointer at the top, machine state under a banner at the bottom.*
+A pointer at the top, machine state under a banner at the bottom.
 
 #### The head
 
@@ -85,7 +85,7 @@ The memory is read over its store, reality is snapshotted, the LIVE file's snaps
 
 ### The harvest, step by step
 
-*Looking is what writes the log.*
+Looking is what writes the log.
 
 #### The parse
 
@@ -179,7 +179,7 @@ One file in, one verdict out — the parser never refuses.
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -198,7 +198,7 @@ as none, and the next open lays a new baseline).
 
 ### Start a moves log
 
-*Three lines, then look.*
+Three lines, then look.
 
 #### Start from the template
 

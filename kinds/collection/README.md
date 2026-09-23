@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, why the decisions are a lo
 
 ### The shape of the file
 
-*Copied rows, and a log of what was decided about them.*
+Copied rows, and a log of what was decided about them.
 
 #### Top-level keys
 
@@ -103,7 +103,7 @@ parseCollection reads the YAML once and never throws; the order is derived from 
 
 ### What the parser keeps, and what is drawn
 
-*A lenient parse with a problem list, then the flow or the gallery.*
+A lenient parse with a problem list, then the flow or the gallery.
 
 #### The parse
 
@@ -223,7 +223,7 @@ One file in, one verdict out — the parser's problem list is the verdict.
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -248,7 +248,7 @@ ignored, and the first picture stands in).
 
 ### Work a collection
 
-*From a table to a log of reasons — then the rules that reproduce the order.*
+From a table to a log of reasons — then the rules that reproduce the order.
 
 #### Get the view right first
 

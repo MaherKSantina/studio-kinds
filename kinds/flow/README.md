@@ -31,7 +31,7 @@ What holds at every moment — the two documents, the model's shape, the when gr
 
 ### The shape of the file
 
-*The model, a line that is exactly `---`, then the views the preview writes back.*
+The model, a line that is exactly `---`, then the views the preview writes back.
 
 #### Two documents
 
@@ -181,7 +181,7 @@ Map, Missing, Frames and Changes — four other places to stand; the open tab is
 
 ### What each tab shows
 
-*Orientation, gaps, frames and the diff.*
+Orientation, gaps, frames and the diff.
 
 #### Map
 
@@ -275,7 +275,7 @@ One file in, one verdict out — the model's parse error, or the validation cata
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -316,7 +316,7 @@ its YAML parsing.
 
 ### Write a flow
 
-*From the template to a walk that validates what is about to be built.*
+From the template to a walk that validates what is about to be built.
 
 #### Start from the template
 

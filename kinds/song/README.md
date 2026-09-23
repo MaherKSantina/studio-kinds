@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, how bars and placements ar
 
 ### The shape of the file
 
-*The clips the song is made of, and the tracks that place them.*
+The clips the song is made of, and the tracks that place them.
 
 #### Top-level keys
 
@@ -91,7 +91,7 @@ The YAML is read once and never throws; the clips are already here, so the arran
 
 ### What is parsed, what is read, and what is drawn
 
-*A lenient parse, then the arrangement.*
+A lenient parse, then the arrangement.
 
 #### The parse
 
@@ -210,7 +210,7 @@ One file in, one verdict out — the clips are in it.
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -239,7 +239,7 @@ written clip's signature agrees with the song's.
 
 ### Write a song
 
-*From the template to an arrangement — the clips first, then the placements.*
+From the template to an arrangement — the clips first, then the placements.
 
 #### Start from the template
 

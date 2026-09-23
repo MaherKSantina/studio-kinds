@@ -18,6 +18,7 @@ python/                the checker — pip install studio-kinds — one module p
 conformance/           the corpus: a document and its expected verdict per rule, what proves the checker
 examples/              a brief, a playbook, a kanban with its calendar, a policy — every one passes the checker
 skills/studio-files    the studio-files skill for Claude Code — generated from claude/claude.playbook
+skills/studio-file-artifact  renders a .brief, .playbook or .pipeline as a shareable Claude artifact
 claude/                Claude's master playbook for this repository (claude.playbook) and its memory (memory.brief, never committed)
 packages/, apps/       the Studio's front end — parked: the crosscut kit, the file-kind layer, the web Studio, the desktop app, the VS Code extension
 ```
@@ -78,6 +79,13 @@ schema can still fail `studio-check`, never the reverse.
 Claude Code with this repository on disk needs none of that: the `studio-files` skill (and every
 `CLAUDE.md` the Studio's "Prepare for Claude Code" button writes) walks it through `--book`,
 `--schema`, `--fields`, `--spec`, `--template` and the check.
+
+To show a document to someone who has no Studio, the `studio-file-artifact` skill renders a
+`.brief`, `.playbook` or `.pipeline` as an interactive Claude artifact: private until you share
+its link, and built the way the kind's README says the kind behaves. It reads that README from
+this repository each time, so it follows the books without being reinstalled. Copy
+`skills/studio-file-artifact` into `~/.claude/skills/` (`%USERPROFILE%\.claude\skills\` on
+Windows); it needs `node` and `curl`.
 
 ## What proves the checker
 

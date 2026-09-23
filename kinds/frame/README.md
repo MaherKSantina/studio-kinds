@@ -31,7 +31,7 @@ What holds at every moment — the legend, the node tree, the sizing rules, and 
 
 ### The shape of the file
 
-*What the legend on top of every saved frame says, in a table.*
+What the legend on top of every saved frame says, in a table.
 
 #### The legend
 
@@ -169,7 +169,7 @@ A state's panel names a frame beside the flow, or one kept inside it.
 
 ### The frame in a flow
 
-*Beside the flow, or under its `frames:` map.*
+Beside the flow, or under its `frames:` map.
 
 #### A panel
 
@@ -217,7 +217,7 @@ One file in, one verdict out — the structure rules are the check.
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -241,7 +241,7 @@ exists. That props make sense for the kind. Whether a view hides everything.
 
 ### Write a frame
 
-*From an empty screen to views and a handover.*
+From an empty screen to views and a handover.
 
 #### Start from the template
 

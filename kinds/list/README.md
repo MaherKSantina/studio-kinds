@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, what a row is, and where t
 
 ### The shape of the file
 
-*A title and rows; optionally other lists to collate.*
+A title and rows; optionally other lists to collate.
 
 #### Top-level keys
 
@@ -175,7 +175,7 @@ A list is where streams land documents and where other kinds read rows from.
 
 ### Who writes it, who reads it
 
-*The list is authored by hand or by producers; several kinds read it.*
+The list is authored by hand or by producers; several kinds read it.
 
 #### Producers
 
@@ -199,7 +199,7 @@ One file in, one verdict out — the parser never refuses.
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -223,7 +223,7 @@ a field any row carries. A row dropped for having neither file nor label.
 
 ### Write a list
 
-*From the template to rows that open — by hand, or as the target of a stream.*
+From the template to rows that open — by hand, or as the target of a stream.
 
 #### Start from the template
 

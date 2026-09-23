@@ -19,7 +19,7 @@ events:
             body: |
               A `.md` is text. There is no version line, no key the Studio reads, no engine that
               turns it into a document. The template is one heading: `# <stem>` and a blank line.
-              Anything else under `C:\Github` that fits no other kind is a `.md`.
+              Anything else in a document store that fits no other kind is a `.md`.
           - title: The dialect
             body: |
               GitHub-flavoured markdown: tables, task lists, strikethrough, autolinks, fenced code.
@@ -48,7 +48,7 @@ events:
 
         In the Studio, the desktop app and VS Code's "Open with Studio" there is one surface per
         document — the rendered pane inside `DocumentPreview`, with the file's name in the strip
-        and a "Notes" pill when an annotations sidecar sits beside it. Nothing is parsed, so
+        and a "Notes" pill when an annotations sidecar, `<file>.annotations`, sits beside it. Nothing is parsed, so
         nothing can fail to open.
   - key: link-clicked
     label: A link or an image is followed

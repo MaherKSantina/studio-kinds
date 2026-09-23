@@ -24,7 +24,7 @@ What holds at every moment — the file is a pointer and a window; where the two
 
 ### The shape of the file
 
-*Four keys, and two honest sources it reads on every open.*
+Four keys, and two honest sources it reads on every open.
 
 #### Top-level keys
 
@@ -62,7 +62,7 @@ The memory is read over its store, every unit is placed on its answer path and i
 
 ### What is computed, and what is drawn
 
-*The rows, the columns, the cells, then the page.*
+The rows, the columns, the cells, then the page.
 
 #### The parse and the read
 
@@ -138,7 +138,7 @@ One file in, one verdict out — the parser never refuses.
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -156,7 +156,7 @@ is clamped or defaulted, quietly).
 
 ### Write a pulse
 
-*Three lines beside a memory.*
+Three lines beside a memory.
 
 #### Start from the template
 

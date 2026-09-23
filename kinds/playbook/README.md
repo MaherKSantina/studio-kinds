@@ -24,7 +24,7 @@ What holds at every moment — the shape of the file, how an answer picks a docu
 
 ### The shape of the file
 
-*Two lists — decisions and events — and one document per event. The whole book is this one file.*
+Two lists — decisions and events — and one document per event. The whole book is this one file.
 
 #### Top-level keys
 
@@ -33,7 +33,7 @@ What holds at every moment — the shape of the file, how an answer picks a docu
 | key | what it is |
 |---|---|
 | `title` | the heading |
-| `description` | one line under the title |
+| `description` | **not drawn** — a one-line summary of the book, read and kept on a dump. The walk uses the title; it never draws this |
 | `decisions` | the state space: questions, each with its answers |
 | `events` | what can happen, when it is on the table, what to do before its document shows, and the one document each shows when taken |
 
@@ -228,7 +228,7 @@ The event-detail table picks the body; the document renders by its kind.
 
 ### What the pane shows
 
-*One body per event, decided by the event-detail table, then rendered without a read.*
+One body per event, decided by the event-detail table, then rendered without a read.
 
 #### Which body
 
@@ -266,7 +266,7 @@ One file in, one verdict out — and a verdict per document in it.
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -299,7 +299,7 @@ appears.
 
 ### Write a playbook
 
-*From the template to a file the checker passes — one file, start to finish.*
+From the template to a file the checker passes — one file, start to finish.
 
 #### Start from the template
 
