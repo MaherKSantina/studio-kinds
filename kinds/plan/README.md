@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, why rules are a list, what
 
 ### The shape of the file
 
-*Where the plan starts, how far it reaches, and one instruction per rule.*
+Where the plan starts, how far it reaches, and one instruction per rule.
 
 #### Top-level keys
 
@@ -94,7 +94,7 @@ parsePlan reads the YAML once and never throws; the books and their guides are r
 
 ### What is read, and what is drawn
 
-*The parse, the books, the guides, then the playground.*
+The parse, the books, the guides, then the playground.
 
 #### The parse
 
@@ -131,7 +131,7 @@ On open and on every edit — the frontier is ranked, the winner taken, the assi
 
 ### How the right-hand side is made
 
-*Simulated forward, never sorted once.*
+Simulated forward, never sorted once.
 
 #### The frontier
 
@@ -221,7 +221,7 @@ One file in, one verdict out — the parser never refuses and the books are not 
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -241,7 +241,7 @@ stranger red and reports "no such event"). A rule dropped for carrying nothing. 
 
 ### Write a plan
 
-*From the template to a policy tuned against the plan it produces.*
+From the template to a policy tuned against the plan it produces.
 
 #### Start from the template
 

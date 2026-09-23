@@ -128,7 +128,7 @@ events:
         **The surface.** In the Studio, the desktop app and VS Code there is one surface per
         document — the kind's preview, inside `DocumentPreview` — so this viewer is what opens,
         with no authoring editor beside it. The strip above it carries the file's name and a
-        "Notes" pill when an annotations sidecar sits beside the file.
+        "Notes" pill when an annotations sidecar, `<file>.annotations`, sits beside the file.
 
         **What is drawn.** A header with the title ("Untitled brief" when there is none) and
         nothing else — the brief's own `description` is not drawn. The tree, with every root
@@ -142,9 +142,9 @@ events:
         a chip at the row's end: green `add`, amber `edit`, red `remove`.
 
         **The width.** A `ResizeObserver` on the component decides the layout the moment it
-        mounts: 480px or more splits the tree and the content; under it the tree takes the full
-        width. It is the component's width, so half a desktop trail still splits and a phone
-        never does.
+        mounts, and again whenever its width changes: 480px or more splits the tree and the
+        content; under it the tree takes the full width. It is the component's width, so half
+        a desktop trail still splits and a phone never does.
   - key: section-clicked
     label: A section is clicked
     trigger: chosen
@@ -171,7 +171,7 @@ events:
 
           - **Inside a pane trail** — a points store, a workup, a project lens, any host that
             passes `onDrill`: a pane keyed `section:<path>` and titled with the section's name
-            opens in the trail, holding the description and the prose.
+            opens in the trail, holding the description, the prose and any document written in.
           - **Standalone**: the content replaces the tree in place, behind a "‹ back" chip that
             returns to it.
 

@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, why rows and dates are nev
 
 ### The shape of the file
 
-*Columns and tasks are authored; rows and dates are facts about the edges.*
+Columns and tasks are authored; rows and dates are facts about the edges.
 
 #### Top-level keys
 
@@ -150,7 +150,7 @@ Every dialog goes through kanbanEdit; a refusal is a strip on the board, never a
 
 ### What each control does
 
-*The dialogs, the mutators behind them, and what reaches the file.*
+The dialogs, the mutators behind them, and what reaches the file.
 
 #### Columns
 
@@ -248,7 +248,7 @@ One file in, one verdict out — the parser never refuses, so the checker names 
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -277,7 +277,7 @@ file, so the verdict is the same wherever the file is read.
 
 ### Write a kanban
 
-*From the template to a board with edges, dates and whatever a card has to open.*
+From the template to a board with edges, dates and whatever a card has to open.
 
 #### Start from the template
 

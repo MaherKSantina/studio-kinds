@@ -24,7 +24,7 @@ What holds at every moment — the shape of the file, what a stage and a view ar
 
 ### The shape of the file
 
-*The items, the stages in order, the views; the decisions the circumstances name.*
+The items, the stages in order, the views; the decisions the circumstances name.
 
 #### Top-level keys
 
@@ -114,7 +114,7 @@ parsePipeline reads the YAML once and never throws; runPipeline applies every st
 
 ### What is parsed, what is run, and what is drawn
 
-*A lenient parse, the stages run in order, the rail and the pane.*
+A lenient parse, the stages run in order, the rail and the pane.
 
 #### The parse
 
@@ -160,7 +160,7 @@ The rows as of that stage, or its logic — Rows and Logic, a switch at the righ
 
 ### Rows and Logic
 
-*Two ways to look at one stage.*
+Two ways to look at one stage.
 
 #### Rows
 
@@ -238,7 +238,7 @@ The whole file is checked wherever it is — its items are its own, so the page'
 
 ### What the checker does
 
-*One file in, one verdict out — the same on the command line and on the page.*
+One file in, one verdict out — the same on the command line and on the page.
 
 #### The check
 
@@ -261,7 +261,7 @@ set field is one a view shows. What the file looks like under an answer taken.
 
 ### Write a pipeline
 
-*From the template to a list with its stages and views.*
+From the template to a list with its stages and views.
 
 #### Start from the template
 

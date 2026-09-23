@@ -24,7 +24,7 @@ What holds at every moment — the shape of the file, what the verdicts mean, an
 
 ### The shape of the file
 
-*Two handles, a key, and what to compare; the diff lives nowhere.*
+Two handles, a key, and what to compare; the diff lives nowhere.
 
 #### Top-level keys
 
@@ -72,7 +72,7 @@ Both tables are read from the store and diffed; the grid and the counts are draw
 
 ### What is read, what is computed, and what is drawn
 
-*The parse, the read, the diff, the grid.*
+The parse, the read, the diff, the grid.
 
 #### The parse and the read
 
@@ -147,7 +147,7 @@ One file in, one verdict out — the parser never refuses and the tables are not
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -166,7 +166,7 @@ key columns exist in both tables (the diff says so). Whether `compare`, `ignore`
 
 ### Write a table diff
 
-*Two handles and a key, then narrow the question.*
+Two handles and a key, then narrow the question.
 
 #### Start from the template
 

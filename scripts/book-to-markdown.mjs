@@ -54,7 +54,9 @@ function flatten(kind, doc, depth) {
     out.push(text(doc));
   } else if (kind === "brief") {
     if (doc.title) out.push(heading(depth, doc.title));
-    if (doc.description) out.push(`*${text(doc.description)}*`);
+    // Plain, not styled as a subtitle: a viewer never draws a brief's own description,
+    // and this page must not look as though one does. A section's, drawn, stays italic.
+    if (doc.description) out.push(text(doc.description));
     const walk = (sections, d) => {
       for (const s of sections ?? []) {
         if (s.title) out.push(heading(d, s.title));
@@ -67,7 +69,7 @@ function flatten(kind, doc, depth) {
     walk(doc.sections, depth + 1);
   } else if (kind === "guide") {
     if (doc.title) out.push(heading(depth, doc.title));
-    if (doc.description) out.push(`*${text(doc.description)}*`);
+    if (doc.description) out.push(text(doc.description));
     for (const step of doc.steps ?? []) {
       out.push(heading(depth + 1, step.label ?? step.key));
       if (step.detail) out.push(text(step.detail));
@@ -156,9 +158,13 @@ function renderIndex(rows) {
     "Read the kind's `README.md`. Between them, the books cover what a parser keeps from a",
     "file, what each interaction shows and changes, how a kind behaves when it is embedded",
     "in another, and what the checker judges — the domain rules and the view model both.",
-    "Take the shape from the schema beside it: it is authoritative for which keys exist, their",
-    "types and which are required. For what a key means, and whether a viewer draws it, the",
-    "book is — where a schema's description of a key reads differently, trust the book.",
+    "Take the shape from the schema beside it. The schema is the AUTHORING shape — what a",
+    "document should contain — and a reader is lenient beyond it: a missing title, an older",
+    "spelling, an empty file all still open, and the book says how each reads. So check what",
+    "you write against the schema, but never refuse to read a document for failing it. The",
+    "cases it deliberately does not advertise are listed, each with its reason, in",
+    "`python/tests/test_schemas.py`. For what a key means and whether a viewer draws it, the",
+    "book is right — where a schema's description reads differently, trust the book.",
     "",
     "The book is the source of truth and the `README.md` is generated from it. Change the",
     "book, then run `node scripts/book-to-markdown.mjs` from the repository root.",

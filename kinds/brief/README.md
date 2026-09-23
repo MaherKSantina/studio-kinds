@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, what a section is, and whe
 
 ### The shape of the file
 
-*Three top-level keys and one recursive node shape. A brief names no other file.*
+Three top-level keys and one recursive node shape. A brief names no other file.
 
 #### Top-level keys
 
@@ -137,7 +137,7 @@ A value that is not a string reads as empty.
 **The surface.** In the Studio, the desktop app and VS Code there is one surface per
 document — the kind's preview, inside `DocumentPreview` — so this viewer is what opens,
 with no authoring editor beside it. The strip above it carries the file's name and a
-"Notes" pill when an annotations sidecar sits beside the file.
+"Notes" pill when an annotations sidecar, `<file>.annotations`, sits beside the file.
 
 **What is drawn.** A header with the title ("Untitled brief" when there is none) and
 nothing else — the brief's own `description` is not drawn. The tree, with every root
@@ -151,9 +151,9 @@ own kind's viewer. A brief with no sections shows "No sections yet" in the tree,
 a chip at the row's end: green `add`, amber `edit`, red `remove`.
 
 **The width.** A `ResizeObserver` on the component decides the layout the moment it
-mounts: 480px or more splits the tree and the content; under it the tree takes the full
-width. It is the component's width, so half a desktop trail still splits and a phone
-never does.
+mounts, and again whenever its width changes: 480px or more splits the tree and the
+content; under it the tree takes the full width. It is the component's width, so half
+a desktop trail still splits and a phone never does.
 
 ## A section is clicked
 
@@ -179,7 +179,7 @@ a document written in, opens it as the next step:
 
 - **Inside a pane trail** — a points store, a workup, a project lens, any host that
   passes `onDrill`: a pane keyed `section:<path>` and titled with the section's name
-  opens in the trail, holding the description and the prose.
+  opens in the trail, holding the description, the prose and any document written in.
 - **Standalone**: the content replaces the tree in place, behind a "‹ back" chip that
   returns to it.
 
@@ -211,7 +211,7 @@ The brief is the prose kind other documents point at; each renders it through th
 
 ### Where a brief turns up
 
-*Five places a brief is opened by something other than its own file.*
+Five places a brief is opened by something other than its own file.
 
 #### A section of another brief
 
@@ -251,7 +251,7 @@ One file in, one verdict out — the YAML, what a section's content cannot be, a
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -282,7 +282,7 @@ the prose.
 
 ### Write a brief
 
-*From the template to a tree the viewer draws — one file, nothing beside it.*
+From the template to a tree the viewer draws — one file, nothing beside it.
 
 #### Start from the template
 

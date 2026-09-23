@@ -27,6 +27,8 @@ REPO = os.path.join(HERE, "..", "..")
 LENIENT = {
     "brief/features-spelling.brief": "the engine reads `features`/`name`/`prose` as `sections`/`title`/`body`",
     "brief/not-mapping.brief": "a non-mapping renders as an empty brief",
+    "brief/untitled.brief": "no title renders as \"Untitled brief\" and an untitled section as \"Untitled\"; the schema asks for both",
+    "brief/no-sections.brief": "no `sections` renders as an empty brief; the schema asks for the key",
     "playbook/empty.playbook": "an empty file opens as an empty book",
     "jsonl/array.jsonl": "one JSON array of objects is accepted as the rows",
     "kanban/date-rollover.kanban": "a datetime, or a date that rolls over, is cut to its day; the schema says `YYYY-MM-DD`",

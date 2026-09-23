@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, why the order is a graph, 
 
 ### The shape of the file
 
-*Decisions as a playbook has them, and steps that carry conditions and edges.*
+Decisions as a playbook has them, and steps that carry conditions and edges.
 
 #### Top-level keys
 
@@ -160,7 +160,7 @@ A playbook narrows it with its own answers; a plan reads its steps as work.
 
 ### Where a guide turns up
 
-*Two hosts read a guide for what it says, not only to draw it.*
+Two hosts read a guide for what it says, not only to draw it.
 
 #### Inside a playbook
 
@@ -203,7 +203,7 @@ One file in, one verdict out — the parser never refuses, so the verdict is abo
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -229,7 +229,7 @@ is never answered). A cycle in `after` (the order degrades to document order). W
 
 ### Write a guide
 
-*From the template to a procedure that narrows — one file, no answers in it.*
+From the template to a procedure that narrows — one file, no answers in it.
 
 #### Start from the template
 

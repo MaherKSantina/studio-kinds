@@ -32,7 +32,7 @@ What holds at every moment — how the role is picked, the shape of each, the on
 
 ### The shapes of the file
 
-*Three documents share the extension; the text decides which one it is.*
+Three documents share the extension; the text decides which one it is.
 
 #### How the role is picked
 
@@ -239,7 +239,7 @@ A policy is rules; the data lives wherever the data is, and the two never meet i
 
 ### Who applies a policy
 
-*The same engines, called from other kinds.*
+The same engines, called from other kinds.
 
 #### A pipeline
 
@@ -279,7 +279,7 @@ One file in, one verdict out — the bucket machine and the chain roles each hav
 
 ### What the checker does
 
-*The order it runs in, the summary line, and what it leaves alone.*
+The order it runs in, the summary line, and what it leaves alone.
 
 #### In order
 
@@ -317,7 +317,7 @@ rule's unknown op (the clause is dropped, and the rule still tags).
 
 ### Write a policy
 
-*From the template to rules that run — the role decides the shape.*
+From the template to rules that run — the role decides the shape.
 
 #### Start from the template
 

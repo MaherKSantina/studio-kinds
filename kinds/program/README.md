@@ -31,7 +31,7 @@ What holds at every moment — the contract, why it is the only doorway, and whe
 
 ### The shape of the file
 
-*A contract and the code it bounds.*
+A contract and the code it bounds.
 
 #### Top-level keys
 
@@ -142,7 +142,7 @@ One file in, one verdict out — the parser never refuses.
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -161,7 +161,7 @@ relative handle.
 
 ### Write a program
 
-*The contract first, then the code that honours it.*
+The contract first, then the code that honours it.
 
 #### Start from the template
 

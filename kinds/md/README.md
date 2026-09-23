@@ -24,13 +24,13 @@ What holds at every moment — there is no shape, and where the renderer lives.
 
 ### The shape of the file
 
-*Markdown, and nothing the Studio parses.*
+Markdown, and nothing the Studio parses.
 
 #### No fields
 
 A `.md` is text. There is no version line, no key the Studio reads, no engine that
 turns it into a document. The template is one heading: `# <stem>` and a blank line.
-Anything else under `C:\Github` that fits no other kind is a `.md`.
+Anything else in a document store that fits no other kind is a `.md`.
 
 #### The dialect
 
@@ -58,7 +58,7 @@ and anchor URLs are left alone.
 
 In the Studio, the desktop app and VS Code's "Open with Studio" there is one surface per
 document — the rendered pane inside `DocumentPreview`, with the file's name in the strip
-and a "Notes" pill when an annotations sidecar sits beside it. Nothing is parsed, so
+and a "Notes" pill when an annotations sidecar, `<file>.annotations`, sits beside it. Nothing is parsed, so
 nothing can fail to open.
 
 ## A link or an image is followed
@@ -92,7 +92,7 @@ Every markdown field in every other kind goes through the same pane.
 
 ### Where the same pane draws
 
-*The pane is one component; the kinds hand it their prose.*
+The pane is one component; the kinds hand it their prose.
 
 #### Fields that are markdown
 
@@ -124,7 +124,7 @@ with `kind: md` content is checked only for the document being a string.
 
 ### Write a markdown note
 
-*The one kind with nothing to get right.*
+The one kind with nothing to get right.
 
 #### Start from the template
 

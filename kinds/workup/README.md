@@ -31,7 +31,7 @@ What holds at every moment — the shape of the file, the two roles, where compa
 
 ### The shape of the file
 
-*One source, ordered steps, one output each.*
+One source, ordered steps, one output each.
 
 #### Top-level keys
 
@@ -215,7 +215,7 @@ One file in, one verdict out — the parser never refuses.
 
 ### What the checker does
 
-*The order it runs in, and what it leaves alone.*
+The order it runs in, and what it leaves alone.
 
 #### In order
 
@@ -234,7 +234,7 @@ key (status stepping edits the first). A `status` outside the four (it reads
 
 ### Write a workup
 
-*The regimen once, then an instance beside each document.*
+The regimen once, then an instance beside each document.
 
 #### Start from the template
 
