@@ -13,7 +13,7 @@ a path. So a document can be pasted, checked and rendered anywhere, two document
 apart, and a check reads the text and nothing beside it.
 
 ```
-kinds/<ext>/           every kind: v<N>.schema.json, v<N>.playbook (the book), v<N>.fields.yaml (the field table)
+kinds/<ext>/           every kind: v<N>.schema.json (the shape), v<N>.playbook (the book), v<N>.fields.yaml (the field table), README.md (the book as markdown)
 python/                the checker — pip install studio-kinds — one module per kind, the schemas/books/templates as data
 conformance/           the corpus: a document and its expected verdict per rule, what proves the checker
 examples/              a brief, a playbook, a kanban with its calendar, a policy — every one passes the checker
@@ -21,6 +21,11 @@ skills/studio-files    the studio-files skill for Claude Code — generated from
 claude/                Claude's master playbook for this repository (claude.playbook) and its memory (memory.brief, never committed)
 packages/, apps/       the Studio's front end — parked: the crosscut kit, the file-kind layer, the web Studio, the desktop app, the VS Code extension
 ```
+
+**Implementing a kind?** Start at [`kinds/README.md`](kinds/README.md). Each kind's `README.md` is
+its book rendered as plain markdown — what a parser keeps from a file, what every interaction shows
+and changes, how the kind behaves when embedded in another, and what the checker judges — so it can
+be read without first implementing the `playbook` kind the books are written in.
 
 ## The checker
 
@@ -53,6 +58,7 @@ Nothing leaves the machine: the checker has no network, no telemetry, no server.
 |---|---|---|
 | the **schema** — JSON Schema draft 2020-12: every field, its type, what is required, a description on each; `x-studio-*` keywords name the references the schema cannot express | `kinds/<ext>/v<N>.schema.json` | `studio-check --schema <ext> [N]` prints the path |
 | the **book** — how the kind works, as a version-2 playbook | `kinds/<ext>/v<N>.playbook` | `studio-check --book <ext> [N]`; `--books` lists all |
+| the **book as markdown** — the same book, rendered flat so it reads without the `playbook` kind; generated, never edited | `kinds/<ext>/README.md` | `pnpm kinds:readme` writes them; `kinds:readme:check` fails when stale |
 | the **field table** — the schema as a table | `kinds/<ext>/v<N>.fields.yaml` | `studio-check --fields <ext> [N]` |
 | the **spec** and the **template** — the engine's account of the format; a fresh document | inside the package | `studio-check --spec <ext>`; `--template <ext> > new.<ext>` |
 

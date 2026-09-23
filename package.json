@@ -15,7 +15,9 @@
     "skill:export": "python scripts/export_skill.py",
     "desktop:dist": "pnpm --filter studio-frontend build:desktop && pnpm --filter studio-desktop dist",
     "release:build": "pnpm vscode:vsix && pnpm desktop:dist",
-    "kinds:check": "python scripts/kind_books.py --check"
+    "kinds:check": "python scripts/kind_books.py --check",
+    "kinds:readme": "node scripts/book-to-markdown.mjs",
+    "kinds:readme:check": "node scripts/book-to-markdown.mjs --check"
   },
   "engines": {
     "node": ">=20"
