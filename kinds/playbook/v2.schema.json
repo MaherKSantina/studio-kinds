@@ -20,7 +20,7 @@
     },
     "description": {
       "type": "string",
-      "description": "One line under the title."
+      "description": "A one-line summary of the book, read and kept on a dump. The walk does not draw it."
     },
     "decisions": {
       "type": "array",

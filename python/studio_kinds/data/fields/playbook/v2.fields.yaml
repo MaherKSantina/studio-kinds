@@ -11,7 +11,7 @@ fields:
     description: The heading.
   - field: description
     type: string
-    description: One line under the title.
+    description: A one-line summary of the book, read and kept on a dump. The walk does not draw it.
   - field: decisions
     type: list of decision
     description: The state space — questions, each with its answers. A state is the set of answers taken; none is ever written.

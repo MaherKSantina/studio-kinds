@@ -33,7 +33,7 @@ What holds at every moment — the shape of the file, how an answer picks a docu
 | key | what it is |
 |---|---|
 | `title` | the heading |
-| `description` | one line under the title |
+| `description` | **not drawn** — a one-line summary of the book, read and kept on a dump. The walk uses the title; it never draws this |
 | `decisions` | the state space: questions, each with its answers |
 | `events` | what can happen, when it is on the table, what to do before its document shows, and the one document each shows when taken |
 
