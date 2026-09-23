@@ -1,0 +1,304 @@
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/*
+  STUDIO VIEWER — the one look every studio-kinds artifact shares.
+
+  The user chose a single consistent look for every document, so a page built on
+  this shell keeps these tokens and classes and does not redesign. Colours come
+  from tokens only: a literal colour works in one theme and breaks in the other.
+  The three theme blocks (light on bare :root, then dark under the OS setting,
+  then dark when the viewer chooses it) must stay in step.
+
+  Type: Newsreader for document titles, Figtree for everything you operate,
+  JetBrains Mono for what is literally in the file — keys, refs, values.
+*/
+:root {
+  --ground: #F4F6F8;
+  --surface: #FFFFFF;
+  --raised: #F9FAFB;
+  --ink: #19202A;
+  --ink-2: #4D5766;
+  --ink-3: #7C8594;
+  --rule: #E1E5EB;
+  --rule-strong: #CBD2DB;
+  --hover: #EEF1F5;
+  --accent: #1F6784;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E3EEF3;
+  --badge: #EDF0F4;
+  --set: #E6F1F5;
+  --open: #955805;
+  --open-soft: #FBF2E1;
+  --add: #1A7F46;
+  --edit: #955805;
+  --remove: #B4362B;
+  --code: #EEF1F5;
+  --f-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --f-ui: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0F1318;
+    --surface: #161B22;
+    --raised: #131820;
+    --ink: #E4E8EE;
+    --ink-2: #A7B0BE;
+    --ink-3: #7A8494;
+    --rule: #262D37;
+    --rule-strong: #343C48;
+    --hover: #1C232C;
+    --accent: #5AAECF;
+    --accent-ink: #0B1A22;
+    --accent-soft: #17303C;
+    --badge: #212833;
+    --set: #16303B;
+    --open: #E2A54A;
+    --open-soft: #33250E;
+    --add: #4CBF7B;
+    --edit: #E2A54A;
+    --remove: #F0776A;
+    --code: #1C232C;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0F1318;
+  --surface: #161B22;
+  --raised: #131820;
+  --ink: #E4E8EE;
+  --ink-2: #A7B0BE;
+  --ink-3: #7A8494;
+  --rule: #262D37;
+  --rule-strong: #343C48;
+  --hover: #1C232C;
+  --accent: #5AAECF;
+  --accent-ink: #0B1A22;
+  --accent-soft: #17303C;
+  --badge: #212833;
+  --set: #16303B;
+  --open: #E2A54A;
+  --open-soft: #33250E;
+  --add: #4CBF7B;
+  --edit: #E2A54A;
+  --remove: #F0776A;
+  --code: #1C232C;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--ground); color: var(--ink); font: 14px/1.5 var(--f-ui); }
+
+/* ── the frame: the strip (which file), then the working area (the kind's view) ── */
+.app { height: 100%; display: flex; flex-direction: column; gap: 10px; padding-inline: 16px; padding-block: 12px; }
+.strip { display: flex; align-items: center; gap: 8px; min-height: 22px; font: 500 12px/1.4 var(--f-mono); color: var(--ink-3); }
+.strip .kind { padding: 1px 6px; border: 1px solid var(--rule-strong); border-radius: 4px; color: var(--ink-2); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
+.strip .file { min-width: 0; overflow-wrap: anywhere; }
+.work { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; }
+
+/* ── the kind's own header, and a rail beside a pane ── */
+.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 14px 18px 12px; border-bottom: 1px solid var(--rule); }
+.head h1 { margin: 0; font: 600 21px/1.25 var(--f-display); letter-spacing: -.005em; text-wrap: balance; }
+.head .meta { color: var(--ink-3); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 18px; border-bottom: 1px solid var(--rule); background: var(--raised); }
+.split { flex: 1; min-height: 0; display: flex; }
+.rail { flex: 0 0 auto; width: clamp(210px, 32%, 300px); overflow-y: auto; padding: 8px; border-right: 1px solid var(--rule); background: var(--raised); }
+.pane { flex: 1; min-width: 0; overflow-y: auto; padding: 18px 22px 28px; }
+/* drill: the rail fills the width; add .is-detail to show the pane in its place (with a .back) */
+.split.is-drill .rail { flex: 1; width: auto; border-right: 0; }
+.split.is-drill .pane { display: none; }
+.split.is-drill.is-detail .rail { display: none; }
+.split.is-drill.is-detail .pane { display: block; }
+/* stacked: the rail above the pane, for a surface too narrow for both side by side */
+.split.is-stacked { flex-direction: column; }
+.split.is-stacked .rail { width: auto; max-height: 45%; border-right: 0; border-bottom: 1px solid var(--rule); }
+
+/* ── rows: a whole-row target, or a tree item whose caret folds and whose label selects ── */
+.row { display: flex; align-items: baseline; gap: 8px; width: 100%; min-height: 32px; padding: 5px 8px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.row:hover, .item:hover { background: var(--hover); }
+.row.is-on, .item.is-on { background: var(--accent-soft); }
+.row.is-on, .item.is-on > .pick { font-weight: 600; }
+.row .label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.row .meta, .item .meta { color: var(--ink-3); font-size: 11.5px; font-weight: 400; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.row.is-off { opacity: .5; }
+/* A tree item indents by its depth: set style="--depth: N" on it. Labels wrap, and the
+   caret stays level with a label's first line. */
+.item { display: flex; align-items: flex-start; gap: 2px; min-height: 32px; padding-left: calc(var(--depth, 0) * 16px); border-radius: 6px; }
+.item > .caret, .item > .caret-gap { margin-top: 4px; }
+.item > .pick { flex: 1; min-width: 0; padding: 6px 8px 6px 2px; border: 0; background: none; color: inherit; font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.caret { flex: 0 0 auto; display: inline-grid; place-items: center; width: 24px; height: 24px; border: 0; border-radius: 5px; background: none; color: var(--ink-3); cursor: pointer; }
+.caret:hover { background: var(--rule); color: var(--ink); }
+.caret svg { transition: transform .12s ease; }
+.caret[aria-expanded="true"] svg { transform: rotate(90deg); }
+.caret-gap { flex: 0 0 24px; }
+.group { margin: 12px 6px 4px; color: var(--ink-3); font: 600 10.5px/1.3 var(--f-ui); letter-spacing: .09em; text-transform: uppercase; }
+.group:first-child { margin-top: 4px; }
+
+/* ── answers and controls ── */
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { height: 26px; padding: 0 11px; border: 1px solid var(--rule-strong); border-radius: 13px; background: var(--surface); color: var(--ink); font: 500 12.5px/1 var(--f-ui); cursor: pointer; }
+.pill:hover { border-color: var(--ink-3); }
+.pill[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.question { margin: 0 0 5px; font-size: 13px; font-weight: 500; }
+.search { width: 100%; height: 30px; padding: 0 10px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; }
+.back { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border: 1px solid var(--rule-strong); border-radius: 13px; background: var(--surface); color: var(--ink); font: 600 12px/1 var(--f-ui); cursor: pointer; }
+
+/* ── what is literally in the file ── */
+.badge, .ref { display: inline-block; padding: 1px 6px; border-radius: 4px; background: var(--badge); color: var(--ink-2); font: 500 11px/1.5 var(--f-mono); white-space: nowrap; vertical-align: 1px; }
+.change { display: inline-block; padding: 0 6px; border-radius: 4px; font: 600 10.5px/1.6 var(--f-mono); }
+.change.add { color: var(--add); background: color-mix(in srgb, var(--add) 13%, transparent); }
+.change.edit { color: var(--edit); background: color-mix(in srgb, var(--edit) 13%, transparent); }
+.change.remove { color: var(--remove); background: color-mix(in srgb, var(--remove) 13%, transparent); }
+.kw { color: var(--ink-3); font: 600 10.5px/1.5 var(--f-ui); letter-spacing: .07em; text-transform: uppercase; }
+.field, .val { font: 500 12px/1.5 var(--f-mono); }
+.val { padding: 1px 5px; border-radius: 4px; background: var(--badge); }
+
+/* ── a data grid; a cell a rule set is .is-set, one still open between values is .is-open ── */
+.grid-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; }
+table.grid { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.grid th { position: sticky; top: 0; padding: 8px 10px; border-bottom: 1px solid var(--rule); background: var(--raised); color: var(--ink-3); font: 600 11px/1.3 var(--f-ui); letter-spacing: .06em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+table.grid td { padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.grid tr:last-child td { border-bottom: 0; }
+table.grid td.is-set { background: var(--set); }
+table.grid td.is-open { background: var(--open-soft); }
+table.grid tr.is-dropped td { color: var(--ink-3); text-decoration: line-through; }
+.opts { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.opt { white-space: nowrap; }
+.opt > .v { font-weight: 600; }
+.grid-note { margin-top: 8px; color: var(--ink-3); font-size: 12.5px; }
+
+/* ── a selected item's detail ── */
+.title { margin: 0; font: 600 20px/1.3 var(--f-display); text-wrap: balance; }
+.lede { margin: 4px 0 0; color: var(--ink-2); font-size: 14px; }
+.tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; color: var(--ink-3); font-size: 12.5px; }
+.hint { margin-top: 8px; color: var(--open); font-style: italic; }
+.logic { margin: 10px 0 14px; padding-left: 12px; border-left: 2px solid var(--rule-strong); }
+.logic > * { margin: 5px 0; font-size: 13px; }
+.skipped { margin: 6px 0 10px; color: var(--open); font-size: 12.5px; }
+.doc { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 8px; }
+.doc-kind { margin-bottom: 6px; color: var(--ink-3); font: 600 10.5px/1.3 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; }
+.empty { padding: 8px 4px; color: var(--ink-3); font-size: 13px; }
+.problem { margin: 12px 18px; padding: 10px 12px; border: 1px solid var(--rule-strong); border-radius: 8px; color: var(--ink-2); font-size: 13px; }
+
+/* ── markdown prose, rendered through md() ── */
+.md { max-width: 68ch; font-size: 15px; line-height: 1.62; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md h1, .md h2, .md h3, .md h4 { margin: 1.4em 0 .5em; font-family: var(--f-display); font-weight: 600; line-height: 1.25; text-wrap: balance; }
+.md h1 { font-size: 1.5em; } .md h2 { font-size: 1.3em; } .md h3 { font-size: 1.12em; } .md h4 { font-size: 1em; }
+.md p, .md ul, .md ol, .md blockquote, .md pre, .md table { margin: .7em 0; }
+.md li + li { margin-top: .25em; }
+.md a { color: var(--accent); text-underline-offset: 2px; }
+.md code { padding: .12em .35em; border-radius: 4px; background: var(--code); font: .88em var(--f-mono); }
+.md pre { padding: 12px 14px; overflow-x: auto; border-radius: 8px; background: var(--code); }
+.md pre code { padding: 0; background: none; font-size: 12.5px; }
+.md blockquote { margin-left: 0; padding-left: 14px; border-left: 3px solid var(--rule-strong); color: var(--ink-2); }
+.md table { display: block; overflow-x: auto; border-collapse: collapse; }
+.md th, .md td { padding: 6px 10px; border: 1px solid var(--rule); text-align: left; }
+.md th { background: var(--raised); font-weight: 600; }
+.md hr { border: 0; border-top: 1px solid var(--rule); }
+.md img { max-width: 100%; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="app">
+  <div class="strip"><span class="kind"></span><span class="file"></span></div>
+  <main class="work" id="view"></main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script>
+/* ── the file, embedded verbatim by scripts/prepare_page.mjs — never edit by hand ── */
+const SOURCE = __SOURCE_JSON__;
+const FILE = { name: __FILE_NAME_JSON__, kind: __KIND_JSON__ };
+
+/* ── helpers shared by every kind ─────────────────────────────────────────── */
+
+/** Build an element: h("div", { class, text, html, on: { click }, attrs: { … } }, ...children).
+ *  `html` is only for md() output, which is already sanitised. */
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k === "html") el.innerHTML = v;
+    else if (k === "on") for (const [ev, fn] of Object.entries(v)) el.addEventListener(ev, fn);
+    else if (k === "attrs") for (const [a, av] of Object.entries(v)) { if (av != null && av !== false) el.setAttribute(a, av === true ? "" : String(av)); }
+    else el[k] = v;
+  }
+  for (const kid of kids.flat(Infinity)) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : String(kid));
+  return el;
+}
+
+/** A value that is not a string reads as empty, as the books' parsers read it. */
+const str = (v) => (typeof v === "string" ? v : "");
+
+/** The first of several spellings that holds non-empty text — `title`, `name`, `heading`, … */
+function firstText(obj, keys) {
+  for (const k of keys) { const v = obj && obj[k]; if (typeof v === "string" && v.trim()) return v; }
+  return "";
+}
+
+/** Markdown in the md kind's dialect: GitHub-flavoured, a paragraph's lines joined,
+ *  sanitised, and a web link opening in a new tab. Returns HTML for h(…, { html }). */
+function md(text) {
+  const box = document.createElement("div");
+  box.innerHTML = DOMPurify.sanitize(marked.parse(str(text), { gfm: true, breaks: false }));
+  box.querySelectorAll("a[href]").forEach((a) => {
+    if (/^https?:/i.test(a.getAttribute("href"))) { a.target = "_blank"; a.rel = "noopener"; }
+  });
+  return box.innerHTML;
+}
+
+/** Parse the embedded file. Never throws: a YAML error comes back as `error`. */
+function parseSource() {
+  try { return { doc: jsyaml.load(SOURCE), error: null }; }
+  catch (e) { return { doc: null, error: String((e && e.message) || e).split("\n")[0] }; }
+}
+
+/** Call fn(isWide) now and again whenever `el` crosses `px` — a book that measures the
+ *  component's own width means this element, not the window. */
+function onWidth(el, px, fn) {
+  let last;
+  const check = () => { const wide = el.clientWidth >= px; if (wide !== last) { last = wide; fn(wide); } };
+  new ResizeObserver(check).observe(el);
+  check();
+}
+
+/** A caret button: rotates when aria-expanded="true". */
+function caret(expanded, onClick, label) {
+  return h("button", {
+    class: "caret", type: "button", on: { click: onClick },
+    attrs: { "aria-expanded": expanded ? "true" : "false", "aria-label": label || "Expand or collapse" },
+    html: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THE KIND'S VIEW. Replace this function with the view the kind's book specifies:
+   what the parser keeps, what is drawn when the file opens, and what every
+   interaction does. Draw into `root` (the working area) using the classes above.
+   `parsed` is { doc, error } from parseSource().
+   ════════════════════════════════════════════════════════════════════════════ */
+function renderKind(parsed, root) {
+  root.append(h("div", { class: "problem", text: "This page's view has not been written yet." }));
+}
+
+/* ── boot ── */
+document.querySelector(".strip .kind").textContent = FILE.kind;
+document.querySelector(".strip .file").textContent = FILE.name;
+if (!window.jsyaml || !window.marked || !window.DOMPurify) {
+  document.getElementById("view").append(h("div", { class: "problem", text: "The page could not load its readers from cdnjs. Reload to try again." }));
+} else {
+  renderKind(parseSource(), document.getElementById("view"));
+}
+</script>
