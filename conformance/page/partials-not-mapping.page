@@ -1,0 +1,5 @@
+title: Partials as a list
+partials:
+  - <li>one</li>
+template: |
+  <ul>{% include "0" %}</ul>

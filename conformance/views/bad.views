@@ -1,0 +1,29 @@
+fields:
+  id: key
+  status: stage
+  start: from
+  end: to
+  previous: after
+  owner: who
+  title: 3
+columns: [To do, 4, Done]
+items:
+  - just a string
+  - name: no key here
+  - key: dup
+    name: 1
+    stage: Nowhere
+    from: soon
+    to: 2026-10-01
+  - key: dup
+    name: Twice
+  - key: back
+    from: 2026-10-10
+    to: 2026-10-01
+    after: {a: 1}
+  - key: loose
+    after: ["", loose, missing]
+  - key: cyc1
+    after: cyc2
+  - key: cyc2
+    after: cyc1

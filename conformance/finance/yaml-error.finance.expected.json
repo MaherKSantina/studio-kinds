@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "problems": [
+    "YAML: while parsing a flow node expected the node content, but found '<stream end>' (2:1)"
+  ]
+}

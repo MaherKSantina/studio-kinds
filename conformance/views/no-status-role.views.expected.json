@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "problems": [
+    "`fields` is not a mapping — a role to the item key that plays it: id, title, status, start, end, previous, parent",
+    "`columns` without a `status` role — say which item key is the status under `fields`"
+  ],
+  "summary": "0 items · table"
+}

@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "problems": [
+    "no horizon_years — the window every option is judged over",
+    "option 1: no id",
+    "option 3: id \"dup\" is already used",
+    "option \"nameless\": no label",
+    "option \"odd\": capital \"a lot\" is not an amount",
+    "option \"odd\": growth_pct \"nope\" is not a percent",
+    "option \"odd\": effort_hours_per_week \"some\" is not an amount",
+    "option \"odd\": unknown risk \"extreme\" — low, medium, high or speculative",
+    "option \"odd\": unknown liquidity \"fortnights\" — days, weeks, months or years",
+    "option \"odd\": exit cost_pct \"none\" is not a percent",
+    "option \"borrowed\": a loan with no rate_pct",
+    "option \"borrowed-again\": loan term_years \"thirty\" is not a whole number of years"
+  ],
+  "summary": "7 options · no horizon · benchmark \"First\" · 0 flows"
+}

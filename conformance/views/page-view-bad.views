@@ -1,0 +1,23 @@
+title: Pages that cannot render
+fields:
+  status: stage
+views:
+  - {key: bare, kind: page}
+  - {key: blank, kind: page, template: "  "}
+  - key: listed
+    kind: page
+    template: [not, text]
+    partials: [row]
+  - key: named
+    kind: page
+    partials:
+      row: <li>{{ item.title }}</li>
+      count: 3
+    template: |
+      {% extends "layout" %}{% for item in items %}{% include "row" %}{% include "cell" %}{% endfor %}
+  - key: open
+    kind: kanban
+    template: <p>ignored</p>
+    partials: {row: x}
+items:
+  - {id: a, title: A, stage: Doing}

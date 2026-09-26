@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "not a mapping — a views document is `title`, `fields`, `views` and `items`"
+  ],
+  "summary": "0 items · table"
+}

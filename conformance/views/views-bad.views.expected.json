@@ -1,0 +1,21 @@
+{
+  "ok": false,
+  "problems": [
+    "view 1: not a mapping — write `key`, `kind` and the rest",
+    "view 2: no `key` — the view's identity",
+    "view k: kind \"dance\" is not a view — one of table, kanban, calendar, gantt, tree, page",
+    "view k: key twice",
+    "view k: a gantt needs `start`, `end` and `previous` or `parent` roles under `fields`",
+    "view cal: a calendar needs a `start` role under `fields`",
+    "view f filter 1: no field",
+    "view f filter 2: no op",
+    "view f filter 3: unknown op \"near\"",
+    "view f sort 1: dir must be asc or desc, not \"up\"",
+    "view f limit: must be a positive number",
+    "item e: `under` is not an id (got [\"x\"]) — one item this one is part of",
+    "item a: is its own parent",
+    "item b: parent `nobody` — no item has that id",
+    "parent cycle: c → d — items inside each other have no top"
+  ],
+  "summary": "5 items · views: f (kanban, 0 columns) 0"
+}

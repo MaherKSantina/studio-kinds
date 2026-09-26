@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "problems": [
+    "template: `extends \"base\"` names no partial of this page — write it under `partials`",
+    "template: `import \"macros\"` names no partial of this page — write it under `partials`",
+    "template: `from \"macros\"` names no partial of this page — write it under `partials`",
+    "template: `include \"rowx\"` names no partial of this page — write it under `partials`",
+    "partial \"row\": `include \"cell\"` names no partial of this page — write it under `partials`"
+  ],
+  "summary": "2 variables · 1 partial · 5 lines"
+}

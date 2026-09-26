@@ -1,7 +1,7 @@
 # studio-kinds
 
-Twelve document kinds — `.brief`, `.playbook`, `.kanban`, `.calendar`, `.policy`, `.flow`,
-`.jsonl`, `.pipeline`, `.collection`, `.clip`, `.song`, `.md` — each defined three ways
+Sixteen document kinds — `.brief`, `.playbook`, `.kanban`, `.calendar`, `.policy`, `.flow`,
+`.jsonl`, `.pipeline`, `.collection`, `.clip`, `.song`, `.finance`, `.script`, `.views`, `.page`, `.md` — each defined three ways
 that never drift: a **JSON Schema** (the shape), a **book** (how the kind works), and a **checker**
 (the engine that reads a file and names every problem, references between fields included). The
 checker is a Python package, `studio-kinds`, with the `studio-check` command; the schemas and books
@@ -16,7 +16,7 @@ apart, and a check reads the text and nothing beside it.
 kinds/<ext>/           every kind: v<N>.schema.json (the shape), v<N>.playbook (the book), v<N>.fields.yaml (the field table), README.md (the book as markdown)
 python/                the checker — pip install studio-kinds — one module per kind, the schemas/books/templates as data
 conformance/           the corpus: a document and its expected verdict per rule, what proves the checker
-examples/              a brief, a playbook, a kanban with its calendar, a policy — every one passes the checker
+examples/              a brief, a playbook, a kanban with its calendar, a policy, a script, a views document, a page — every one passes the checker
 skills/studio-files    the studio-files skill for Claude Code — generated from claude/claude.playbook
 skills/studio-file-artifact  renders a .brief, .playbook or .pipeline as a shareable Claude artifact
 claude/                Claude's master playbook for this repository (claude.playbook) and its memory (memory.brief, never committed)

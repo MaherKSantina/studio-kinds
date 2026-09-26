@@ -123,6 +123,9 @@ const FrameR = lazyViewer("frame", lazy(() => import("../components/frame/FrameV
 const FlowR = lazyViewer("flow", lazy(() => import("../components/flow/FlowKindView")));
 const ClipR = lazyViewer("clip", lazy(() => import("../components/music/ClipView")));
 const SongR = lazyViewer("song", lazy(() => import("../components/music/SongView")));
+const ScriptR = lazyViewer("script", lazy(() => import("../components/script/ScriptView")));
+const ViewsR = lazyViewer("views", lazy(() => import("../components/views/ViewsView")));
+const PageR = lazyViewer("page", lazy(() => import("../components/page/PageView")));
 
 // Authoring surfaces — loaded only when the Studio mounts them.
 const FrameE = lazyEditor("frame", lazy(() => import("../components/frame/FrameEditor")));
@@ -247,6 +250,15 @@ export const FILE_KINDS: FileKindDef[] = [
   // multi-track, one named track per song track: the Ableton handover.
   { key: "clip", label: "Clip", extensions: ["clip"], studioPath: STUDIO, Renderer: ClipR },
   { key: "song", label: "Song", extensions: ["song"], studioPath: STUDIO, Renderer: SongR },
+  // A SCRIPT as a document: the code, its interpreter and the environment
+  // variables the run gets, read before it runs; Run starts it on the host.
+  { key: "script", label: "Script", extensions: ["script"], studioPath: STUDIO, Renderer: ScriptR },
+  // ONE LIST of items and the views over it — a table, and a kanban, a
+  // calendar, a gantt and a tree as the roles the file names allow. Read only.
+  { key: "views", label: "Views", extensions: ["views"], studioPath: STUDIO, Renderer: ViewsR },
+  // A PAGE made from its own data: a Nunjucks template, its model and its
+  // partials, rendered inside the sandboxed frame an `.html` file opens in.
+  { key: "page", label: "Page", extensions: ["page"], studioPath: STUDIO, Renderer: PageR },
 ];
 
 export const extensionOfPath = (path: string): string => {

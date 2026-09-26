@@ -45,6 +45,13 @@ configureFileKinds({
   renameFile: (abs, name) => folderFs.rename(abs, name),
   removeFile: (abs) => folderFs.remove(abs),
   writeBinary: (abs, blob) => uploadBinary(folderApi("api/fs/binary"), abs, blob),
+  // A `.script` runs on the folder worker, which re-reads the file at that path from disk and runs
+  // what it holds — nothing this page parsed is sent, so nothing a page sends reaches the shell.
+  runScript: async (abs) => {
+    const r = await fetch(folderApi("api/run/script"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: abs }) });
+    if (!r.ok) throw new Error((await r.json().catch(() => null))?.error ?? `run failed: ${r.status}`);
+    return r.json();
+  },
   // The flat store, or one folder's subtree (`from`). The folder split the start page shows
   // never calls this: it LISTS where you are and what you take (memoryLoad.ts).
   indexFiles: async (from) => {

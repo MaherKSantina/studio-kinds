@@ -1,0 +1,24 @@
+kind: script
+version: 1
+fields:
+  - field: title
+    type: string
+    required: true
+    description: The script's heading.
+  - field: description
+    type: string
+    description: One line under the title.
+  - field: language
+    type: powershell | pwsh | bash | sh | python | node | cmd
+    required: true
+    description: The interpreter the host starts. `powershell` is `powershell.exe` on Windows and `pwsh` elsewhere; `python` and `node` are the commands on the host's PATH; `cmd` is Windows only.
+  - field: env
+    type: mapping of name → string | number | boolean
+    description: The environment variables the run gets, by name — saved in the file and shown on open. A name is an identifier (`[A-Za-z_][A-Za-z0-9_]*`); a number or boolean is handed to the run as text. A variable here overrides the host's own of the same name for the run.
+  - field: cwd
+    type: string
+    description: Where the code runs — a folder relative to this file's own (default the file's folder).
+  - field: code
+    type: block string
+    required: true
+    description: The script itself. Blank is a problem — nothing would run.

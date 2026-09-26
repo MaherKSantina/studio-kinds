@@ -1,0 +1,70 @@
+kind: views
+version: 1
+fields:
+  - field: title
+    type: string
+    required: true
+    description: The heading.
+  - field: description
+    type: string
+    description: One line under the title.
+  - field: fields
+    type: mapping of role → item key
+    description: Which item key plays which role — `id`, `title`, `status`, `start`, `end`, `previous`, `parent`. The roles present decide which views can be offered; `id` and `title` default to keys of those names.
+  - field: fields.id
+    type: item key
+    description: What identifies an item (default `id`) — what the `previous` and `parent` keys name. Required on every item, unique.
+  - field: fields.title
+    type: item key
+    description: What an item is labelled by (default `title`).
+  - field: fields.status
+    type: item key
+    description: The key that is a kanban column — allows the Kanban view. Matched against `columns` case-insensitively when columns are given.
+  - field: fields.start
+    type: item key
+    description: The key that is the start date (`YYYY-MM-DD`, bare or quoted) — allows the Calendar view; with `end` and `previous` or `parent`, the Gantt.
+  - field: fields.end
+    type: item key
+    description: The key that is the end date. An end before its start is a problem.
+  - field: fields.previous
+    type: item key
+    description: The key naming what comes before — one id or a list of ids of items in this file — allows the Tree view; with the dates, the Gantt. The item itself, an id no item has, or a cycle is a problem.
+  - field: fields.parent
+    type: item key
+    description: The key naming the one item this one is part of — the gantt nests it under that item, and a parent with no dates of its own spans its children. The item itself, an id no item has, or a cycle is a problem.
+  - field: columns
+    type: list of string
+    description: The statuses in order, for the Kanban; absent, the values found are the columns, first seen first. Needs a `status` role.
+  - field: views
+    type: list of view
+    description: The views to offer, in this order, each over the items its `filter` keeps. Absent, one view of every kind the roles allow is offered, the table first.
+  - field: views[].key
+    type: string
+    required: true
+    description: The view's identity. Unique.
+  - field: views[].kind
+    type: table | kanban | calendar | gantt | tree | page
+    required: true
+    description: Which view. Its roles must be named under `fields`, or the checker names what is missing. A page needs no role and has a `template` of its own.
+  - field: views[].label
+    type: string
+    description: The button's text; the kind's name when absent.
+  - field: views[].filter
+    type: list of clause
+    description: "Clauses over the items' own keys, all of which must hold — `{field, op, value}` with the suite's one vocabulary (`equals`, `not_equals`, `contains`, `not_contains`, `starts_with`, `ends_with`, `matches`, `gt`, `gte`, `lt`, `lte`, `between`, `in`, `not_in`, `is_empty`, `not_empty`, `is_true`, `is_false`). Items that fail are hidden for this view only."
+  - field: views[].sort
+    type: list of sort
+    description: "The order, first key first: `{field, dir: asc|desc}`, or a field name for ascending."
+  - field: views[].limit
+    type: number
+    description: At most this many items, after the filter and the sort.
+  - field: views[].template
+    type: block string
+    description: "A page view's Nunjucks template, whose output is the view — required on a page, a problem on any other kind. It is handed `items` (the view's items after its filter, sort and limit, each a mapping of its own keys as written, a date as `YYYY-MM-DD`), `title` (the document's), `fields` (the role → key map, defaults filled), `columns` (the kanban's) and `view` (its `key` and `label`)."
+  - field: views[].partials
+    type: mapping of name → block string
+    description: The templates a page view's `include`, `import`, `from … import` and `extends` name, by name. A name the view does not hold is a problem; so are `partials` on any other kind.
+  - field: items
+    type: list of mapping
+    required: true
+    description: "The list itself — every item a mapping, its fields as they are; every key not playing a role is shown in the table and the item's dialog. `items: []` is an empty list."

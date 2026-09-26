@@ -1,0 +1,19 @@
+kind: page
+version: 1
+fields:
+  - field: title
+    type: string
+    description: Not drawn — the page is what shows. The page's name, and the frame's accessible name ("Page" when absent).
+  - field: description
+    type: string
+    description: Not drawn. A one-line summary of the page, read and kept on a dump.
+  - field: model
+    type: mapping
+    description: The data the template renders. Every key is a variable of the template and of every partial; a value is the YAML as written — text, a number, a boolean, a list, a mapping, and a date as the text it is written as (`2026-10-01`, not a timestamp). Absent, the template has no variables.
+  - field: partials
+    type: mapping of name → block string
+    description: The templates that `include`, `import`, `from … import` and `extends` name, by name. A name the file does not hold is a problem — the page names no other file.
+  - field: template
+    type: block string
+    required: true
+    description: The Nunjucks template whose output is the page. Blank is a problem — the page would be empty. A `<!doctype html>` is put first when the output starts with none.

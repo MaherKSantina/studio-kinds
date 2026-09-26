@@ -1,0 +1,8 @@
+title: Groceries
+items:
+  - id: milk
+    title: Milk
+    qty: 2
+  - id: eggs
+    title: Eggs
+    qty: 12

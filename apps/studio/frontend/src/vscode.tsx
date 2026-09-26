@@ -32,6 +32,8 @@ configureFileKinds({
   removeFile: (abs) => fs.remove(abs),
   writeBinary: async (abs, blob) => { await rpc("writeBinary", abs, await blobToBase64(blob)); },
   indexFiles: (from) => rpc("index", from),
+  // A `.script` runs in the extension host, in the document's folder.
+  runScript: (abs, run) => rpc("runScript", abs, run),
   // The suite's ask worker, when it runs on this machine; the panels say so when it does not.
   ask: askApi("http://127.0.0.1:9250"),
   // The extension's `studio.remoteContent` setting, written into the page as a <meta> beside the CSP that enforces it; off unless it says on.

@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "problems": [
+    "view bare: no `template` — the Nunjucks template that renders the view's items, as a block string",
+    "view blank: `template` is blank — the view would be empty",
+    "view listed: `partials` is not a mapping — partial names to their templates (got [\"row\"])",
+    "view listed: `template` is not text — write it as a block string (got [\"not\",\"text\"])",
+    "view named: partial \"count\": not text — write it as a block string (got 3)",
+    "view named: template: `extends \"layout\"` names no partial of this view — write it under `partials`",
+    "view named: template: `include \"cell\"` names no partial of this view — write it under `partials`",
+    "view open: `template` is a page view's — a kanban draws the items itself",
+    "view open: `partials` is a page view's — a kanban draws the items itself"
+  ],
+  "summary": "1 item · views: bare (page), blank (page), listed (page), named (page), open (kanban, 1 column)"
+}

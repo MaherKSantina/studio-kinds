@@ -1,0 +1,8 @@
+language: ruby
+env:
+  1ST: one
+  GOOD: fine
+  LIST: [a, b]
+  MAP: {a: 1}
+cwd: 3
+code: "   "

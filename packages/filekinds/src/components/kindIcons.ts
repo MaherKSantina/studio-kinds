@@ -6,6 +6,7 @@
 import {
   Activity, AlignLeft, AppWindow, ArrowRightLeft, BookOpen, Boxes, Brain, CalendarDays, CircleDot, Database, File as FileIcon, FileText, Folder, Frame,
   GalleryHorizontal, GitCompareArrows, Layers, List as ListIcon, ListChecks, ListMusic, Music, Package, Replace, Route, Shapes, SlidersHorizontal, Kanban, SquareTerminal, Stethoscope, Table, Waypoints, Workflow,
+  LayoutGrid, LayoutTemplate, ScrollText,
 } from "lucide-react";
 import { isStructuredName } from "crosscut";
 import { previewForPath } from "../lib/filePreviews";
@@ -41,6 +42,9 @@ export const KIND_ICONS: Record<string, React.ComponentType<{ className?: string
   flow: Route,
   clip: Music,
   song: ListMusic,
+  script: ScrollText,
+  views: LayoutGrid,
+  page: LayoutTemplate,
 };
 
 /** The icon for a PATH on the shared fs: structured nodes read as one boxed

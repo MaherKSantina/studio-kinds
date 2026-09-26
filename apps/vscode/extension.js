@@ -15,6 +15,7 @@
 const vscode = require("vscode");
 const path = require("node:path");
 const fs = require("node:fs");
+const { runScript } = require("./scriptRunner.cjs");
 
 const VIEW_TYPE = "studio.document";
 const SKIP = new Set(["node_modules", ".git", ".vite", "dist"]);
@@ -40,7 +41,7 @@ function activate(context) {
 
 /** The kinds the Studio editor takes — the custom editor's selector, as a set. */
 const STUDIO_EXTS = new Set(["frame", "flow", "playbook", "plan", "guide", "brief", "points", "policy", "project", "list", "kanban",
-  "calendar", "definition", "memory", "schema", "workup", "program", "tablediff", "pulse", "moves"]);
+  "calendar", "definition", "memory", "schema", "workup", "program", "tablediff", "pulse", "moves", "script", "views"]);
 
 /** "Open" from inside a surface: a Studio document in its own Studio tab, any other file in its
  *  default editor, a FOLDER (a journey's pool, a memory's card) revealed in the Explorer. */
@@ -204,6 +205,8 @@ async function rpc(root, op, args) {
       return null;
     }
     case "index": return index(root, args[0]);
+    // A `.script` document's run: the interpreter starts in the document's folder, inside the workspace folder.
+    case "runScript": return runScript(args[1], { root: root.fsPath, docDir: path.dirname(uriOf(root, args[0]).fsPath) });
     default: throw new Error(`unknown op ${op}`);
   }
 }

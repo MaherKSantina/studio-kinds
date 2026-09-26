@@ -1,0 +1,33 @@
+title: Team roster
+description: The platform team, one card each, in the team's layout.
+model:
+  team: Platform
+  since: 2026-10-01
+  people:
+    - {name: Ada Lovelace, role: Lead, lead: true}
+    - {name: Alan Turing, role: Research}
+  links: &links
+    docs: /docs
+    repo: /repo
+  footer:
+    <<: *links
+    status: /status
+partials:
+  layout: |
+    <!doctype html>
+    <main>{% block body %}{% endblock %}</main>
+  ui: |
+    {% macro card(title) %}<section><h3>{{ title }}</h3>{{ caller() }}</section>{% endmacro %}
+  person: |
+    <li><b>{{ person.name }}</b> — {{ person.role }}</li>
+template: |
+  {% extends "layout" %}
+  {% from "ui" import card %}
+  {# {% include "commented-out" %} #}
+  {% block body %}
+    <h1>{{ team }} <small>since {{ since }}</small></h1>
+    <ul>{% for person in people %}{% include "person" %}{% endfor %}</ul>
+    {% call card("Links") %}{% for name, href in footer %}<a href="{{ href }}">{{ name }}</a>{% endfor %}{% endcall %}
+    {% include "banner" ignore missing %}
+    {% raw %}{% include "shown-as-text" %}{% endraw %}
+  {% endblock %}

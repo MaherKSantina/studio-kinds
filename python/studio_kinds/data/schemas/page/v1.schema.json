@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/page/v1.schema.json",
+  "title": "page",
+  "description": "An HTML page made from its own data: a Nunjucks template, the model it renders and the partials it includes, in one file. Opened, the template is rendered with the model inside a sandboxed frame and its output is the page shown; nothing is read from beside the file and nothing writes to it.",
+  "type": "object",
+  "required": [
+    "template"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Not drawn — the page is what shows. The page's name, and the frame's accessible name."
+    },
+    "description": {
+      "type": "string",
+      "description": "Not drawn. A one-line summary of the page, read and kept on a dump."
+    },
+    "model": {
+      "type": "object",
+      "description": "The data the template renders. Every key is a variable of the template and of every partial; a value is the YAML as written — text, a number, a boolean, a list, a mapping, and a date as the text it is written as."
+    },
+    "partials": {
+      "type": "object",
+      "description": "The templates that `include`, `import`, `from … import` and `extends` name, by name — written here, so the page names no other file.",
+      "additionalProperties": {
+        "type": "string",
+        "description": "A Nunjucks template, as a block string."
+      }
+    },
+    "template": {
+      "type": "string",
+      "description": "The Nunjucks template whose output is the page: `{{ }}` writes a value, `{% %}` is a tag, `|` applies a filter; output is escaped unless the `safe` filter says otherwise. A `<!doctype html>` is put first when the output starts with none.",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,4 @@
+title: Columns without a role
+fields: [status]
+columns: [A, B]
+items: []

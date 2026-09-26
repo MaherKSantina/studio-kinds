@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "problems": [
+    "YAML: while parsing a flow mapping expected ',' or '}', but got '<stream end>' (4:8)"
+  ]
+}

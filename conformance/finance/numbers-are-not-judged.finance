@@ -1,0 +1,21 @@
+# Every figure here is nonsense and every one of them passes: the check reads structure
+# and never what a number says. The author computed these elsewhere and owns them.
+capital: 100000
+horizon_years: 5
+benchmark: greedy
+options:
+  - id: greedy
+    label: Takes three times the pot
+    capital: 300000
+    growth_pct: 4000
+    effort_hours_per_week: -5
+    loan: {amount: -480000, rate_pct: -600, term_years: 0}
+    exit: {sell: true, cost_pct: -12}
+    risk: low
+    liquidity: days
+    flows:
+      - {label: A cost written as a negative, direction: out, amount: -2400}
+      - {label: A ramp longer than the horizon, direction: in, schedule: [1, 2, 3, 4, 5, 6, 7, 8]}
+      - {label: Starts after the window ends, direction: out, amount: 10, start_year: 90}
+      - {label: Ends before it starts, direction: out, amount: 10, start_year: 4, end_year: 2}
+      - {label: Year zero, direction: out, amount: 10, start_year: 0}

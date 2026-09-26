@@ -112,6 +112,12 @@
           },
           {
             "filenamePattern": "*.song"
+          },
+          {
+            "filenamePattern": "*.script"
+          },
+          {
+            "filenamePattern": "*.views"
           }
         ]
       }

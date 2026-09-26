@@ -1,0 +1,15 @@
+capital: 100000
+horizon_years: 5
+benchmark: biz
+options:
+  - id: biz
+    label: A business
+    flows:
+      - {direction: sideways, amount: 10}
+      - {label: Neither}
+      - {label: Both, direction: in, amount: 10, schedule: [1, 2]}
+      - {label: No direction, amount: 10}
+      - {label: Bad amount, direction: in, amount: "ten", growth_pct: "fast"}
+      - {label: Holes in the ramp, direction: in, schedule: [1, "two", 3]}
+      - {label: Not a list, direction: in, schedule: 500}
+      - {label: Odd years, direction: out, amount: 10, start_year: "third", end_year: 4.5}

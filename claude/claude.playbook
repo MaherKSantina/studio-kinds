@@ -92,6 +92,10 @@ events:
         | a gallery view of data — each item with its images, facts and link, decided over one at a time | `.collection` | the rows copied in, and a log of decisions with reasons; the copy is a handover — nothing points back at where the rows came from |
         | the notes of one MIDI clip — a beat, a bass line, chords, a hook — on a piano roll, handed to a DAW | `.clip` | pitches by name (`C2`, `F#3`) or number, `start`/`length` in beats from 0, velocities, drum `lanes:` as step strings (`x...x...`); Export .mid writes the Standard MIDI File beside it |
         | clips placed on tracks — the arrangement, and the ONE file to drop on Ableton | `.song` | the clips written in under `clips:`, placed by `{clip: <name>, at: <bar>, repeat, transpose}`; drawn as tracks against bars; Export .mid = one multi-track MIDI file, a named track per song track |
+        | one pot of money and the ways it could be placed, weighed against each other — a deposit, a property, a business | `.finance` | the `capital` there is to place, one `horizon_years` every option is judged over, and a `benchmark` the rest have to beat; each option states the capital it takes, its `loan`, its `growth_pct`, its `flows` in and out and what its `exit` costs. The shape of the comparison, never its verdict: no return is computed and none is stored |
+        | a script you press play on — the code, the interpreter and the environment variables it needs, in one file you can read before running | `.script` | `language` (powershell, pwsh, bash, sh, python, node, cmd), `env:` (the variables the run gets, shown on open), `cwd:`, `code:`; Run starts the interpreter on the host and shows the exit code, the output and the errors; the file is never changed by running |
+        | one list of items seen several ways — as a table, on a kanban, on a calendar, as a gantt, as a dependency tree, as a page of its own — from one file | `.views` | `items:` (mappings, each with an id), `fields:` saying which key plays which role — `status` allows the Kanban, `start`/`end` the Calendar, `previous` the Tree, the dates with `previous` or `parent` the Gantt, which nests children under their `parent` — and `views:` naming the views to offer, each with a `filter` over the items (the pipeline's clauses) — a `kind: page` view carries a Nunjucks `template` that renders the view's `items`; the views are read, nothing is written, the open view lasts the session |
+        | an HTML page made from its own data — a Nunjucks template and the model it renders, shown rendered when opened | `.page` | `model:` (the data — each key a variable of the template), `template:` (Nunjucks: `{{ }}`, `{% for %}`, `{% if %}`, filters, macros, `extends`), `partials:` (what the template's `include`, `import` and `extends` name, by name, in the file); rendered in a sandboxed frame, the engine's message in its place when it fails; nothing is written |
         | anything else | `.md` | plain markdown — the default whenever no kind above fits |
 
         Worked example — "a process for managing a trip, from the input markdown": `trip.brief` (the
@@ -161,6 +165,10 @@ events:
         | `.collection` | rows to decide over, one at a time: `to:` (where directions go), `fields:`/`labels:` (the columns shown), `stats:` (the fields shown as big cards), `items:` (the rows themselves, each with an `id`; `featured:` the picture chosen for it), `decisions:` a LOG of `{item, op: up\|down\|hide\|show, reason}` in the order taken — never applied to the items; the order shown is derived (rank = ups − downs, hidden out). An item's fields may be edited in place (no reason). Made by Collect on a table, `studio-check --collect stays.jsonl` or `--collect stays.pipeline#<view>`; not hand-written. The rows are COPIED in — nothing points back — so read the reasons to write the rules that yield the same order | `collection.py` |
         | `.clip` | the NOTES of one MIDI clip: `tempo`, `time: 4/4`, `bars`, `channel`, `velocity`, `naming` (scientific = C4 is 60, the default; `ableton` = C3 is 60, what Live shows), `notes: [{pitch, start, length, velocity}]` (pitch = a name, a number, or a LIST for a chord; start/length in beats — quarter notes — from 0), `grid` (steps per bar, 16) + `lanes: [{name, pitch, steps: "x...X...o...", length?, velocity?}]` (`x` a hit, `X` accent 127, `o` ghost 50, `1`–`9` ninths of 127, `.`/`-` rest, `\|` and spaces ignored). Drawn as a piano roll (lanes coloured apart, a note past the clip's end shaded); Export .mid writes `<stem>.mid` beside it, or `studio-check --midi x.clip` | `clip.py` |
         | `.song` | an arrangement, whole: `tempo`/`time` (default: the first placed clip's), `clips: [{name, …the clip's own fields}]` — the clips this song is made of, written in — and `tracks: [{name, channel?, clips: [{clip: <name>, at?, repeat?, transpose?}]}]` placing them; `at` a BAR from 0 (default: right after the previous placement), `repeat` back-to-back passes, `transpose` semitones. A riff played twice is written once and placed twice; a placement naming no clip is a problem, the rest still renders. Drawn as an arrangement (blocks with note thumbnails; a block opens its clip; a track's name lays its notes on a roll); Export .mid = ONE format-1 MIDI file, a named track per song track, or `studio-check --midi x.song` — drop it on Ableton Live's Arrangement for one track per song track at the song's tempo | `song.py` |
+        | `.finance` | one pot of money and the ways it could be placed, side by side: `capital` (the money there is to place), `horizon_years` (the one window every option is judged over), `currency` (the document's — never an option's), `as_of`, `assumptions:` (`inflation_pct`, `tax_rate_pct` — what is true of every option alike), `benchmark:` (the id of the option the rest have to beat) and `options:` — each `{id, label, capital, loan: {amount, rate_pct, term_years, interest_only}, growth_pct, flows: [...], exit: {sell, cost_pct}, effort_hours_per_week, risk: low\|medium\|high\|speculative, liquidity: days\|weeks\|months\|years, note}`. Options are ALTERNATIVES, not a portfolio: their capital is never added up. A FLOW is money moving each year, `direction: in\|out` (money out is a direction, never a negative amount), sized by an `amount` (repeating, compounding at its own `growth_pct`) or a `schedule: [year 1, year 2, …]` for a ramp a rate cannot say — one or the other, never both — and bounded by `start_year`/`end_year`, counted from 1. Every rate is a PERCENT (`4.5`, not `0.045`). The document holds the SHAPE of the comparison and never its verdict: no return is computed and none is stored, the figures are worked out elsewhere and written in as they stand, and the check reads STRUCTURE only — whether a figure is a number, never what the number says | `finance.py` |
+        | `.script` | a script as a document: `title`, `language` (`powershell` — `powershell.exe` on Windows, `pwsh` elsewhere — `pwsh`, `bash`, `sh`, `python`, `node`, `cmd`; the command on the host's PATH), `env:` (name → text, number or boolean; the environment variables the run gets, saved in the file and shown on open; a name is `[A-Za-z_][A-Za-z0-9_]*`), `cwd:` (a folder relative to the file's, default the file's folder; the run cannot leave the opened folder), `code:` (a block string). Opened: the variables and the code with line numbers, and Run; pressed, the host writes the code to a temporary file and starts the interpreter with the host's environment plus `env`, in `cwd`, and the panel shows `exit N · N.Ns`, the output and the errors. The web Studio's folder worker re-reads the file from disk and runs what it holds — nothing a page sends reaches the shell; the desktop app and VS Code run what the page parsed. Secrets stay in the host's environment, which the run inherits | `script.py` |
+        | `.views` | one list and the views over it: `items:` (mappings, each with an id — a string, or a whole number), `fields:` (role → the item key that plays it: `id` and `title` default to those names; `status` → a Kanban; `start` — and `end` — → a Calendar; `previous` (one id or a list, of items in this file) → a Tree; `start` + `end` + `previous` or `parent` → a Gantt; `parent` (one id) nests an item under another in the Gantt, and a parent with no dates of its own spans its children), `columns:` (the statuses in order; absent = the values found, first seen first), `views:` (the views to offer, in order — each `{key, kind: table|kanban|calendar|gantt|tree|page, label?, filter?, sort?, limit?}`, a `page` with a Nunjucks `template:` and its `partials:`, the template handed `items` — the view's items as written — with `title`, `fields`, `columns` and `view`; `filter` is the suite's clause vocabulary over the items' own keys and hides for that view only; absent = one view of every kind the roles allow, the table first). A view whose roles are not named is a problem. Every other key an item carries is shown as it is — a table column, a line in the item's dialog. Dates `YYYY-MM-DD`. Read only: nothing on the page writes the file, and which view is open is the session's | `views.py` |
+        | `.page` | an HTML page made from its own data: `title`, `model:` (a mapping — each key a variable of the template; a value is the YAML as written, a date as the text it is written as), `partials:` (name → Nunjucks template: what `include`, `import`, `from … import` and `extends` name — never a path), `template:` (Nunjucks; its output is the page, a `<!doctype html>` put first when it has none). Opened, it renders in a sandboxed frame — scripts allowed, the host's origin withheld — and a template the engine refuses shows its message in place of the page. The checker reads the structure and the partials named; the template's syntax is the engine's to judge. The web Studio and the desktop app render it; VS Code opens it as text | `page.py` |
         | `.md` | markdown — rendered, edited as text; the default when no kind fits | — |
 
         ## 3 · Conventions that bite
@@ -223,6 +231,51 @@ events:
           the check, the `.mid` is the handover. To Ableton: drop the exported `.mid` on a track (a song's on
           the Arrangement), or add the folder to Live's browser (Places › Add Folder) so every export shows
           up there as it lands. No `.als`/`.alc` is written — that format is undocumented and version-bound.
+        - **`.finance` checks STRUCTURE, never the figures.** The numbers are worked out elsewhere — a
+          script, a spreadsheet, an agent — and written in as they stand, so the engine asks whether a figure
+          is a number and never what the number says. An option taking triple the pot, a schedule running
+          past the horizon, an `end_year` before its `start_year`, a cost written as a negative, a rate of
+          4000%: every one of those passes. Do not add a rule that judges a value — a figure that makes no
+          sense is the author's, and the author computed it. What IS refused is structure: a missing or
+          repeated `id`, no `label`, a `benchmark` naming no option, a `loan` with no `rate_pct`, an unknown
+          `risk`/`liquidity`/`direction`, a flow with both an `amount` and a `schedule` or with neither.
+        - **`.finance` compares over ONE ground.** The currency, the `capital` and the `horizon_years` are the
+          document's, never an option's — two options written over different windows or different money are
+          two documents, not a comparison. Every rate is a percent (`4.5`, not `0.045`), and money leaving is
+          a flow's `direction: out`, never a negative amount (a convention the engine does not enforce). An
+          option's `capital` is what it takes OF the pot, so options never sum: each is a way to spend the
+          same money. A `loan` is what makes leverage sayable — a property taking a small deposit and
+          controlling a whole asset reads differently from a deposit taking the lot. A flow's `amount` (and a
+          `schedule`'s first entry) is its FIRST RUNNING year, not year 1: `{amount: 82000, growth_pct: 3,
+          start_year: 3}` is 82,000 in year 3, so a late flow is authored at a figure you can check against a
+          quote. Nothing in the file is a return: the kind states the comparison and leaves the arithmetic to
+          whatever reads it.
+        - **`.script` runs on the host, as the host.** Run starts the interpreter named by `language` with the
+          host's own environment plus `env`, in `cwd` under the opened folder — so a script does whatever the
+          person running the Studio can do. The variables belong in the file when they describe the run (a
+          folder, a name, a flag) and in the host's environment when they must stay off disk (a key, a
+          password): the run inherits the host's and the file overrides only what it names. The checker
+          refuses a `language` no host can start, a variable whose name is not an identifier or whose value
+          is not one string's worth (a list, a mapping), and blank code; it never runs anything.
+        - **`.views` roles unlock views; `views:` picks them.** A kanban needs a `status` role, a calendar a
+          `start`, a tree a `previous`, a gantt `start`, `end` and `previous` or `parent`. Name under `fields`
+          only the roles the items really carry, and name them by the item's OWN keys (`status: stage` when
+          the items say `stage:`) — the items are data as they came, the roles are the reading. Without
+          `views:` every view the roles allow is offered; with it, only those, in that order, and a view
+          whose roles are not named is a problem, not a silent absence. A view's `filter` hides items for
+          that view only — write one view per way of looking (`open` = a kanban of what is not Done, `plan`
+          = the gantt of everything), never a filter on the items themselves. `previous` names ids, one or
+          a list, and `parent` one id, of items in the same file; an id no item has, the item itself, or a
+          cycle is a problem. The kanban's `columns` are optional: absent, the statuses found are the
+          columns, first seen first. A `page` view is named, never offered by the roles: `kind: page` with a
+          `template` of its own, handed the view's `items` as written — `{% for item in items %}` and the
+          items' own keys, `item[fields.title]` for the label whatever its key.
+        - **`.page` is data and a template; the engine judges the template.** The facts go under `model`,
+          the HTML in `template`, and a piece used twice is a partial, named by its key under `partials` —
+          never a path. The checker reads the structure and the partials named; the template's syntax is
+          Nunjucks' to judge, and a page that fails to render says why in its place. Output is escaped
+          unless the template says `safe`; `groupby` gives a mapping (`for team, members in people |
+          groupby("team")`); there is no `break`.
         - **No document names another.** Every kind is one self-contained file: what a document
           shows is in it, written in where it is a document of another kind. The one thing kept
           outside a file is an image — a flow's screenshots in `<stem>-assets/` beside it.
@@ -251,8 +304,8 @@ events:
           this guide as a skill; the package carries every kind's schema, book, field table, spec and template,
           so `--schema`, `--book`, `--fields`, `--spec` and `--template` answer without a checkout. If
           `studio-check` is not on the PATH, say so and install it before editing documents.
-        - Samples: `examples/` in this repository — a brief, a playbook, a kanban with its calendar, a policy —
-          every one passing the checker.
+        - Samples: `examples/` in this repository — a brief, a playbook, a kanban with its calendar, a policy, a
+          script, a views document, a page — every one passing the checker.
   - key: guide-changed
     label: The Studio-documents guide in this book is edited
     trigger: imposed

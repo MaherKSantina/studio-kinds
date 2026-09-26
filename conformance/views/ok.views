@@ -1,0 +1,35 @@
+title: Launch
+description: The work to the launch, seen five ways.
+fields:
+  id: key
+  title: name
+  status: stage
+  start: from
+  end: to
+  previous: after
+columns: [To do, Doing, Done]
+items:
+  - key: plan
+    name: Plan the launch
+    stage: Done
+    from: 2026-10-01
+    to: 2026-10-03
+    owner: Maher
+  - key: build
+    name: Build it
+    stage: Doing
+    from: 2026-10-04
+    to: 2026-10-10
+    after: plan
+  - key: test
+    name: Test it
+    stage: To do
+    from: "2026-10-08"
+    to: "2026-10-12"
+    after: [build]
+  - key: 7
+    name: Ship
+    stage: to do
+    from: 2026-10-13
+    to: 2026-10-13
+    after: [build, test]

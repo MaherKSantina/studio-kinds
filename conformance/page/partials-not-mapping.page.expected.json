@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "problems": [
+    "`partials` is not a mapping — partial names to their templates (got [\"<li>one</li>\"])",
+    "template: `include \"0\"` names no partial of this page — write it under `partials`"
+  ],
+  "summary": "0 variables · 0 partials · 1 line"
+}

@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "problems": [
+    "`title` is not text (got 42)",
+    "`model` is not a mapping — the template's variables, by name (got [\"a\",\"b\"])",
+    "partial \"count\": not text — write it as a block string (got 3)",
+    "partial \"table\": not text — write it as a block string (got [\"not\",\"text\"])",
+    "`template` is blank — the page would be empty"
+  ],
+  "summary": "0 variables · 1 partial · 0 lines"
+}

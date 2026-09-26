@@ -1,0 +1,106 @@
+kind: finance
+version: 1
+fields:
+  - field: title
+    type: string
+    description: What is being decided.
+  - field: currency
+    type: string
+    description: The one currency every amount is in; an option never has its own.
+  - field: capital
+    type: amount
+    required: true
+    description: The money there is to place. Each option is a way to use it.
+  - field: horizon_years
+    type: integer
+    required: true
+    description: The window every option is judged over; one window for the whole document.
+  - field: as_of
+    type: date
+    description: The day the figures were true.
+  - field: assumptions.inflation_pct
+    type: percent
+    description: Yearly.
+  - field: assumptions.tax_rate_pct
+    type: percent
+    description: The marginal rate applied to a flow marked `taxable`.
+  - field: benchmark
+    type: option id
+    description: The option the others have to beat; required once there are options.
+  - field: options
+    type: list of option
+    required: true
+    description: The ways the capital could be placed. Alternatives, not a portfolio.
+  - field: options[].id
+    type: string
+    required: true
+    description: Unique in the document; what `benchmark` names.
+  - field: options[].label
+    type: string
+    required: true
+    description: The option in plain words.
+  - field: options[].capital
+    type: amount
+    description: What this option takes of the pot; whether it fits is not checked.
+  - field: options[].loan.amount
+    type: amount
+    description: Borrowed on top of the option's capital — what makes leverage sayable.
+  - field: options[].loan.rate_pct
+    type: percent
+    description: Yearly; a `loan` block without one is a problem.
+  - field: options[].loan.term_years
+    type: integer
+    description: How long the loan runs; may reach past the horizon.
+  - field: options[].loan.interest_only
+    type: boolean
+    description: True when no principal is repaid over the term.
+  - field: options[].growth_pct
+    type: percent
+    description: What the asset itself gains per year, apart from anything it pays out.
+  - field: options[].flows
+    type: list of flow
+    description: Money moving each year of the horizon.
+  - field: options[].flows[].label
+    type: string
+    required: true
+    description: What the money is.
+  - field: options[].flows[].direction
+    type: in | out
+    required: true
+    description: Money coming to you, or leaving; money out is never a negative amount.
+  - field: options[].flows[].amount
+    type: amount
+    description: The amount in the flow's first running year, repeating; one of `amount` or `schedule`, never both.
+  - field: options[].flows[].growth_pct
+    type: percent
+    description: What the amount compounds at per year, from the flow's first running year; only with `amount`.
+  - field: options[].flows[].schedule
+    type: list of amount
+    description: The amount for the flow's first running year, the one after, and so on.
+  - field: options[].flows[].start_year
+    type: integer
+    description: The first year the flow runs, counted from 1.
+  - field: options[].flows[].end_year
+    type: integer
+    description: The last year the flow runs.
+  - field: options[].flows[].taxable
+    type: boolean
+    description: True when `assumptions.tax_rate_pct` applies to it.
+  - field: options[].exit.sell
+    type: boolean
+    description: True when the asset is sold at the horizon rather than held on.
+  - field: options[].exit.cost_pct
+    type: percent
+    description: What getting out costs, as a percent of what the asset is worth.
+  - field: options[].effort_hours_per_week
+    type: amount
+    description: The time the option takes — a cost that is not money.
+  - field: options[].risk
+    type: low | medium | high | speculative
+    description: How likely the figures are to hold.
+  - field: options[].liquidity
+    type: days | weeks | months | years
+    description: How long getting the money back out takes.
+  - field: options[].note
+    type: string
+    description: Anything the figures do not say.

@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "problems": [
+    "option \"biz\", flow 1: no label",
+    "option \"biz\", flow 1: unknown direction \"sideways\" — in or out",
+    "option \"biz\", flow 2: no direction — in or out",
+    "option \"biz\", flow 2: neither amount nor schedule",
+    "option \"biz\", flow 3: both amount and schedule — one or the other",
+    "option \"biz\", flow 4: no direction — in or out",
+    "option \"biz\", flow 5: amount \"ten\" is not an amount",
+    "option \"biz\", flow 5: growth_pct \"fast\" is not a percent",
+    "option \"biz\", flow 6: schedule year 2 \"two\" is not an amount",
+    "option \"biz\", flow 7: schedule \"500\" is not a list of amounts",
+    "option \"biz\", flow 8: start_year \"third\" is not a whole number",
+    "option \"biz\", flow 8: end_year \"4.5\" is not a whole number"
+  ],
+  "summary": "1 option · 5 years · benchmark \"A business\" · 8 flows"
+}

@@ -1,0 +1,8 @@
+title: 42
+model: [a, b]
+partials:
+  row: |
+    <li>{{ row }}</li>
+  count: 3
+  table: [not, text]
+template: "   "

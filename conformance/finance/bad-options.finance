@@ -1,0 +1,23 @@
+capital: 100000
+benchmark: dup
+options:
+  - label: No id at all
+  - id: dup
+    label: First
+  - id: dup
+    label: Second
+  - id: nameless
+  - id: odd
+    label: Figures that are not figures
+    capital: "a lot"
+    growth_pct: "nope"
+    effort_hours_per_week: "some"
+    risk: extreme
+    liquidity: fortnights
+    exit: {cost_pct: "none"}
+  - id: borrowed
+    label: A loan with no rate
+    loan: {amount: 400000, term_years: 30}
+  - id: borrowed-again
+    label: A loan with an odd term
+    loan: {amount: 100, rate_pct: 6, term_years: "thirty"}

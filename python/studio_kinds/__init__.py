@@ -9,7 +9,7 @@ Every kind is ONE self-contained file: a document holds its own content and name
 check takes the text and reads nothing beside it.
 
 The kinds: brief, playbook, kanban, calendar, policy, flow, jsonl, pipeline, collection, clip, song,
-md. Each has a JSON Schema (`schema_path`), a book (`book_path`), a field table (`fields_path`), a
+finance, script, views, page, md. Each has a JSON Schema (`schema_path`), a book (`book_path`), a field table (`fields_path`), a
 spec (`spec`) and a template (`template`) shipped as data. `studio-check` is the command over all
 of it.
 """

@@ -1,0 +1,43 @@
+title: Team roster
+model:
+  team: Platform
+  updated: 2026-09-26
+  people:
+    - {name: Ada Lovelace, role: Lead, focus: [engines, notes]}
+    - {name: Alan Turing, role: Research, focus: [computability]}
+    - {name: Grace Hopper, role: Tooling, focus: [compilers, debugging]}
+partials:
+  layout: |
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <title>{{ team }} roster</title>
+      <style>
+        body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; color: #1f2328; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .75rem; }
+        .card { border: 1px solid #d0d7de; border-radius: 8px; padding: .75rem 1rem; }
+        .card h3 { margin: 0 0 .25rem; font-size: 1rem; }
+        .tag { display: inline-block; background: #eef1f4; border-radius: 999px; padding: 0 .5rem; margin: .125rem; font-size: 12px; }
+        small { color: #656d76; }
+      </style>
+    </head>
+    <body>{% block body %}{% endblock %}</body>
+    </html>
+  cards: |
+    {% macro card(person) %}
+      <div class="card">
+        <h3>{{ person.name }}</h3>
+        <div>{{ person.role }}</div>
+        {% for tag in person.focus %}<span class="tag">{{ tag }}</span>{% endfor %}
+      </div>
+    {% endmacro %}
+template: |
+  {% extends "layout" %}
+  {% import "cards" as cards %}
+  {% block body %}
+    <h1>{{ team }} <small>{{ people | length }} people · updated {{ updated }}</small></h1>
+    <div class="grid">
+      {% for person in people | sort(attribute="name") %}{{ cards.card(person) }}{% endfor %}
+    </div>
+  {% endblock %}

@@ -1,8 +1,16 @@
 /* filekinds — the suite's file-kind registry and read-only viewers.
  * crosscut (shell, fs, decision engine) ← filekinds (kinds) ← tools. */
 
-export { configureFileKinds, configuredAsk, configuredFs, configuredReader, isRemoteUrl, readVirtualDirectoryFile, remoteContentAllowed } from "./api";
-export type { FileReader, DirFileContent } from "./api";
+export { configureFileKinds, configuredAsk, configuredFs, configuredReader, configuredScriptRunner, isRemoteUrl, readVirtualDirectoryFile, remoteContentAllowed } from "./api";
+export type { FileReader, DirFileContent, ScriptRun, ScriptRunResult, ScriptRunner } from "./api";
+// The script and views kinds — their engines, pure.
+export { parseScript, scriptRunOf, scriptSummary, SCRIPT_LANGUAGES } from "./lib/scriptDoc";
+export type { ScriptDoc } from "./lib/scriptDoc";
+export { parseViews, availableViews, rowsOfView, docOfView, columnsOf as viewsColumnsOf, ganttOf, treeOf, viewsSummary } from "./lib/viewsDoc";
+export type { ViewsDoc, ViewsItem, ViewName, ViewSpec } from "./lib/viewsDoc";
+// The page kind — its parser, the frame's document and the code the frame renders with.
+export { parsePage, pageSummary, pageFrame, pageError, RENDER_PAGE } from "./lib/pageDoc";
+export type { PageDoc, PageRender } from "./lib/pageDoc";
 export * from "./lib/filePreviews";
 export * from "./openWith";
 

@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "problems": [
+    "`env` is not a mapping — variable names to their values",
+    "`code` is not text — write it as a block string (got 42)"
+  ],
+  "summary": "node · 0 variables · 0 lines"
+}

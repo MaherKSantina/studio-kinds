@@ -21,6 +21,7 @@ const { app, BrowserWindow, Menu, dialog, ipcMain, net, protocol, shell } = requ
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
+const { runScript } = require("./scriptRunner.cjs");
 
 const SCHEME = "studio-local";
 protocol.registerSchemesAsPrivileged([
@@ -311,6 +312,8 @@ ipcMain.handle("fs:rename", async (_e, p, newName) => {
 });
 ipcMain.handle("fs:remove", async (_e, p) => { await fs.rm(within(p), { recursive: true, force: true }); });
 ipcMain.handle("fs:index", (_e, from) => index(from));
+// A `.script` document's run: the interpreter starts in the document's folder, inside the open one.
+ipcMain.handle("script:run", (_e, p, run) => runScript(run, { root, docDir: path.dirname(within(p)) }));
 ipcMain.handle("shell:openExternal", (_e, url) => { if (/^https?:/.test(String(url))) return shell.openExternal(String(url)); });
 ipcMain.handle("shell:showInFolder", (_e, p) => { shell.showItemInFolder(within(p)); });
 

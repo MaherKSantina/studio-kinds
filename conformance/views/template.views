@@ -1,0 +1,55 @@
+title: "untitled"
+description: "One list of items; `fields` says which key plays which role, `views` which views to offer and what each keeps."
+fields:
+  id: id
+  title: title
+  status: status
+  start: start
+  end: end
+  previous: after
+  parent: under
+columns: [To do, Doing, Done]
+views:
+  - key: all
+    kind: table
+  - key: open
+    kind: kanban
+    label: Open work
+    filter: [{field: status, op: not_equals, value: Done}]
+  - key: month
+    kind: calendar
+  - key: plan
+    kind: gantt
+  - key: chain
+    kind: tree
+items:
+  - id: first
+    title: The first thing
+    status: Done
+    start: 2026-12-01
+    end: 2026-12-03
+  - id: second
+    title: What follows it
+    status: Doing
+    start: 2026-12-04
+    end: 2026-12-10
+    after: first
+  - id: second-a
+    title: Its first half
+    status: Done
+    start: 2026-12-04
+    end: 2026-12-06
+    under: second
+  - id: second-b
+    title: Its second half
+    status: Doing
+    start: 2026-12-07
+    end: 2026-12-10
+    under: second
+    after: second-a
+  - id: third
+    title: And then this
+    status: To do
+    start: 2026-12-11
+    end: 2026-12-12
+    after: [second]

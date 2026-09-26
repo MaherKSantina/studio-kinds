@@ -1,0 +1,13 @@
+{
+  "ok": false,
+  "problems": [
+    "no `title` — the script's heading",
+    "`language` \"ruby\" is not one a host can start — powershell, pwsh, bash, sh, python, node, cmd",
+    "env \"1ST\": not a variable name — letters, digits and underscores, not starting with a digit",
+    "env LIST: the value is not text, a number or a boolean (got [\"a\",\"b\"]) — an environment variable is one string",
+    "env MAP: the value is not text, a number or a boolean (got {\"a\":1}) — an environment variable is one string",
+    "`cwd` is not text — a folder relative to this file's (got 3)",
+    "`code` is blank — nothing would run"
+  ],
+  "summary": "ruby · 1 variable · 0 lines"
+}

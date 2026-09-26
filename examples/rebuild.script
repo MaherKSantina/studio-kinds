@@ -1,0 +1,12 @@
+title: Rebuild the index
+description: Walks the folder and writes the index beside it.
+language: python
+env:
+  INDEX_DIR: C:\Github\index
+  DRY_RUN: "1"
+  RETRIES: 3
+  VERBOSE: true
+cwd: .
+code: |
+  import os
+  print("rebuilding", os.environ["INDEX_DIR"], "dry run" if os.environ["DRY_RUN"] == "1" else "")

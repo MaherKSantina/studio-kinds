@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { previewForPath } from "../src/lib/filePreviews";
-import { BRIEF, BRIEF_WRITTEN, GUIDE, PLAN, PLAYBOOK, useFixtureFs } from "./fixtures";
+import { BRIEF, BRIEF_WRITTEN, GUIDE, PAGE, PLAN, PLAYBOOK, SCRIPT, VIEWS, useFixtureFs } from "./fixtures";
 
 useFixtureFs();
 
@@ -30,4 +30,20 @@ export const Plan: StoryObj = { render: () => <View path="/Books/fixture.plan" c
 export const BriefEmpty: StoryObj = {
   name: "Brief (half-written file still renders)",
   render: () => <View path="/x.brief" content={"title: Just a title"} />,
+};
+export const Script: StoryObj = {
+  name: "Script (the code and its variables; no runner here, so Run is disabled)",
+  render: () => <View path="/Scripts/rebuild.script" content={SCRIPT} />,
+};
+export const Views: StoryObj = {
+  name: "Views (one list — table, kanban, calendar, gantt, tree, page)",
+  render: () => <View path="/Plans/launch.views" content={VIEWS} />,
+};
+export const Page: StoryObj = {
+  name: "Page (a Nunjucks template and its model, rendered in the sandboxed frame)",
+  render: () => <View path="/Pages/roster.page" content={PAGE} />,
+};
+export const PageFailed: StoryObj = {
+  name: "Page (the engine's message in place of the page)",
+  render: () => <View path="/Pages/broken.page" content={'template: "{% for p in people %}{{ p }}{% endfo %}"'} />,
 };

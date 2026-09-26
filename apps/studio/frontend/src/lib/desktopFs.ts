@@ -30,6 +30,8 @@ export interface DesktopBridge {
     index(from?: string): Promise<FsEntry[]>;
   };
   rawUrl(p: string): string;
+  /** Run a `.script` document's code — the interpreter starts in the document's folder. */
+  runScript(p: string, run: { language: string; code: string; env: Record<string, string>; cwd?: string }): Promise<{ ok: boolean; exitCode: number | null; stdout: string; stderr: string; durationMs: number }>;
   openExternal(url: string): Promise<void>;
   showInFolder(p: string): Promise<void>;
 }

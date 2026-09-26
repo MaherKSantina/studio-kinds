@@ -1,0 +1,4 @@
+title: Wrong shape
+language: node
+env: [A=1, B=2]
+code: 42

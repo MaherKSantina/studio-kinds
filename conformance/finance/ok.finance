@@ -1,0 +1,52 @@
+title: Where the savings go
+currency: AUD
+capital: 300000
+horizon_years: 10
+as_of: 2026-09-24
+assumptions:
+  inflation_pct: 3.0
+  tax_rate_pct: 32.0
+benchmark: bank
+options:
+  - id: bank
+    label: Term deposit
+    capital: 300000
+    growth_pct: 0
+    flows:
+      - {label: Interest, direction: in, amount: 13500, growth_pct: 0, taxable: true}
+    exit: {sell: true, cost_pct: 0}
+    effort_hours_per_week: 0
+    risk: low
+    liquidity: days
+    note: Rolls over every 12 months.
+  - id: unit
+    label: A one-bedroom unit, rented out
+    capital: 150000
+    loan: {amount: 450000, rate_pct: 6.1, term_years: 30, interest_only: false}
+    growth_pct: 4.0
+    flows:
+      - {label: Rent, direction: in, amount: 26000, growth_pct: 3, taxable: true}
+      - {label: Loan repayments, direction: out, amount: 32700}
+      - {label: Strata, rates and insurance, direction: out, amount: 7400, growth_pct: 4}
+      - {label: Letting fee, direction: out, amount: 1800, growth_pct: 3}
+      - {label: Vacancy and repairs, direction: out, schedule: [3000, 2000, 2000, 2000, 6000, 2000, 2000, 2000, 2000, 6000]}
+    exit: {sell: true, cost_pct: 3.5}
+    effort_hours_per_week: 1
+    risk: medium
+    liquidity: months
+    note: Land tax starts once the holding passes the threshold.
+  - id: business
+    label: The fit-out business, run by me
+    capital: 120000
+    growth_pct: 0
+    flows:
+      - {label: Revenue, direction: in, schedule: [40000, 140000, 260000, 340000, 380000, 400000, 420000, 440000, 460000, 480000], taxable: true}
+      - {label: Cost of delivery, direction: out, schedule: [22000, 77000, 143000, 187000, 209000, 220000, 231000, 242000, 253000, 264000]}
+      - {label: Rent and overheads, direction: out, amount: 48000, growth_pct: 3}
+      - {label: First hire, direction: out, amount: 78000, growth_pct: 3, start_year: 3}
+      - {label: Setup loan repayments, direction: out, amount: 14000, start_year: 1, end_year: 5}
+    exit: {sell: false, cost_pct: 0}
+    effort_hours_per_week: 45
+    risk: high
+    liquidity: years
+    note: The 45 hours a week are not in any flow — a wage forgone elsewhere is the real cost.

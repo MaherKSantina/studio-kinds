@@ -1,0 +1,15 @@
+title: Untitled comparison
+currency: AUD
+capital: 100000
+horizon_years: 10
+benchmark: bank
+options:
+  - id: bank
+    label: Leave it in the bank
+    capital: 100000
+    growth_pct: 0
+    flows:
+      - {label: Interest, direction: in, amount: 4500, growth_pct: 0}
+    exit: {sell: true, cost_pct: 0}
+    risk: low
+    liquidity: days

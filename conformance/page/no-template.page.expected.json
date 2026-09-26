@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "no `template` — the Nunjucks template the page renders, as a block string"
+  ],
+  "summary": "1 variable · 0 partials · 0 lines"
+}

@@ -1,0 +1,21 @@
+{
+  "ok": false,
+  "problems": [
+    "no `title` — the heading",
+    "fields.owner: not a role — the roles are id, title, status, start, end, previous, parent",
+    "fields.title: not a key name (got 3) — the item key that plays this role",
+    "column 2: not text (got 4)",
+    "item 1: not a mapping — the item's fields",
+    "item 2: no `key` — what identifies the item, and what `after` names",
+    "item dup: status `Nowhere` is not a column — it would land in the first column; columns are To do, Done",
+    "item dup: `from` is not a date — write `YYYY-MM-DD` (got \"soon\")",
+    "item dup: id used twice — an id is identity, and a second item with it is dropped",
+    "item back: `to` 2026-10-01 is before `from` 2026-10-10",
+    "item back: `after` is not an id or a list of ids (got {\"a\":1})",
+    "item loose: a `after` entry is empty",
+    "item loose: comes after itself",
+    "item loose: after `missing` — no item has that id",
+    "cycle: cyc1 → cyc2 — items that come after each other cannot be ordered"
+  ],
+  "summary": "6 items · table, kanban (2 columns), calendar, gantt, tree"
+}

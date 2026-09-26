@@ -1,0 +1,8 @@
+title: "untitled"
+description: "What this script does, in a line."
+language: powershell
+env:
+  GREETING: Hello
+cwd: .
+code: |
+  Write-Host "$env:GREETING from $(Get-Location)"

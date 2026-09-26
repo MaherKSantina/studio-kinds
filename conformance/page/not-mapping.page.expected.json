@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "not a mapping — a page is a `template` and the `model` it renders"
+  ],
+  "summary": "0 variables · 0 partials · 0 lines"
+}

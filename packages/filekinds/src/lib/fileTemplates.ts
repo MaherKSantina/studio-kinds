@@ -38,6 +38,9 @@ export const TEMPLATE_KINDS: ReadonlyArray<{ ext: string; what: string }> = [
   { ext: "pipeline", what: "one curated list in the file — items with ids — the stages that transform it (rules that set fields, a filter, a sort, each under a circumstance) and the views that show the output" },
   { ext: "clip", what: "the notes of one MIDI clip — pitches by name or number, beats, velocities, drum lanes as step strings; a piano roll, exported as a .mid" },
   { ext: "song", what: "clips placed on tracks — an arrangement, exported as one multi-track .mid for Ableton" },
+  { ext: "script", what: "a script to press play on — the code, its interpreter (powershell, pwsh, bash, sh, python, node, cmd) and the environment variables the run gets, in one file" },
+  { ext: "views", what: "one list of items seen several ways — a table always, and a kanban, a calendar, a gantt and a dependency tree as the roles under `fields` allow (status, start, end, previous)" },
+  { ext: "page", what: "an HTML page made from its own data — a Nunjucks template, the model it renders and the partials it names, rendered on open" },
 ];
 
 export const fileExtensionOf = (path: string): string => {
@@ -361,6 +364,68 @@ function collectionText(): string {
   ].join("\n");
 }
 
+/** The checker's template (python/studio_kinds/data/templates/untitled.script) with the stem as its title. */
+const scriptText = (stem: string) => `title: ${JSON.stringify(stem)}
+description: "What this script does, in a line."
+language: powershell
+env:
+  GREETING: Hello
+cwd: .
+code: |
+  Write-Host "$env:GREETING from $(Get-Location)"
+`;
+
+/** The checker's template (untitled.views): three items with every role named, so all five views have something to show. */
+const viewsText = (stem: string) => `title: ${JSON.stringify(stem)}
+description: "One list of items; the roles under \`fields\` decide which views it offers."
+fields:
+  id: id
+  title: title
+  status: status
+  start: start
+  end: end
+  previous: after
+columns: [To do, Doing, Done]
+items:
+  - id: first
+    title: The first thing
+    status: Done
+    start: 2026-12-01
+    end: 2026-12-03
+  - id: second
+    title: What follows it
+    status: Doing
+    start: 2026-12-04
+    end: 2026-12-10
+    after: first
+  - id: third
+    title: And then this
+    status: To do
+    start: 2026-12-11
+    end: 2026-12-12
+    after: [second]
+`;
+
+/** The checker's template (untitled.page): a heading and two items, one partial for an item. */
+const pageText = (stem: string) => `title: ${JSON.stringify(stem)}
+model:
+  heading: Hello
+  items:
+    - {name: First, note: the first thing}
+    - {name: Second, note: what follows it}
+partials:
+  item: |
+    <li><b>{{ item.name }}</b> — {{ item.note }}</li>
+template: |
+  <style>
+    body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; }
+  </style>
+  <h1>{{ heading }}</h1>
+  <ul>
+  {% for item in items %}{% include "item" %}{% endfor %}
+  </ul>
+`;
+
 export function fileTemplate(path: string, title?: string, content?: string): string {
   const name = path.slice(path.lastIndexOf("/") + 1);
   const dot = name.lastIndexOf(".");
@@ -396,6 +461,9 @@ export function fileTemplate(path: string, title?: string, content?: string): st
     case "pipeline": return pipelineText();
     case "clip": return clipText(stem);
     case "song": return songText(stem);
+    case "script": return scriptText(stem);
+    case "views": return viewsText(stem);
+    case "page": return pageText(stem);
     default: return body;
   }
 }

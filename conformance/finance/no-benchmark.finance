@@ -1,0 +1,6 @@
+capital: 50000
+horizon_years: 5
+options:
+  - id: bank
+    label: Term deposit
+    capital: 50000

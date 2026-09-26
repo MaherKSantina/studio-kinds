@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/views/v1.schema.json",
+  "title": "views",
+  "description": "One list of items in the file and the views over it. `fields` says which item key plays which role — id, title, status, start, end, previous, parent — and `views` which views the file offers, each over the items its filter keeps. Without `views`, the roles decide: a table always, a kanban by `status`, a calendar by `start` (and `end`), a gantt by `start`, `end` and `previous` or `parent`, a dependency tree by `previous`. A page is a view the file names with a Nunjucks `template` of its own, rendering the view's items as HTML. Read only; which view is open is kept for the session.",
+  "type": "object",
+  "required": [
+    "title",
+    "items"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The heading."
+    },
+    "description": {
+      "type": "string",
+      "description": "One line under the title."
+    },
+    "fields": {
+      "type": "object",
+      "description": "Which item key plays which role. A role absent means the views that need it are absent; `id` and `title` default to keys of those names.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The key that identifies an item (default `id`) — what `previous` and `parent` name."
+        },
+        "title": {
+          "type": "string",
+          "description": "The key an item is labelled by (default `title`)."
+        },
+        "status": {
+          "type": "string",
+          "description": "The key that is a kanban column — allows the Kanban view."
+        },
+        "start": {
+          "type": "string",
+          "description": "The key that is the start date, `YYYY-MM-DD` — allows the Calendar view; with `end` and `previous` or `parent`, the Gantt."
+        },
+        "end": {
+          "type": "string",
+          "description": "The key that is the end date, `YYYY-MM-DD`."
+        },
+        "previous": {
+          "type": "string",
+          "description": "The key naming what comes before — one id or a list of ids — allows the Tree view; with the dates, the Gantt."
+        },
+        "parent": {
+          "type": "string",
+          "description": "The key naming the one item this one is part of — the gantt nests it under that item, and a parent without dates spans its children."
+        }
+      },
+      "additionalProperties": false
+    },
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The statuses in order, for the Kanban; absent, the values found are the columns, first seen first. Needs a `status` role."
+    },
+    "views": {
+      "type": "array",
+      "description": "The views to offer, in this order, each over the items its filter keeps. Absent: one view of every kind the roles allow, the table first.",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "kind"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The view's identity. Unique."
+          },
+          "kind": {
+            "type": "string",
+            "description": "Which view; its roles must be named under `fields` (a kanban needs `status`, a calendar `start`, a gantt `start`, `end` and `previous` or `parent`, a tree `previous`). A page needs no role and has a `template` of its own.",
+            "enum": [
+              "table",
+              "kanban",
+              "calendar",
+              "gantt",
+              "tree",
+              "page"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "The button's text; the kind's name when absent."
+          },
+          "filter": {
+            "type": "array",
+            "description": "Clauses over the items' own keys, every one of which must hold — the suite's one vocabulary. Items that fail are hidden for this view only.",
+            "items": {
+              "$ref": "#/$defs/clause"
+            }
+          },
+          "sort": {
+            "type": "array",
+            "description": "The order, first key first: `{field, dir: asc|desc}` or a field name.",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "field"
+                  ],
+                  "properties": {
+                    "field": {
+                      "type": "string"
+                    },
+                    "dir": {
+                      "type": "string",
+                      "enum": [
+                        "asc",
+                        "desc"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "limit": {
+            "type": "number",
+            "description": "At most this many items, after the filter and the sort.",
+            "exclusiveMinimum": 0
+          },
+          "template": {
+            "type": "string",
+            "description": "A page view's Nunjucks template, whose output is the view. It is handed `items` — the view's items after its filter, sort and limit, each a mapping of its own keys as written, a date as `YYYY-MM-DD` — with `title` (the document's), `fields` (the role → key map), `columns` (the kanban's) and `view` (its `key` and `label`). A page view only.",
+            "minLength": 1
+          },
+          "partials": {
+            "type": "object",
+            "description": "The templates a page view's `include`, `import`, `from … import` and `extends` name, by name. A page view only.",
+            "additionalProperties": {
+              "type": "string",
+              "description": "A Nunjucks template, as a block string."
+            }
+          }
+        },
+        "if": {
+          "properties": {
+            "kind": {
+              "const": "page"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        "then": {
+          "required": [
+            "template"
+          ]
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One item — its fields as they are. The key playing `id` is required and unique; the keys playing `start` and `end` are dates; the key playing `previous` is an id or a list of ids, the key playing `parent` one id, of items in this file."
+      },
+      "description": "The list itself. `items: []` is an empty one."
+    }
+  },
+  "$defs": {
+    "clause": {
+      "type": "object",
+      "required": [
+        "field",
+        "op"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "An item key, or a dot path into a nested mapping."
+        },
+        "op": {
+          "type": "string",
+          "enum": [
+            "equals",
+            "not_equals",
+            "contains",
+            "not_contains",
+            "starts_with",
+            "ends_with",
+            "matches",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "between",
+            "in",
+            "not_in",
+            "is_empty",
+            "not_empty",
+            "is_true",
+            "is_false"
+          ]
+        },
+        "value": {
+          "description": "One value, or a list — any of them for a text op, `[lo, hi]` for `between`, the set for `in`/`not_in`."
+        }
+      }
+    }
+  },
+  "x-studio-roles": {
+    "id": "identity — what `previous` and `parent` refer to",
+    "title": "the label",
+    "status": "a column of the Kanban; matched case-insensitively against `columns`",
+    "start": "a date; a value that is not one is a problem",
+    "end": "a date; before `start` is a problem",
+    "previous": "ids of items in this file; the item itself, an unknown id or a cycle is a problem",
+    "parent": "one id of an item in this file; the item itself, an unknown id or a cycle is a problem"
+  }
+}

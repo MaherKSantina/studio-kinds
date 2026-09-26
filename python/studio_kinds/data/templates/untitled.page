@@ -1,0 +1,17 @@
+title: "untitled"
+model:
+  heading: Hello
+  items:
+    - {name: First, note: the first thing}
+    - {name: Second, note: what follows it}
+partials:
+  item: |
+    <li><b>{{ item.name }}</b> — {{ item.note }}</li>
+template: |
+  <style>
+    body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; }
+  </style>
+  <h1>{{ heading }}</h1>
+  <ul>
+  {% for item in items %}{% include "item" %}{% endfor %}
+  </ul>

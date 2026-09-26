@@ -1,0 +1,24 @@
+title: Launch
+fields:
+  id: key
+  title: name
+  status: stage
+columns: [To do, Doing, Done]
+views:
+  - {key: all, kind: table}
+  - key: report
+    kind: page
+    label: Report
+    filter: [{field: stage, op: not_equals, value: Done}]
+    sort: [{field: name, dir: asc}]
+    partials:
+      row: |
+        <tr><td>{{ item[fields.title] }}</td><td>{{ item.stage }}</td><td>{{ item.due }}</td></tr>
+    template: |
+      <h1>{{ title }} — {{ view.label }}</h1>
+      <table>{% for item in items %}{% include "row" %}{% endfor %}</table>
+      <p>{{ items | length }} open, in {{ columns | join(" → ") }}</p>
+items:
+  - {key: plan, name: Plan the launch, stage: Done, due: 2026-10-03}
+  - {key: build, name: Build it, stage: Doing, due: 2026-10-10}
+  - {key: test, name: Test it, stage: To do, due: 2026-10-12}

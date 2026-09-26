@@ -1,0 +1,52 @@
+title: Launch
+fields:
+  id: key
+  title: name
+  status: stage
+  start: from
+  end: to
+  previous: after
+  parent: under
+columns: [To do, Doing, Done]
+views:
+  - key: open
+    kind: kanban
+    label: Open work
+    filter: [{field: stage, op: not_equals, value: Done}]
+    sort: [{field: from, dir: asc}]
+  - key: plan
+    kind: gantt
+  - key: all
+    kind: table
+  - key: status
+    kind: page
+    label: Status report
+    partials:
+      card: |
+        <li><b>{{ item[fields.title] }}</b> <small>{{ item.from }} → {{ item.to }}</small></li>
+    template: |
+      <style>
+        body { font: 14px/1.5 system-ui, sans-serif; margin: 1.5rem; color: #1f2328; }
+        .columns { display: grid; grid-template-columns: repeat({{ columns | length }}, 1fr); gap: 1rem; }
+        h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #656d76; }
+        ul { list-style: none; margin: 0; padding: 0; }
+        li { border: 1px solid #d0d7de; border-radius: 6px; padding: .4rem .6rem; margin-bottom: .4rem; }
+        small { color: #656d76; }
+      </style>
+      <h1>{{ title }}: {{ view.label }}</h1>
+      {% set by = items | groupby(fields.status) %}
+      <div class="columns">
+      {% for column in columns %}
+        {% set these = by[column] or [] %}
+        <section>
+          <h2>{{ column }} · {{ these | length }}</h2>
+          <ul>{% for item in these %}{% include "card" %}{% endfor %}</ul>
+        </section>
+      {% endfor %}
+      </div>
+items:
+  - {key: plan, name: Plan the launch, stage: Done, from: 2026-10-01, to: 2026-10-03}
+  - {key: build, name: Build it, stage: Doing, from: 2026-10-04, to: 2026-10-10, after: plan}
+  - {key: api, name: The API, stage: Doing, from: 2026-10-04, to: 2026-10-07, under: build}
+  - {key: ui, name: The UI, stage: To do, from: 2026-10-07, to: 2026-10-10, under: build, after: api}
+  - {key: ship, name: Ship, stage: To do, from: 2026-10-11, to: 2026-10-11, after: build}

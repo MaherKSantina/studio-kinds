@@ -47,6 +47,24 @@ export interface ProgramRunResult {
   durationMs: number;
 }
 export type ProgramRunner = (absPath: string) => Promise<ProgramRunResult>;
+/** What a `.script` run is handed — the document's executable half, parsed by the page. A host that
+ *  can read the file itself (the folder worker) re-reads it at `absPath` and runs what it holds;
+ *  the desktop shell and the VS Code extension run what they are handed. */
+export interface ScriptRun {
+  language: string;
+  code: string;
+  env: Record<string, string>;
+  cwd?: string;
+}
+export interface ScriptRunResult {
+  ok: boolean;
+  exitCode: number | null;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+}
+/** Run a `.script` document on the host. Hosts without one render scripts with Run disabled. */
+export type ScriptRunner = (absPath: string, run: ScriptRun) => Promise<ScriptRunResult>;
 /** Write BYTES (a screenshot a flow state captures) — hosts point it at the
  *  nodes worker's binary upsert; without one, upload controls stay hidden. */
 export type BinaryWriter = (absPath: string, blob: Blob) => Promise<void>;
@@ -67,6 +85,7 @@ const slot = globalThis as {
   __filekindsWriter?: FileWriter;
   __filekindsIndexer?: FileIndexer;
   __filekindsRunner?: ProgramRunner;
+  __filekindsScriptRunner?: ScriptRunner;
   __filekindsBinaryWriter?: BinaryWriter;
   __filekindsMkdir?: FolderMaker;
   __filekindsRenamer?: FileRenamer;
@@ -82,6 +101,7 @@ export function configureFileKinds(opts: {
   writeFile?: FileWriter;
   indexFiles?: FileIndexer;
   runProgram?: ProgramRunner;
+  runScript?: ScriptRunner;
   writeBinary?: BinaryWriter;
   mkdir?: FolderMaker;
   renameFile?: FileRenamer;
@@ -99,6 +119,7 @@ export function configureFileKinds(opts: {
   if (opts.writeFile) slot.__filekindsWriter = opts.writeFile;
   if (opts.indexFiles) slot.__filekindsIndexer = opts.indexFiles;
   if (opts.runProgram) slot.__filekindsRunner = opts.runProgram;
+  if (opts.runScript) slot.__filekindsScriptRunner = opts.runScript;
   if (opts.writeBinary) slot.__filekindsBinaryWriter = opts.writeBinary;
   if (opts.mkdir) slot.__filekindsMkdir = opts.mkdir;
   if (opts.renameFile) slot.__filekindsRenamer = opts.renameFile;
@@ -122,6 +143,7 @@ export const configuredBinaryWriter = (): BinaryWriter | null => slot.__filekind
 export const configuredLister = (): FileLister | null => slot.__filekindsLister ?? null;
 export const configuredWriter = (): FileWriter | null => slot.__filekindsWriter ?? null;
 export const configuredRunner = (): ProgramRunner | null => slot.__filekindsRunner ?? null;
+export const configuredScriptRunner = (): ScriptRunner | null => slot.__filekindsScriptRunner ?? null;
 
 /**
  * Every entry of the store, flat. The configured indexer when the host wired

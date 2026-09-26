@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "problems": [
+    "capital \"lots\" is not an amount",
+    "horizon_years \"ten\" is not a whole number of years",
+    "assumptions.inflation_pct \"high\" is not a percent",
+    "assumptions.tax_rate_pct \"a third\" is not a percent",
+    "benchmark \"shares\" is not an option"
+  ],
+  "summary": "1 option · no horizon · benchmark \"shares\" · 0 flows"
+}

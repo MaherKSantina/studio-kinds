@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/script/v1.schema.json",
+  "title": "script",
+  "description": "A script as a document: the code, the interpreter it runs in, the environment variables the run gets, and the folder it runs in. Opened, the source and the variables are shown and Run starts the interpreter on the host; the file is never changed by running.",
+  "type": "object",
+  "required": [
+    "title",
+    "language",
+    "code"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The script's heading."
+    },
+    "description": {
+      "type": "string",
+      "description": "One line under the title."
+    },
+    "language": {
+      "type": "string",
+      "description": "The interpreter the host starts. `powershell` is `powershell.exe` on Windows and `pwsh` elsewhere; `python` and `node` are the commands on the host's PATH; `cmd` is Windows only.",
+      "enum": [
+        "powershell",
+        "pwsh",
+        "bash",
+        "sh",
+        "python",
+        "node",
+        "cmd"
+      ]
+    },
+    "env": {
+      "type": "object",
+      "description": "The environment variables the run gets, by name — saved in the file and shown on open. A variable written here overrides the host's own of the same name for the run.",
+      "propertyNames": {
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ],
+        "description": "The value — text, or a number or boolean written as text for the run."
+      }
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Where the code runs: a folder relative to this file's own (default: the file's folder)."
+    },
+    "code": {
+      "type": "string",
+      "description": "The script itself, as a block string.",
+      "minLength": 1
+    }
+  }
+}

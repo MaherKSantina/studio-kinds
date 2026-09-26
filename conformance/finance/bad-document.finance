@@ -1,0 +1,10 @@
+title: Figures that are not figures
+capital: "lots"
+horizon_years: "ten"
+assumptions:
+  inflation_pct: "high"
+  tax_rate_pct: "a third"
+benchmark: shares
+options:
+  - id: bank
+    label: Term deposit

@@ -1,0 +1,13 @@
+title: Names partials it does not hold
+model:
+  rows: [a, b]
+  which: row
+partials:
+  row: |
+    <li>{{ r }}</li>{% include "cell" %}
+template: |
+  {% extends "base" %}
+  {% import "macros" as m %}
+  {% from 'macros' import field with context %}
+  {% for r in rows %}{% include "row" %}{% include "rowx" %}{% include "rowx" %}{% endfor %}
+  {% include which %}{% include "row" + "" %}{% include "maybe" ignore missing %}

@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "not a mapping — a script is `title`, `language`, `env` and `code`"
+  ],
+  "summary": "no language · 0 variables · 0 lines"
+}

@@ -1,0 +1,9 @@
+title: Bad views
+fields: {status: stage, parent: under}
+views: [not a mapping, {kind: table}, {key: k, kind: dance}, {key: k, kind: gantt}, {key: cal, kind: calendar}, {key: f, kind: kanban, filter: [{op: equals}, {field: x}, {field: x, op: near}], sort: [{field: x, dir: up}], limit: -1}]
+items:
+  - {id: a, under: a}
+  - {id: b, under: nobody}
+  - {id: c, under: d}
+  - {id: d, under: c}
+  - {id: e, under: [x]}

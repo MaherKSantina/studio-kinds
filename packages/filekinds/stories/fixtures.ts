@@ -585,6 +585,80 @@ Irfaan Azizi,15/07/2026,1,55
 `,
 });
 
+/** A script — read before it runs; Run is disabled in stories, which have no runner. */
+export const SCRIPT = `title: Rebuild the index
+description: Walks the folder and writes the index beside it.
+language: python
+env:
+  INDEX_DIR: C:\Github\index
+  DRY_RUN: "1"
+cwd: ..
+code: |
+  import os
+  print("rebuilding", os.environ["INDEX_DIR"])
+`;
+
+/** One list with every role named, so the five role views have something to show, and a page view of what is open. */
+export const VIEWS = `title: Launch
+description: The work to the launch, seen five ways.
+fields:
+  id: key
+  title: name
+  status: stage
+  start: from
+  end: to
+  previous: after
+  parent: under
+columns: [To do, Doing, Done]
+views:
+  - {key: all, kind: table}
+  - {key: open, kind: kanban, label: Open work, filter: [{field: stage, op: not_equals, value: Done}]}
+  - {key: month, kind: calendar}
+  - {key: plan, kind: gantt}
+  - {key: chain, kind: tree}
+  - key: report
+    kind: page
+    label: Report
+    filter: [{field: stage, op: not_equals, value: Done}]
+    template: |
+      <style>body { font: 14px/1.5 system-ui, sans-serif; margin: 1.5rem; } small { color: #656d76; }</style>
+      <h1>{{ title }}: {{ view.label }} <small>{{ items | length }} open</small></h1>
+      <ul>{% for item in items %}<li><b>{{ item[fields.title] }}</b> — {{ item.stage }}</li>{% endfor %}</ul>
+items:
+  - {key: plan, name: Plan the launch, stage: Done, from: 2026-10-01, to: 2026-10-03, owner: Maher}
+  - {key: build, name: Build it, stage: Doing, after: plan}
+  - {key: api, name: The API, stage: Doing, from: 2026-10-04, to: 2026-10-07, under: build}
+  - {key: ui, name: The UI, stage: To do, from: 2026-10-07, to: 2026-10-10, under: build, after: api}
+  - {key: test, name: Test it, stage: To do, from: 2026-10-08, to: 2026-10-12, after: [build]}
+  - {key: ship, name: Ship, stage: To do, from: 2026-10-13, to: 2026-10-13, after: [build, test]}
+`;
+
+/** A page — the model rendered through a layout, a macro and an included partial, in the sandboxed frame. */
+export const PAGE = `title: Team roster
+model:
+  team: Platform
+  people:
+    - {name: Ada Lovelace, role: Lead, since: 2026-10-01}
+    - {name: Alan Turing, role: Research, since: 2026-11-15}
+partials:
+  layout: |
+    <!doctype html>
+    <style>
+      body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; color: #1f2328; }
+      .card { border: 1px solid #d0d7de; border-radius: 8px; padding: .75rem 1rem; margin: .5rem 0; }
+      small { color: #656d76; }
+    </style>
+    <main>{% block body %}{% endblock %}</main>
+  person: |
+    <div class="card"><b>{{ person.name }}</b> — {{ person.role }} <small>since {{ person.since }}</small></div>
+template: |
+  {% extends "layout" %}
+  {% block body %}
+    <h1>{{ team }} <small>{{ people | length }} people</small></h1>
+    {% for person in people %}{% include "person" %}{% endfor %}
+  {% endblock %}
+`;
+
 export const PROJECT = `name: Fixture venture
 description: One container over the fixture files.
 items:

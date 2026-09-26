@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "studio-kinds"
 version = "1.0.0"
-description = "The Studio's document kinds — brief, playbook, kanban, calendar, policy, flow, jsonl, middleware, pipeline, collection, clip, song, md — checked from Python: the schemas, the books, the field tables, the templates, and the studio-check command."
+description = "The Studio's document kinds — brief, playbook, kanban, calendar, policy, flow, jsonl, middleware, pipeline, collection, clip, song, finance, script, views, page, md — checked from Python: the schemas, the books, the field tables, the templates, and the studio-check command."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"

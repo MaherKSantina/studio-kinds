@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "`views` is not a list — the views to offer, each `key`, `kind` (table, kanban, calendar, gantt, tree, page) and its `filter`"
+  ],
+  "summary": "0 items · table"
+}

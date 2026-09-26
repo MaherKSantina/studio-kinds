@@ -1,0 +1,26 @@
+title: Launch
+fields:
+  id: key
+  title: name
+  status: stage
+  start: from
+  end: to
+  previous: after
+  parent: under
+columns: [To do, Doing, Done]
+views:
+  - key: open
+    kind: kanban
+    label: Open work
+    filter: [{field: stage, op: not_equals, value: Done}]
+    sort: [{field: from, dir: asc}]
+  - key: plan
+    kind: gantt
+  - key: all
+    kind: table
+items:
+  - {key: plan, name: Plan the launch, stage: Done, from: 2026-10-01, to: 2026-10-03}
+  - {key: build, name: Build it, stage: Doing, from: 2026-10-04, to: 2026-10-10, after: plan}
+  - {key: api, name: The API, stage: Doing, from: 2026-10-04, to: 2026-10-07, under: build}
+  - {key: ui, name: The UI, stage: To do, from: 2026-10-07, to: 2026-10-10, under: build, after: api}
+  - {key: ship, name: Ship, stage: To do, from: 2026-10-11, to: 2026-10-11, after: build}

@@ -24,6 +24,7 @@
     "files": [
       "main.cjs",
       "preload.cjs",
+      "scriptRunner.cjs",
       "renderer/**",
       "build/icon.ico"
     ],
@@ -168,6 +169,21 @@
       {
         "ext": "song",
         "name": "Studio song",
+        "role": "Editor"
+      },
+      {
+        "ext": "script",
+        "name": "Studio script",
+        "role": "Editor"
+      },
+      {
+        "ext": "views",
+        "name": "Studio views",
+        "role": "Editor"
+      },
+      {
+        "ext": "page",
+        "name": "Studio page",
         "role": "Editor"
       }
     ],

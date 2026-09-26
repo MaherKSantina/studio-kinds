@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/finance/v1.schema.json",
+  "title": "finance",
+  "description": "One pot of money and the ways it could be placed, side by side: the capital there is to place, the horizon every option is judged over, the benchmark the others have to beat, and the options themselves — each with the capital it takes, what it borrows, what the asset gains, the money flowing in and out year by year, and what getting out of it costs. The shape of the comparison, never its verdict: no return is computed and none is stored.",
+  "type": "object",
+  "required": [
+    "capital",
+    "horizon_years",
+    "options"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "What is being decided."
+    },
+    "currency": {
+      "type": "string",
+      "description": "The one currency every amount in the document is in; an option never has its own."
+    },
+    "capital": {
+      "type": "number",
+      "description": "The money there is to place. Each option is a way to use it, so an option's capital is read against this, never added to another option's."
+    },
+    "horizon_years": {
+      "type": "integer",
+      "description": "The window every option is judged over. One window for the whole document — that is what makes the options comparable."
+    },
+    "as_of": {
+      "type": "string",
+      "format": "date",
+      "description": "The day the figures were true."
+    },
+    "assumptions": {
+      "type": "object",
+      "description": "What is true of every option alike.",
+      "properties": {
+        "inflation_pct": {
+          "type": "number",
+          "description": "Yearly, as a percent."
+        },
+        "tax_rate_pct": {
+          "type": "number",
+          "description": "The marginal rate applied to a flow marked `taxable`, as a percent."
+        }
+      }
+    },
+    "benchmark": {
+      "type": "string",
+      "description": "The id of the option the others have to beat — the hurdle every other option is read against.",
+      "x-studio-ref": "#/properties/options/items/properties/id"
+    },
+    "options": {
+      "type": "array",
+      "description": "The ways the capital could be placed. Alternatives, not a portfolio.",
+      "items": {
+        "type": "object",
+        "description": "One way to place the capital.",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique in the document; what `benchmark` names."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The option in plain words."
+          },
+          "capital": {
+            "type": "number",
+            "description": "What this option takes of the pot. Less than the document's `capital` leaves the rest unplaced; whether it fits at all is not checked."
+          },
+          "loan": {
+            "type": "object",
+            "description": "What is borrowed on top of the capital — what makes leverage sayable.",
+            "properties": {
+              "amount": {
+                "type": "number",
+                "description": "Borrowed on top of the option's capital."
+              },
+              "rate_pct": {
+                "type": "number",
+                "description": "Yearly, as a percent. A `loan` block without one is a problem."
+              },
+              "term_years": {
+                "type": "integer",
+                "description": "How long the loan runs; may reach past the horizon."
+              },
+              "interest_only": {
+                "type": "boolean",
+                "description": "True when no principal is repaid over the term."
+              }
+            }
+          },
+          "growth_pct": {
+            "type": "number",
+            "description": "What the asset itself gains per year, as a percent — apart from anything it pays out."
+          },
+          "flows": {
+            "type": "array",
+            "description": "Money moving each year of the horizon.",
+            "items": {
+              "type": "object",
+              "description": "One flow. Its size is an `amount` or a `schedule` — never both and never neither.",
+              "required": [
+                "label",
+                "direction"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "What the money is."
+                },
+                "direction": {
+                  "enum": [
+                    "in",
+                    "out"
+                  ],
+                  "description": "Money coming to you, or leaving. Money out is a direction, never a negative amount."
+                },
+                "amount": {
+                  "type": "number",
+                  "description": "Repeating every year the flow runs. It is the amount in the flow's FIRST RUNNING year, not in year 1 — a flow starting at year 3 is worth this in year 3."
+                },
+                "growth_pct": {
+                  "type": "number",
+                  "description": "What the amount compounds at per year, as a percent, counted from the flow's first running year. Only with `amount`."
+                },
+                "schedule": {
+                  "type": "array",
+                  "description": "The amount for the flow's first running year, the one after, and so on — a ramp a rate cannot say.",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "start_year": {
+                  "type": "integer",
+                  "description": "The first year the flow runs, counted from 1."
+                },
+                "end_year": {
+                  "type": "integer",
+                  "description": "The last year the flow runs."
+                },
+                "taxable": {
+                  "type": "boolean",
+                  "description": "True when `assumptions.tax_rate_pct` applies to it."
+                }
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "amount"
+                  ],
+                  "not": {
+                    "required": [
+                      "schedule"
+                    ]
+                  }
+                },
+                {
+                  "required": [
+                    "schedule"
+                  ],
+                  "not": {
+                    "required": [
+                      "amount"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "exit": {
+            "type": "object",
+            "description": "What happens to the asset at the horizon.",
+            "properties": {
+              "sell": {
+                "type": "boolean",
+                "description": "True when the asset is sold at the horizon rather than held on."
+              },
+              "cost_pct": {
+                "type": "number",
+                "description": "What getting out costs, as a percent of what the asset is worth."
+              }
+            }
+          },
+          "effort_hours_per_week": {
+            "type": "number",
+            "description": "The time the option takes — a cost that is not money."
+          },
+          "risk": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "speculative"
+            ],
+            "description": "How likely the figures are to hold."
+          },
+          "liquidity": {
+            "enum": [
+              "days",
+              "weeks",
+              "months",
+              "years"
+            ],
+            "description": "How long getting the money back out takes."
+          },
+          "note": {
+            "type": "string",
+            "description": "Anything the figures do not say."
+          }
+        }
+      }
+    }
+  }
+}

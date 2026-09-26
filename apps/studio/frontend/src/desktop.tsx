@@ -35,6 +35,8 @@ configureFileKinds({
   removeFile: (abs) => b.fs.remove(abs),
   writeBinary: async (abs, blob) => b.fs.writeBinary(abs, await blobToBase64(blob)),
   indexFiles: (from) => b.fs.index(from),
+  // A `.script` runs in the shell's main process, in the document's folder.
+  runScript: (abs, run) => b.runScript(abs, run),
   // The suite's ask worker, when it runs on this machine; the panels say so when it does not.
   ask: askApi("http://127.0.0.1:9250"),
   // On only with STUDIO_REMOTE_CONTENT=on on the app; otherwise the main process refuses every request off this machine too.

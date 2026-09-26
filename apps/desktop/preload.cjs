@@ -35,6 +35,8 @@ contextBridge.exposeInMainWorld("studioDesktop", {
   },
   /** Bytes of a file inside the folder, as a URL the page may load. */
   rawUrl: (p) => `studio-local://file${encodeURI(String(p).startsWith("/") ? p : `/${p}`)}`,
+  /** Run a `.script` document's code in the main process (scriptRunner.cjs), in the document's folder. */
+  runScript: (p, run) => ipcRenderer.invoke("script:run", p, run),
   openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
   showInFolder: (p) => ipcRenderer.invoke("shell:showInFolder", p),
 });
