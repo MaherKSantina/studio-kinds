@@ -39,10 +39,10 @@ jobs:
       - name: Build the page
         run: pnpm page:build
 
+      # wrangler from the npm cache, run at the workspace root: the page's own package.json names
+      # workspace dependencies npm cannot read, so nothing is installed into apps/page.
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/page
-          command: pages deploy dist --project-name studio-kinds --branch master
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 pages deploy apps/page/dist --project-name studio-kinds --branch master --commit-dirty=true

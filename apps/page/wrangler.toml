@@ -1,6 +1,0 @@
-# Cloudflare Pages: the static page from dist/. No functions — everything runs in the browser.
-# `pnpm page:deploy` at the workspace root publishes it; .github/workflows/deploy-page.yml does the
-# same on every push to master.
-name = "studio-kinds"
-compatibility_date = "2025-12-01"
-pages_build_output_dir = "dist"

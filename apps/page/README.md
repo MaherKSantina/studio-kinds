@@ -18,11 +18,13 @@ and `skills/`, so the page is as current as the commit it was built from.
 
 Cloudflare Pages, project `studio-kinds`, from `dist/`. `.github/workflows/deploy-page.yml` builds and
 deploys on every push to `master` and every `studio-v*` tag, with the repository secrets
-`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. By hand, from the workspace root:
+`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. By hand, from the workspace root — wrangler runs
+from the npm cache (`npx --yes wrangler@4`) at the root, since npm cannot read this package's
+workspace dependencies; a logged-in wrangler or `CLOUDFLARE_API_TOKEN` in the environment:
 
 ```bash
-pnpm page:build                 # dist/
-pnpm page:deploy                # build, then wrangler pages deploy (npx wrangler@4; a logged-in wrangler or CLOUDFLARE_API_TOKEN)
+pnpm page:build                 # apps/page/dist
+pnpm page:deploy                # build, then wrangler pages deploy apps/page/dist
 ```
 
 ## Run it locally

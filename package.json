@@ -15,7 +15,7 @@
     "skill:export": "python scripts/export_skill.py",
     "page:dev": "pnpm --filter studio-page dev",
     "page:build": "pnpm --filter studio-page build",
-    "page:deploy": "pnpm --filter studio-page deploy",
+    "page:deploy": "pnpm page:build && npx --yes wrangler@4 pages deploy apps/page/dist --project-name studio-kinds --branch master --commit-dirty=true",
     "desktop:dist": "pnpm --filter studio-frontend build:desktop && pnpm --filter studio-desktop dist",
     "release:build": "pnpm vscode:vsix && pnpm desktop:dist",
     "kinds:check": "python scripts/kind_books.py --check",
