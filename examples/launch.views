@@ -14,8 +14,14 @@ views:
     label: Open work
     filter: [{field: stage, op: not_equals, value: Done}]
     sort: [{field: from, dir: asc}]
+  - key: byowner
+    kind: kanban
+    label: By owner
+    group: owner
   - key: plan
     kind: gantt
+  - key: steps
+    kind: sequence
   - key: all
     kind: table
   - key: status
@@ -45,8 +51,22 @@ views:
       {% endfor %}
       </div>
 items:
-  - {key: plan, name: Plan the launch, stage: Done, from: 2026-10-01, to: 2026-10-03}
-  - {key: build, name: Build it, stage: Doing, from: 2026-10-04, to: 2026-10-10, after: plan}
-  - {key: api, name: The API, stage: Doing, from: 2026-10-04, to: 2026-10-07, under: build}
-  - {key: ui, name: The UI, stage: To do, from: 2026-10-07, to: 2026-10-10, under: build, after: api}
+  - key: plan
+    name: Plan the launch
+    stage: Done
+    from: 2026-10-01
+    to: 2026-10-03
+    owner: Maher
+    content:
+      kind: brief
+      doc:
+        title: The plan
+        sections:
+          - title: Scope
+            body: What ships on the day, and what waits for the next release.
+          - title: Owners
+            body: One name per part — the API, the UI, the tests.
+  - {key: build, name: Build it, stage: Doing, from: 2026-10-04, to: 2026-10-10, after: plan, owner: Maher}
+  - {key: api, name: The API, stage: Doing, from: 2026-10-04, to: 2026-10-07, under: build, owner: Sam}
+  - {key: ui, name: The UI, stage: To do, from: 2026-10-07, to: 2026-10-10, under: build, after: api, owner: Sam}
   - {key: ship, name: Ship, stage: To do, from: 2026-10-11, to: 2026-10-11, after: build}

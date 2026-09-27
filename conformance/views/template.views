@@ -20,6 +20,8 @@ views:
     kind: calendar
   - key: plan
     kind: gantt
+  - key: steps
+    kind: sequence
   - key: chain
     kind: tree
 items:

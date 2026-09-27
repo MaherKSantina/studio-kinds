@@ -3,7 +3,8 @@
 `parent` — and `views` says which views the file offers, each over the items its own `filter` keeps.
 Without `views`, the roles decide: a table always; a kanban when a key is the `status`; a calendar when
 a key is the `start` (the `end` too, when there is one); a gantt when `start`, `end` and `previous` or
-`parent` are named; a dependency tree when `previous` is. A page is a view the file names with a Nunjucks
+`parent` are named; a sequence — the gantt's rows on steps of what comes after what, not days — when
+`previous` or `parent` is; a dependency tree when `previous` is. A page is a view the file names with a Nunjucks
 `template` of its own: it renders the view's items as HTML, the way a `.page` renders its model, and the
 roles never offer one. The views are read: nothing on the page writes the file, and which view is open
 is kept for the session only.
@@ -16,17 +17,21 @@ is kept for the session only.
       status: status       # a kanban column                     → Kanban
       start: start         # a date, YYYY-MM-DD                  → Calendar; with `end` and `previous` or `parent`, Gantt
       end: end             # a date
-      previous: after      # the id(s) of what comes before      → Tree; with the dates, Gantt
-      parent: under        # the id of the item this one is part of — the gantt nests it there
+      previous: after      # the id(s) of what comes before      → Tree, Sequence; with the dates, Gantt
+      parent: under        # the id of the item this one is part of → Sequence; nested under it there and in the gantt
     columns: [To do, Doing, Done]   # the statuses in order; absent = the values found, first seen first
     views:                 # optional — absent = every view the roles allow, the table first
       - key: open
-        kind: kanban       # table | kanban | calendar | gantt | tree | page
+        kind: kanban       # table | kanban | calendar | gantt | sequence | tree | page
         label: Open work
         filter: [{field: status, op: not_equals, value: Done}]   # the suite's clause vocabulary
         sort: [{field: start, dir: asc}]
+        group: owner       # a kanban's LANES: the values this item key takes, first seen first
       - key: plan
         kind: gantt
+      - key: steps
+        kind: sequence     # the gantt's rows on steps of what comes after what — no dates
+        group: owner       # a gantt's or a sequence's GROUPS: a row per value over the top rows carrying it
       - key: report
         kind: page         # the view's items through a Nunjucks template of its own
         template: |
@@ -37,11 +42,17 @@ is kept for the session only.
         status: Done
         start: 2026-10-01
         end: 2026-10-03
+        owner: Ana
+        content:             # a document written into the item — its dialog draws it by its kind
+          kind: md
+          doc: |
+            Scope, owners and the date.
       - id: build
         title: Build it
         status: Doing
         start: 2026-10-04
         end: 2026-10-10
+        owner: Bo
         after: plan          # one id, or a list
       - id: build-api
         title: The API
@@ -53,22 +64,41 @@ is kept for the session only.
 A date is `YYYY-MM-DD`, bare or quoted. `previous` is one id or a list of ids, `parent` one id, every one
 an item of this file. A view's `filter` is clauses over the items' own keys (`equals`, `not_equals`,
 `contains`, `gt`, `between`, `in`, `is_empty`, … — one value or a list); `sort` is `{field, dir}`, first
-key first; `limit` caps the rows. Every other key an item carries is shown as it is — in the table's
-columns and in the item's dialog. A page view's template is handed `items` — the view's items after its
-filter, sort and limit, each a mapping of its own keys as written, a date as `YYYY-MM-DD` — with `title`
-(the document's), `fields` (the role → key map, defaults filled), `columns` (the kanban's) and `view` (its
-`key` and `label`); its `partials` are the templates its `include`, `import`, `from` and `extends` name.
+key first; `limit` caps the rows. A KANBAN view may also name a `group`: an item key whose values
+become the board's LANES — rows of the board, the status columns running across each, in the order
+the values are first seen among that view's items, and a last lane for the items carrying no value
+for that key. Lanes are derived from the items, never listed: a lane is a value that is there. A
+GANTT or a SEQUENCE may name a `group` too: its top rows gathered under a row per value, in the same
+order, and a last row for those carrying none — each row spanning its rows and folding them away as a
+parent does, a part staying under its whole whatever it carries. A
+SEQUENCE lays the gantt's rows on steps instead of days: an item stands one step past everything it
+comes after, and no earlier than its parent may start; an item takes one step and a parent spans its
+parts, so what a whole comes after holds for every part and what comes after a whole comes after all
+of them. Every other key an item carries is shown as it is — in the table's
+columns and in the item's dialog — but `content`: an item that holds more than its line shows writes
+that document into itself, `content: {kind, doc}`, the shape a brief's section and a kanban's task
+carry; the item's dialog draws it by its own kind, and the table names its kind. A page view's
+template is handed `items` — the view's items after its filter, sort and limit, each a mapping of its
+own keys as written, a date as `YYYY-MM-DD` — with `title` (the document's), `fields` (the role → key
+map, defaults filled), `columns` (the kanban's) and `view` (its `key` and `label`); its `partials` are
+the templates its `include`, `import`, `from` and `extends` name.
 
 The check names what the lenient reader dropped or defaulted: not a mapping, no `title`, `fields` that is
 not a mapping, a role that is not one of the seven or mapped to something that is not a key name,
 `columns` that is not a list of text, `views` that is not a list, a view without a key or a kind, a key
-used twice, a kind that is not one of the six or whose roles are not named, a page view whose
+used twice, a kind that is not one of the seven or whose roles are not named, a page view whose
 `template` is missing, not text or blank, whose `partials` are not a mapping of text, or whose templates
-name a partial it does not hold, a `template` or `partials` on a view that is not a page, a clause
+name a partial it does not hold, a `template` or `partials` on a view that is not a page, a `group` on a
+view that is not a kanban, a gantt or a sequence, one that is not an item key name, or one no item carries, a clause
 without a field or with an op outside the vocabulary, `items` that is not a list, an item that is not a mapping or has
 no id, an id used twice, a status that is not a column when columns are given, a start or end that is
 not a date, an end before its start, a `previous` that is not an id or a list of ids, a `parent` that is
-not an id, one naming no item or the item itself, and items caught in a cycle.
+not an id, one naming no item or the item itself, items caught in a cycle, a part and its whole out of
+order — a part after its own whole or after what comes after it, a whole after its own part, which no
+step can hold — and what an item's `content`
+cannot be — not a mapping, no `kind` or `doc`, an `md` document that is not text, `by`, `docs` or `file`
+on it. Each written document is then run through its own kind's engine, so a broken brief inside an
+item is a broken views document.
 """
 from __future__ import annotations
 
@@ -78,17 +108,20 @@ from typing import Any
 from .. import _yaml
 from .._js import as_str, defined, get, is_list, is_obj, js_str, json_of, plural
 from .._rows import TableRules, apply_table, read_table_rules
-from . import CheckResult
+from . import CheckResult, content_problems, read_content, written_doc_problems
 from .kanban import as_date
 from .page import template_problems
 
 ROLES: tuple[str, ...] = ("id", "title", "status", "start", "end", "previous", "parent")
 """The roles an item key can play, and the only keys `fields` takes."""
 
-VIEW_KINDS: tuple[str, ...] = ("table", "kanban", "calendar", "gantt", "tree", "page")
+VIEW_KINDS: tuple[str, ...] = ("table", "kanban", "calendar", "gantt", "sequence", "tree", "page")
 """The views a file can name."""
 
-ROLE_VIEWS: tuple[str, ...] = ("table", "kanban", "calendar", "gantt", "tree")
+GROUP_KINDS: tuple[str, ...] = ("kanban", "gantt", "sequence")
+"""The views a `group` key gathers: the kanban into lanes, the gantt and the sequence into groups."""
+
+ROLE_VIEWS: tuple[str, ...] = ("table", "kanban", "calendar", "gantt", "sequence", "tree")
 """The views the roles allow, in the order the page offers them when the file names none — a page is a
 view only a file names, with its template."""
 
@@ -105,6 +138,8 @@ class Item:
     end: str | None = None
     previous: list[str] = field(default_factory=list)
     parent: str | None = None
+    content: dict | None = None
+    """`{"kind": str, "doc": Any}` when the item holds a written document."""
 
 
 @dataclass
@@ -117,6 +152,9 @@ class View:
     """A page view's Nunjucks template; empty for every other kind."""
     partials: dict[str, str] = field(default_factory=dict)
     """A page view's partials that are text, by name."""
+    group: str = ""
+    """The item key whose values gather the view's items — a kanban's lanes, a gantt's or a sequence's groups; empty =
+    none."""
 
 
 @dataclass
@@ -149,6 +187,8 @@ def view_offered(kind: str, fields: dict[str, str]) -> bool:
         return "start" in fields
     if kind == "gantt":
         return "start" in fields and "end" in fields and ("previous" in fields or "parent" in fields)
+    if kind == "sequence":
+        return "previous" in fields or "parent" in fields
     if kind == "tree":
         return "previous" in fields
     return False
@@ -157,7 +197,8 @@ def view_offered(kind: str, fields: dict[str, str]) -> bool:
 def view_needs(kind: str) -> str:
     """What a view of this kind needs under `fields`, in words — for the checker's line."""
     return {"table": "nothing", "page": "nothing", "kanban": "a `status` role", "calendar": "a `start` role",
-            "gantt": "`start`, `end` and `previous` or `parent` roles", "tree": "a `previous` role"}.get(kind, "")
+            "gantt": "`start`, `end` and `previous` or `parent` roles", "sequence": "a `previous` or a `parent` role",
+            "tree": "a `previous` role"}.get(kind, "")
 
 
 def _id_text(v: Any) -> str:
@@ -195,6 +236,8 @@ def _read_views(raw: Any, fields: dict[str, str]) -> list[View] | None:
             view.template = v["template"] if isinstance(v.get("template"), str) else ""
             view.partials = {(k if isinstance(k, str) else js_str(k)): p
                              for k, p in (v["partials"].items() if is_obj(v.get("partials")) else []) if isinstance(p, str)}
+        elif kind in GROUP_KINDS:
+            view.group = as_str(v.get("group"))
         out.append(view)
     return out
 
@@ -222,7 +265,7 @@ def parse(text: str) -> Views:
         previous = [p for p in _ids(it.get(fields["previous"])) if p != id_] if "previous" in fields else []
         parent = _id_text(it.get(fields["parent"])) if "parent" in fields else ""
         items.append(Item(id_, title, dict(it), status or None, start or None, end or None, previous,
-                          parent if parent and parent != id_ else None))
+                          parent if parent and parent != id_ else None, read_content(it.get("content"))))
     for it in items:
         it.previous = [p for p in it.previous if p in seen]
         if it.parent and it.parent not in seen:
@@ -240,6 +283,37 @@ def columns_of(doc: Views) -> list[str]:
         if it.status and it.status not in out:
             out.append(it.status)
     return out
+
+
+def lanes_of(view: View, items: list[Item]) -> list[tuple[str, list[Item]]]:
+    """A kanban's lanes: the values its `group` key takes among these items, first seen first, and
+    last the items carrying none, under an empty label. One unlabelled lane when it groups by
+    nothing — the plain board a kanban degenerates to."""
+    if not view.group:
+        return [("", items)]
+    lanes: list[tuple[str, list[Item]]] = []
+    at: dict[str, list[Item]] = {}
+    rest: list[Item] = []
+    for it in items:
+        v = it.fields.get(view.group)
+        label = "" if v is None or v == "" or isinstance(v, bool) else (v if isinstance(v, str) else js_str(v))
+        if not label:
+            rest.append(it)
+            continue
+        if label not in at:
+            at[label] = []
+            lanes.append((label, at[label]))
+        at[label].append(it)
+    if rest:
+        lanes.append(("", rest))
+    return lanes
+
+
+def top_items(items: list[Item]) -> list[Item]:
+    """The items at the top of a view's outline: those whose parent is not among them — what a gantt's or a sequence's
+    `group` gathers, their parts staying under them."""
+    ids = {it.id for it in items}
+    return [it for it in items if not (it.parent and it.parent in ids)]
 
 
 def available_views(doc: Views) -> list[View]:
@@ -291,6 +365,50 @@ def parent_cycle(items: list[Item]) -> list[str]:
     return bad
 
 
+def unplaced(items: list[Item]) -> list[str]:
+    """The items a sequence gives no step, in the file's order. An item stands one step past everything it comes
+    after and no earlier than its parent may start, and a parent spans its parts — so an item's start waits for the
+    end of what it comes after and for its parent's start, and a parent's end for its parts' ends. Two points per
+    item (its start 2i, its end 2i + 1) in Kahn's order: a point in a loop, or after one, is never reached — a cycle
+    of `previous`, a part after its own whole or after what comes after it, a whole after its own part. Items in a
+    cycle of `parent` are `parent_cycle`'s and left out."""
+    nested = set(parent_cycle(items))
+    kept = [it for it in items if it.id not in nested]
+    at = {it.id: i for i, it in enumerate(kept)}
+    parts: dict[str, list[Item]] = {}
+    for it in kept:
+        if it.parent and it.parent in at:
+            parts.setdefault(it.parent, []).append(it)
+    n = len(kept) * 2
+    after: list[list[int]] = [[] for _ in range(n)]
+    waiting = [0] * n
+
+    def link(a: int, b: int) -> None:
+        after[a].append(b)
+        waiting[b] += 1
+
+    for i, it in enumerate(kept):
+        if it.id in parts:
+            for c in parts[it.id]:
+                link(2 * i, 2 * at[c.id])
+                link(2 * at[c.id] + 1, 2 * i + 1)
+        else:
+            link(2 * i, 2 * i + 1)
+        for p in it.previous:
+            if p in at:
+                link(2 * at[p] + 1, 2 * i)
+    reached = [False] * n
+    queue = [v for v in range(n) if not waiting[v]]
+    while queue:
+        v = queue.pop()
+        reached[v] = True
+        for w in after[v]:
+            waiting[w] -= 1
+            if waiting[w] == 0:
+                queue.append(w)
+    return [it.id for it in kept if not (reached[2 * at[it.id]] and reached[2 * at[it.id] + 1])]
+
+
 def problems(text: str) -> list[str]:
     raw = _yaml.load_or_none(text)
     out: list[str] = []
@@ -317,6 +435,7 @@ def problems(text: str) -> list[str]:
                     out.append(f"column {i + 1}: not text (got {json_of(c)})")
             if "status" not in fields:
                 out.append("`columns` without a `status` role — say which item key is the status under `fields`")
+    item_keys = {k for it in (raw["items"] if is_list(raw.get("items")) else []) if is_obj(it) for k in it}
     if defined(get(raw, "views")):
         if not is_list(raw["views"]):
             out.append(f"`views` is not a list — the views to offer, each `key`, `kind` ({', '.join(VIEW_KINDS)}) and its `filter`")
@@ -347,6 +466,18 @@ def problems(text: str) -> list[str]:
                     for k in ("template", "partials"):
                         if defined(get(v, k)):
                             out.append(f"{name}: `{k}` is a page view's — a {kind} draws the items itself")
+                if defined(get(v, "group")):
+                    if kind in VIEW_KINDS and kind not in GROUP_KINDS:
+                        out.append(f"{name}: `group` is a kanban's, a gantt's or a sequence's — a {kind} has no lanes or groups")
+                    elif kind in GROUP_KINDS:
+                        g = v["group"]
+                        lanes = kind == "kanban"
+                        if not isinstance(g, str) or not g:
+                            out.append(f"{name}: `group` is not an item key (got {json_of(g)}) — the key whose values are the "
+                                       + ("lanes" if lanes else "groups"))
+                        elif item_keys and g not in item_keys:
+                            out.append(f"{name}: group `{g}` — no item carries that key, so "
+                                       + ("the board would be one lane" if lanes else "every row would sit in one group"))
                 read_table_rules(v, out, "filter", name)
     if not is_list(raw.get("items")):
         out.append("no `items` — the list itself; `items: []` is an empty one")
@@ -403,6 +534,7 @@ def problems(text: str) -> list[str]:
                 out.append(f"{name}: `{fields['parent']}` is not an id (got {json_of(p)}) — one item this one is part of")
             else:
                 parents.append((id_, _id_text(p)))
+        out.extend(f"{name}: {p}" for p in content_problems(it, "an item", "a views document", "brief, md, playbook"))
     for id_, prev in edges:
         for p in prev:
             p_text = _id_text(p)
@@ -424,11 +556,17 @@ def problems(text: str) -> list[str]:
     nested = parent_cycle(doc.items)
     if nested:
         out.append(f"parent cycle: {' → '.join(nested)} — items inside each other have no top")
+    if not cyclic and not nested:
+        looped = unplaced(doc.items)
+        if looped:
+            out.append(f"part and whole out of order: {' → '.join(looped)} — a part cannot come after its own whole, "
+                       "or after what comes after it, nor a whole after its own part")
     return out
 
 
 def summary(doc: Views) -> str:
-    n = plural(len(doc.items), 'item')
+    written = sum(1 for it in doc.items if it.content and it.content["kind"])
+    n = plural(len(doc.items), 'item') + (f", {plural(written, 'document')}" if written else "")
     if doc.views is None:
         views = []
         for v in available_views(doc):
@@ -436,8 +574,15 @@ def summary(doc: Views) -> str:
         return f"{n} · {', '.join(views)}"
     parts = []
     for v in doc.views:
-        kind = f"kanban, {plural(len(columns_of(doc)), 'column')}" if v.kind == "kanban" else v.kind
-        shown = len(rows_of_view(doc, v))
+        rows = rows_of_view(doc, v)
+        kind = v.kind
+        if v.kind == "kanban":
+            kind = f"kanban, {plural(len(columns_of(doc)), 'column')}"
+            if v.group:
+                kind += f", {plural(len(lanes_of(v, rows)), 'lane')}"
+        elif v.group:
+            kind += f", {plural(len(lanes_of(v, top_items(rows))), 'group')}"
+        shown = len(rows)
         parts.append(f"{v.key} ({kind}) {shown}" if shown != len(doc.items) else f"{v.key} ({kind})")
     return f"{n} · views: {', '.join(parts) or 'none'}"
 
@@ -446,4 +591,8 @@ def check(text: str) -> CheckResult:
     y = _yaml.error_line(text)
     if y:
         return CheckResult([y])
-    return CheckResult(problems(text), summary(parse(text)))
+    doc = parse(text)
+    out = problems(text)
+    for it in doc.items:
+        out.extend(written_doc_problems(f"item {it.id}", it.content))
+    return CheckResult(out, summary(doc))

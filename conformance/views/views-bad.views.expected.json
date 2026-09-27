@@ -3,7 +3,7 @@
   "problems": [
     "view 1: not a mapping — write `key`, `kind` and the rest",
     "view 2: no `key` — the view's identity",
-    "view k: kind \"dance\" is not a view — one of table, kanban, calendar, gantt, tree, page",
+    "view k: kind \"dance\" is not a view — one of table, kanban, calendar, gantt, sequence, tree, page",
     "view k: key twice",
     "view k: a gantt needs `start`, `end` and `previous` or `parent` roles under `fields`",
     "view cal: a calendar needs a `start` role under `fields`",

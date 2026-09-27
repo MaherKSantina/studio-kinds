@@ -6,7 +6,7 @@ export type { FileReader, DirFileContent, ScriptRun, ScriptRunResult, ScriptRunn
 // The script and views kinds — their engines, pure.
 export { parseScript, scriptRunOf, scriptSummary, SCRIPT_LANGUAGES } from "./lib/scriptDoc";
 export type { ScriptDoc } from "./lib/scriptDoc";
-export { parseViews, availableViews, rowsOfView, docOfView, columnsOf as viewsColumnsOf, ganttOf, treeOf, viewsSummary } from "./lib/viewsDoc";
+export { parseViews, availableViews, rowsOfView, docOfView, columnsOf as viewsColumnsOf, ganttOf, sequenceOf, treeOf, viewsSummary } from "./lib/viewsDoc";
 export type { ViewsDoc, ViewsItem, ViewName, ViewSpec } from "./lib/viewsDoc";
 // The page kind — its parser, the frame's document and the code the frame renders with.
 export { parsePage, pageSummary, pageFrame, pageError, RENDER_PAGE } from "./lib/pageDoc";

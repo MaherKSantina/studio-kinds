@@ -21,6 +21,7 @@ skills/studio-files    the studio-files skill for Claude Code — generated from
 skills/studio-file-artifact  renders a .brief, .playbook or .pipeline as a shareable Claude artifact
 claude/                Claude's master playbook for this repository (claude.playbook) and its memory (memory.brief, never committed)
 packages/, apps/       the Studio's front end — parked: the crosscut kit, the file-kind layer, the web Studio, the desktop app, the VS Code extension
+apps/page              the paste-and-preview page — https://studio-kinds.pages.dev — a document on the left, the Studio's renderer on the right, the skill a click away
 ```
 
 **Implementing a kind?** Start at [`kinds/README.md`](kinds/README.md). Each kind's `README.md` is

@@ -254,7 +254,7 @@ export const FILE_KINDS: FileKindDef[] = [
   // variables the run gets, read before it runs; Run starts it on the host.
   { key: "script", label: "Script", extensions: ["script"], studioPath: STUDIO, Renderer: ScriptR },
   // ONE LIST of items and the views over it — a table, and a kanban, a
-  // calendar, a gantt and a tree as the roles the file names allow. Read only.
+  // calendar, a gantt, a sequence and a tree as the roles the file names allow. Read only.
   { key: "views", label: "Views", extensions: ["views"], studioPath: STUDIO, Renderer: ViewsR },
   // A PAGE made from its own data: a Nunjucks template, its model and its
   // partials, rendered inside the sandboxed frame an `.html` file opens in.

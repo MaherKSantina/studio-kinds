@@ -39,7 +39,7 @@ export const TEMPLATE_KINDS: ReadonlyArray<{ ext: string; what: string }> = [
   { ext: "clip", what: "the notes of one MIDI clip — pitches by name or number, beats, velocities, drum lanes as step strings; a piano roll, exported as a .mid" },
   { ext: "song", what: "clips placed on tracks — an arrangement, exported as one multi-track .mid for Ableton" },
   { ext: "script", what: "a script to press play on — the code, its interpreter (powershell, pwsh, bash, sh, python, node, cmd) and the environment variables the run gets, in one file" },
-  { ext: "views", what: "one list of items seen several ways — a table always, and a kanban, a calendar, a gantt and a dependency tree as the roles under `fields` allow (status, start, end, previous)" },
+  { ext: "views", what: "one list of items seen several ways — a table always, and a kanban, a calendar, a gantt, a sequence of steps and a dependency tree as the roles under `fields` allow (status, start, end, previous, parent)" },
   { ext: "page", what: "an HTML page made from its own data — a Nunjucks template, the model it renders and the partials it names, rendered on open" },
 ];
 
@@ -375,7 +375,7 @@ code: |
   Write-Host "$env:GREETING from $(Get-Location)"
 `;
 
-/** The checker's template (untitled.views): three items with every role named, so all five views have something to show. */
+/** The checker's template (untitled.views): three items with every role but `parent` named, so all six views have something to show. */
 const viewsText = (stem: string) => `title: ${JSON.stringify(stem)}
 description: "One list of items; the roles under \`fields\` decide which views it offers."
 fields:

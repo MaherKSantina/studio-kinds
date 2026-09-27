@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "cycle: a → b — items that come after each other cannot be ordered"
+  ],
+  "summary": "4 items · table, sequence, tree"
+}

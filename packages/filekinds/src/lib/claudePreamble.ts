@@ -36,7 +36,7 @@ event-based content under decision answers → \`.playbook\`; workflows tracked 
 \`.kanban\` or \`.calendar\`; rules that sort and filter → \`.policy\`; data rows → \`.jsonl\`; a curated
 list with the rules that shaped it → \`.pipeline\`; ways to place one pot of money, weighed against each
 other → \`.finance\`; a script to press play on → \`.script\`; one list of items seen as a table, a kanban, a
-calendar, a gantt, a tree or a page of its own → \`.views\`; an HTML page made from its own data, a Nunjucks
+calendar, a gantt, a sequence of steps, a tree or a page of its own → \`.views\`; an HTML page made from its own data, a Nunjucks
 template and the model it renders → \`.page\`; nothing fits → \`.md\`).
 
 - Before writing a kind, read its spec: \`${CHECKER} --spec <ext>\`

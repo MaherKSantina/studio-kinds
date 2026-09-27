@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "view steps: a sequence needs a `previous` or a `parent` role under `fields`"
+  ],
+  "summary": "2 items · views: board (kanban, 2 columns)"
+}

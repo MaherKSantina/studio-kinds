@@ -15,8 +15,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .. import _yaml
-from .._js import as_str, get, is_obj, defined, is_list
-from . import CheckResult, check_written, written_kind
+from .._js import as_str, is_obj, is_list
+from . import CheckResult, content_problems, read_content, written_doc_problems
 
 
 @dataclass
@@ -27,17 +27,11 @@ class Section:
     children: list["Section"] = field(default_factory=list)
 
 
-def _coerce_content(raw: Any) -> dict | None:
-    if not is_obj(raw):
-        return None
-    return {"kind": written_kind(raw.get("kind")) or "", "doc": raw.get("doc")}
-
-
 def _coerce(raw: Any) -> Section | None:
     if not is_obj(raw):
         return None
     node = Section(name=as_str(raw.get("title")) or as_str(raw.get("name")) or as_str(raw.get("heading")))
-    node.content = _coerce_content(raw.get("content"))
+    node.content = read_content(raw.get("content"))
     node.children = [n for n in (_coerce(c) for c in (raw.get("children") if is_list(raw.get("children")) else [])) if n]
     return node
 
@@ -72,22 +66,7 @@ def problems(text: str) -> list[str]:
                 continue
             name = as_str(raw.get("title")) or as_str(raw.get("name")) or as_str(raw.get("heading")) or "Untitled"
             path = f"{prefix} › {name}" if prefix else name
-            if defined(get(raw, "content")):
-                where = f"section {path}"
-                c = raw["content"]
-                if not is_obj(c):
-                    out.append(f"{where}: `content` is not a mapping — write `kind` and `doc`")
-                else:
-                    kind = written_kind(c.get("kind"))
-                    if not kind:
-                        out.append(f"{where}: `content` has no `kind` — say which kind renders it (playbook, kanban, md, …)")
-                    if not defined(get(c, "doc")):
-                        out.append(f"{where}: `content` has no `doc` — the document itself, as a file of that kind would hold it")
-                    for k in ("by", "docs", "file"):
-                        if defined(get(c, k)):
-                            out.append(f"{where}: `content` has `{k}` — a section holds one document written in; a brief has no answers to vary by and names no file")
-                    if kind == "md" and defined(get(c, "doc")) and not isinstance(c["doc"], str):
-                        out.append(f"{where}: an `md` document is its text — write it as a block string")
+            out.extend(f"section {path}: {p}" for p in content_problems(raw, "a section", "a brief", "playbook, kanban, md"))
             walk(raw["children"] if is_list(raw.get("children")) else [], path)
 
     walk(_root_list(loaded), "")
@@ -115,15 +94,8 @@ def check(text: str) -> CheckResult:
     out = problems(text)
     written = 0
     for path, node in _flatten(sections):
-        if not node.content or not node.content["kind"]:
-            continue
-        written += 1
-        kind = node.content["kind"]
-        name = f"section {path} ({kind})"
-        known, r = check_written(kind, node.content["doc"])
-        if not known:
-            out.append(f"{name}: not a kind the Studio knows — `--kinds` lists them")
-            continue
-        out.extend(f"{name}: {p}" for p in r.problems)
+        if node.content and node.content["kind"]:
+            written += 1
+        out.extend(written_doc_problems(f"section {path}", node.content))
     summary = f"{_count(sections)} sections" + (f", {written} documents" if written else "")
     return CheckResult(out, summary)

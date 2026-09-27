@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/views/v1.schema.json",
   "title": "views",
-  "description": "One list of items in the file and the views over it. `fields` says which item key plays which role — id, title, status, start, end, previous, parent — and `views` which views the file offers, each over the items its filter keeps. Without `views`, the roles decide: a table always, a kanban by `status`, a calendar by `start` (and `end`), a gantt by `start`, `end` and `previous` or `parent`, a dependency tree by `previous`. A page is a view the file names with a Nunjucks `template` of its own, rendering the view's items as HTML. Read only; which view is open is kept for the session.",
+  "description": "One list of items in the file and the views over it. `fields` says which item key plays which role — id, title, status, start, end, previous, parent — and `views` which views the file offers, each over the items its filter keeps. Without `views`, the roles decide: a table always, a kanban by `status`, a calendar by `start` (and `end`), a gantt by `start`, `end` and `previous` or `parent`, a sequence — the gantt's rows on steps of what comes after what, not days — by `previous` or `parent`, a dependency tree by `previous`. A page is a view the file names with a Nunjucks `template` of its own, rendering the view's items as HTML. An item that holds more than its line shows writes that document into itself. Read only; which view is open is kept for the session.",
   "type": "object",
   "required": [
     "title",
@@ -43,11 +43,11 @@
         },
         "previous": {
           "type": "string",
-          "description": "The key naming what comes before — one id or a list of ids — allows the Tree view; with the dates, the Gantt."
+          "description": "The key naming what comes before — one id or a list of ids — allows the Tree view and the Sequence; with the dates, the Gantt."
         },
         "parent": {
           "type": "string",
-          "description": "The key naming the one item this one is part of — the gantt nests it under that item, and a parent without dates spans its children."
+          "description": "The key naming the one item this one is part of — allows the Sequence; the gantt and the sequence nest it under that item, a gantt parent without dates spans its children, and a sequence parent spans its parts' steps."
         }
       },
       "additionalProperties": false
@@ -76,12 +76,13 @@
           },
           "kind": {
             "type": "string",
-            "description": "Which view; its roles must be named under `fields` (a kanban needs `status`, a calendar `start`, a gantt `start`, `end` and `previous` or `parent`, a tree `previous`). A page needs no role and has a `template` of its own.",
+            "description": "Which view; its roles must be named under `fields` (a kanban needs `status`, a calendar `start`, a gantt `start`, `end` and `previous` or `parent`, a sequence `previous` or `parent`, a tree `previous`). A page needs no role and has a `template` of its own.",
             "enum": [
               "table",
               "kanban",
               "calendar",
               "gantt",
+              "sequence",
               "tree",
               "page"
             ]
@@ -131,6 +132,10 @@
             "description": "At most this many items, after the filter and the sort.",
             "exclusiveMinimum": 0
           },
+          "group": {
+            "type": "string",
+            "description": "The item key whose values gather the view's items — a kanban's LANES, the board's rows with the status columns running across each; a gantt's or a sequence's GROUPS, a row per value over the top rows of the outline, spanning and folding them, a part staying under its whole. The values that key takes among the view's items, first seen first, and last the items carrying none — derived from the items, never listed. A problem on any other kind, and when no item carries the key."
+          },
           "template": {
             "type": "string",
             "description": "A page view's Nunjucks template, whose output is the view. It is handed `items` — the view's items after its filter, sort and limit, each a mapping of its own keys as written, a date as `YYYY-MM-DD` — with `title` (the document's), `fields` (the role → key map), `columns` (the kanban's) and `view` (its `key` and `label`). A page view only.",
@@ -166,7 +171,13 @@
       "type": "array",
       "items": {
         "type": "object",
-        "description": "One item — its fields as they are. The key playing `id` is required and unique; the keys playing `start` and `end` are dates; the key playing `previous` is an id or a list of ids, the key playing `parent` one id, of items in this file."
+        "description": "One item — its fields as they are. The key playing `id` is required and unique; the keys playing `start` and `end` are dates; the key playing `previous` is an id or a list of ids, the key playing `parent` one id, of items in this file; `content` is a document written in.",
+        "properties": {
+          "content": {
+            "$ref": "#/$defs/writtenDocument",
+            "description": "One document of another kind, written into the item; the item's dialog draws it above the fields, and the table names its kind."
+          }
+        }
       },
       "description": "The list itself. `items: []` is an empty one."
     }
@@ -210,6 +221,65 @@
           "description": "One value, or a list — any of them for a text op, `[lo, hi]` for `between`, the set for `in`/`not_in`."
         }
       }
+    },
+    "writtenDocument": {
+      "description": "A document written inside another. `kind` names the engine that renders `doc`; `doc` is the document exactly as a file of that kind would hold it — as that kind's YAML parses it, or its text for `md`. Checked by that kind's own engine. One document per item: an item that needs two is two items.",
+      "type": "object",
+      "required": [
+        "kind",
+        "doc"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Which engine renders the document — `md`, `brief`, `playbook`, any kind the Studio knows.",
+          "x-studio-kind": true
+        },
+        "doc": {
+          "description": "The document, as that kind's YAML parses it; a string for `md`."
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "by"
+            ]
+          },
+          {
+            "required": [
+              "docs"
+            ]
+          },
+          {
+            "required": [
+              "file"
+            ]
+          }
+        ]
+      },
+      "x-studio-written-document": {
+        "kind": "kind",
+        "doc": "doc"
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "md"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "doc": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "x-studio-roles": {
@@ -218,7 +288,7 @@
     "status": "a column of the Kanban; matched case-insensitively against `columns`",
     "start": "a date; a value that is not one is a problem",
     "end": "a date; before `start` is a problem",
-    "previous": "ids of items in this file; the item itself, an unknown id or a cycle is a problem",
+    "previous": "ids of items in this file; the item itself, an unknown id or a cycle is a problem, and so is a part after its own whole or after what comes after it, or a whole after its own part",
     "parent": "one id of an item in this file; the item itself, an unknown id or a cycle is a problem"
   }
 }

@@ -1,20 +1,48 @@
 /**
- * The five panes of a `.views` document — the same items laid out as a
- * table, a kanban, a calendar, a gantt (nested by `parent`) and a dependency
- * tree (by `previous`). Every pane reads the document as its view sees it
- * (viewsDoc.ts) and calls `onOpen(id)` for an item; none writes anything.
+ * The six panes of a `.views` document — the same items laid out as a
+ * table, a kanban, a calendar (a day, a week or a month), a gantt (nested by
+ * `parent`, on days), a sequence (nested by `parent`, on steps of `previous`)
+ * and a dependency tree (by `previous`). Every pane reads the document as its
+ * view sees it (viewsDoc.ts) and calls `onOpen(id)` for an item; none writes
+ * anything. An item that holds a document written in carries a mark wherever
+ * its label is drawn.
  */
 import React, { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import { cn } from "crosscut";
-import { monthGrid, type CalTask } from "../../lib/journeyStages";
+import { monthGrid, type CalTask, type CalWeekCell } from "../../lib/journeyStages";
 import {
-  addDays, cellText, columnIndexOf, columnsOf, ganttOf, tableColumnsOf, treeOf,
+  CALENDAR_SCALES, addDays, columnIndexOf, columnsOf, daysBetween, foldOutline, ganttOf, groupOutline, isGroupRow, itemCellText, lanesOf,
+  linksOf, sameSpan, sequenceOf, shiftCalendar, spanTitle, tableColumnsOf, treeOf, type CalendarScale, type GroupRow, type OutlineRow,
   type TreeNode, type ViewsDoc, type ViewsItem,
 } from "../../lib/viewsDoc";
 import { colorOf } from "./ItemDialog";
 
-export interface PaneProps { doc: ViewsDoc; onOpen: (id: string) => void }
+/** The calendar's scale and the day it shows — the page's for the session, per view, like which view is open. */
+export interface CalendarState { scale: CalendarScale; day: string }
+
+export interface PaneProps {
+  doc: ViewsDoc;
+  onOpen: (id: string) => void;
+  /** A calendar pane's scale and day, kept by the host across view switches; absent, the pane keeps its own. */
+  calendar?: CalendarState;
+  onCalendar?: (s: CalendarState) => void;
+  /** A kanban view's `group` — the item key whose values lane the board; absent, one plain board. */
+  group?: string;
+  /** The parents a gantt or a sequence has folded, by id, kept by the host across view switches; absent, the pane keeps its own. */
+  folded?: string[];
+  onFolded?: (ids: string[]) => void;
+}
+
+/** The small buttons over a pane: the calendar's moves, the outline's folds. */
+const NAV = "rounded border px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground";
+
+/** The mark of an item holding a document written in — its dialog draws it. */
+function DocMark({ item }: { item: ViewsItem }) {
+  return item.content ? <FileText aria-hidden className="size-3 shrink-0 opacity-80" /> : null;
+}
+/** The words a title attribute adds for an item's document: " · holds a brief". */
+const docWords = (item: ViewsItem): string => (item.content ? ` · holds a ${item.content.kind || "document"}` : "");
 
 /* ── Table ──────────────────────────────────────────────────────────────── */
 
@@ -32,8 +60,8 @@ export function TablePane({ doc, onOpen }: PaneProps) {
             <tr key={it.id} className="cursor-pointer border-b last:border-b-0 hover:bg-accent/60" onClick={() => onOpen(it.id)}>
               {cols.map((c) => (
                 <td key={c} className={cn("max-w-[32ch] truncate px-2 py-1 align-top", c === doc.fields.id && "font-mono text-muted-foreground")}
-                  title={cellText(it.fields[c])}>
-                  {cellText(it.fields[c])}
+                  title={itemCellText(it, c)}>
+                  {itemCellText(it, c)}
                 </td>
               ))}
             </tr>
@@ -48,9 +76,9 @@ export function TablePane({ doc, onOpen }: PaneProps) {
 
 function Card({ item, columns, onOpen }: { item: ViewsItem; columns: string[]; onOpen: () => void }) {
   return (
-    <button type="button" onClick={onOpen}
+    <button type="button" onClick={onOpen} title={`${item.title}${docWords(item)}`}
       className="w-full rounded-md border bg-background p-2 text-left text-sm transition-colors hover:bg-accent focus-visible:outline focus-visible:outline-2">
-      <span className="block font-medium leading-snug">{item.title}</span>
+      <span className="flex items-start gap-1.5 font-medium leading-snug"><span className="min-w-0 flex-1">{item.title}</span><DocMark item={item} /></span>
       {(item.start || item.previous.length > 0) && (
         <span className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground">
           {item.start && <span className="font-mono">{item.start}{item.end && item.end !== item.start ? ` → ${item.end}` : ""}</span>}
@@ -62,8 +90,9 @@ function Card({ item, columns, onOpen }: { item: ViewsItem; columns: string[]; o
   );
 }
 
-export function KanbanPane({ doc, onOpen }: PaneProps) {
+export function KanbanPane({ doc, onOpen, group }: PaneProps) {
   const columns = columnsOf(doc);
+  const lanes = useMemo(() => lanesOf(doc.items, group), [doc.items, group]);
   if (!columns.length) return <Empty>No statuses found — nothing to lay in columns.</Empty>;
   const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: `repeat(${columns.length}, minmax(200px, 1fr))`, gap: 8 };
   return (
@@ -81,15 +110,25 @@ export function KanbanPane({ doc, onOpen }: PaneProps) {
             );
           })}
         </div>
-        <div style={grid} className="mt-1.5 rounded-lg border bg-muted/30 p-2">
-          {columns.map((c, ci) => (
-            <div key={c} className="flex min-h-12 flex-col gap-1.5">
-              {doc.items.filter((it) => columnIndexOf(it, columns) === ci).map((it) => (
-                <Card key={it.id} item={it} columns={columns} onOpen={() => onOpen(it.id)} />
+        {lanes.map((lane, li) => (
+          <div key={lane.label || `#${li}`}>
+            {group && (
+              <div className="mt-2 flex items-baseline gap-1.5 px-1 text-xs font-medium">
+                <span className={cn("min-w-0 truncate", !lane.label && "italic text-muted-foreground")}>{lane.label || "—"}</span>
+                <span className="font-normal text-muted-foreground">{lane.items.length}</span>
+              </div>
+            )}
+            <div style={grid} className="mt-1.5 rounded-lg border bg-muted/30 p-2">
+              {columns.map((c, ci) => (
+                <div key={c} className="flex min-h-12 flex-col gap-1.5">
+                  {lane.items.filter((it) => columnIndexOf(it, columns) === ci).map((it) => (
+                    <Card key={it.id} item={it} columns={columns} onOpen={() => onOpen(it.id)} />
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
         {!doc.items.length && <p className="mt-2 px-1 text-xs text-muted-foreground">No items yet.</p>}
       </div>
     </div>
@@ -99,65 +138,112 @@ export function KanbanPane({ doc, onOpen }: PaneProps) {
 /* ── Calendar ───────────────────────────────────────────────────────────── */
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const monthOf = (iso: string) => iso.slice(0, 7);
-const shiftMonth = (ym: string, by: number): string => {
-  const [y, m] = ym.split("-").map(Number);
-  const d = new Date(Date.UTC(y, m - 1 + by, 1));
-  return d.toISOString().slice(0, 7);
-};
+const SCALE_LABEL: Record<CalendarScale, string> = { day: "Day", week: "Week", month: "Month" };
+/** An item's last day on the calendar: its end, or its start alone when it has none (or one before it). */
+const lastDayOf = (it: ViewsItem): string => (it.end && it.end >= it.start! ? it.end : it.start!);
 
-export function CalendarPane({ doc, onOpen }: PaneProps) {
+/** One item on the calendar: its label on its column's colour, and the mark of a document written in. */
+function CalendarChip({ item, columns, wrap, onOpen }: { item: ViewsItem; columns: string[]; wrap?: boolean; onOpen: () => void }) {
+  return (
+    <button type="button" title={`${item.title} · ${item.start} → ${lastDayOf(item)}${docWords(item)}`} onClick={onOpen}
+      className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left text-[13px] text-white hover:opacity-80"
+      style={{ background: colorOf(item, columns) }}>
+      <span className={cn("min-w-0 flex-1", wrap ? "break-words" : "truncate")}>{item.title}</span>
+      <DocMark item={item} />
+    </button>
+  );
+}
+
+/** A day: a line for every item that covers it — its label, its status, its span and which of its days this
+ *  is, and the kind of the document it holds. */
+function DayList({ items, day, columns, onOpen }: { items: ViewsItem[]; day: string; columns: string[]; onOpen: (id: string) => void }) {
+  if (!items.length) return <p className="mb-2 mt-1.5 rounded-lg border px-3 py-4 text-xs text-muted-foreground">Nothing on this day.</p>;
+  return (
+    <div className="mb-2 mt-1.5 rounded-lg border">
+      {items.map((it) => {
+        const days = daysBetween(it.start!, lastDayOf(it)) + 1;
+        const span = days > 1 ? `${it.start} → ${lastDayOf(it)} · day ${daysBetween(it.start!, day) + 1} of ${days}` : it.start;
+        return (
+          <button key={it.id} type="button" onClick={() => onOpen(it.id)} title={`${it.title}${docWords(it)}`}
+            className="flex w-full items-start gap-2.5 border-b px-3 py-2 text-left last:border-b-0 hover:bg-accent">
+            <span className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: colorOf(it, columns) }} />
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5 text-sm font-medium">{it.title}<DocMark item={it} /></span>
+              <span className="mt-0.5 block text-[12px] text-muted-foreground">{[it.status, span, it.content?.kind].filter(Boolean).join(" · ")}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function CalendarPane({ doc, onOpen, calendar, onCalendar }: PaneProps) {
   const columns = columnsOf(doc);
   const dated = useMemo(() => doc.items.filter((it) => it.start), [doc.items]);
   const undated = useMemo(() => doc.items.filter((it) => !it.start), [doc.items]);
   const today = new Date().toISOString().slice(0, 10);
-  const firstMonth = dated.length ? monthOf(dated.map((it) => it.start!).sort()[0]) : monthOf(today);
-  const [month, setMonth] = useState(firstMonth);
-  const tasks: CalTask[] = useMemo(() => dated.map((it) => ({
-    label: it.title, start: it.start!, end: it.end && it.end >= it.start! ? it.end : it.start!, group: it.id,
-  })), [dated]);
-  const grid = useMemo(() => monthGrid(tasks, `${month}-15`), [tasks, month]);
+  const first = dated.length ? dated.map((it) => it.start!).sort()[0] : today;
+  // Until a scale or a day is picked, the month of the earliest start.
+  const [own, setOwn] = useState<CalendarState | null>(null);
+  const { scale, day }: CalendarState = calendar ?? own ?? { scale: "month", day: first };
+  const set = (next: Partial<CalendarState>) => (onCalendar ?? setOwn)({ scale, day, ...next });
+  const tasks: CalTask[] = useMemo(() => dated.map((it) => ({ label: it.title, start: it.start!, end: lastDayOf(it), group: it.id })), [dated]);
+  // Every scale reads the month grid the journey and the `.calendar` kind share: a week is the grid's row
+  // holding the day, a day that row's cell — so an item covers the same days at every scale.
+  const grid = useMemo(() => monthGrid(tasks, day), [tasks, day]);
+  const week = grid.weeks.find((w) => w.some((c) => c.iso === day)) ?? grid.weeks[0];
   const byId = useMemo(() => new Map(doc.items.map((it) => [it.id, it])), [doc.items]);
-  const nav = "rounded border px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground";
+  const itemsOf = (cell: CalWeekCell): ViewsItem[] => cell.tasks.map((t) => byId.get(t.group)).filter((it): it is ViewsItem => !!it);
+  const dayLink = (cell: CalWeekCell, label: React.ReactNode) => (
+    <button type="button" title="Open this day" className="hover:text-foreground hover:underline" onClick={() => set({ scale: "day", day: cell.iso })}>{label}</button>
+  );
   return (
     <div>
-      <div className="flex items-center gap-2">
-        <h3 className="text-sm font-medium">{grid.title}</h3>
-        <button type="button" className={nav} title="The month before" onClick={() => setMonth((m) => shiftMonth(m, -1))}><ChevronLeft className="size-3" /></button>
-        <button type="button" className={nav} title="The month after" onClick={() => setMonth((m) => shiftMonth(m, 1))}><ChevronRight className="size-3" /></button>
-        <button type="button" className={nav} onClick={() => setMonth(monthOf(today))}>Today</button>
-        {firstMonth !== monthOf(today) && <button type="button" className={nav} onClick={() => setMonth(firstMonth)}>First item</button>}
-      </div>
-      <div className="mt-1.5 overflow-x-auto pb-2">
-        <div className="min-w-[720px]">
-          <div className="grid grid-cols-7 gap-1">
-            {WEEKDAYS.map((d) => (
-              <div key={d} className="px-1.5 text-[13px] font-medium uppercase tracking-wide text-muted-foreground">{d}</div>
-            ))}
-            {grid.weeks.flat().map((cell) => (
-              <div key={cell.iso}
-                className={cn("min-h-16 rounded border p-1", cell.inMonth ? "bg-background" : "bg-muted/40", cell.iso === today && "border-foreground/40")}>
-                <div className={cn("text-[13px]", cell.inMonth ? "text-muted-foreground" : "text-muted-foreground/50")}>
-                  {cell.day}{cell.iso === today && " · today"}
-                </div>
-                <div className="mt-0.5 space-y-0.5">
-                  {cell.tasks.map((t) => {
-                    const it = byId.get(t.group);
-                    return (
-                      <button key={t.group} type="button" title={`${t.label} · ${t.start} → ${t.end}`}
-                        onClick={() => onOpen(t.group)}
-                        className="block w-full truncate rounded px-1 py-0.5 text-left text-[13px] text-white hover:opacity-80"
-                        style={{ background: it ? colorOf(it, columns) : "#94a3b8" }}>
-                        {t.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-sm font-medium">{spanTitle(scale, day)}</h3>
+        <button type="button" className={NAV} title={`The ${scale} before`} onClick={() => set({ day: shiftCalendar(day, scale, -1) })}><ChevronLeft className="size-3" /></button>
+        <button type="button" className={NAV} title={`The ${scale} after`} onClick={() => set({ day: shiftCalendar(day, scale, 1) })}><ChevronRight className="size-3" /></button>
+        <button type="button" className={NAV} onClick={() => set({ day: today })}>Today</button>
+        {!sameSpan(scale, first, today) && <button type="button" className={NAV} onClick={() => set({ day: first })}>First item</button>}
+        <div role="group" aria-label="Show a day, a week or a month" className="ml-auto flex rounded-md border p-0.5">
+          {CALENDAR_SCALES.map((s) => (
+            <button key={s} type="button" aria-pressed={s === scale} onClick={() => set({ scale: s })}
+              className={cn("rounded px-2 py-0.5 text-xs font-medium",
+                s === scale ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+              {SCALE_LABEL[s]}
+            </button>
+          ))}
         </div>
       </div>
+      {scale === "day" ? (
+        <DayList items={itemsOf(week.find((c) => c.iso === day) ?? week[0])} day={day} columns={columns} onOpen={onOpen} />
+      ) : (
+        <div className="mt-1.5 overflow-x-auto pb-2">
+          <div className="min-w-[720px]">
+            <div className="grid grid-cols-7 gap-1">
+              {scale === "month" && WEEKDAYS.map((d) => (
+                <div key={d} className="px-1.5 text-[13px] font-medium uppercase tracking-wide text-muted-foreground">{d}</div>
+              ))}
+              {(scale === "month" ? grid.weeks.flat() : week).map((cell, i) => (
+                <div key={cell.iso}
+                  className={cn("rounded border p-1", scale === "week" ? "min-h-48 bg-background" : cn("min-h-16", cell.inMonth ? "bg-background" : "bg-muted/40"),
+                    cell.iso === today && "border-foreground/40")}>
+                  <div className={cn("text-[13px]", scale === "week" || cell.inMonth ? "text-muted-foreground" : "text-muted-foreground/50")}>
+                    {dayLink(cell, scale === "week" ? <><span className="font-medium uppercase tracking-wide">{WEEKDAYS[i]}</span> {cell.day}</> : cell.day)}
+                    {cell.iso === today && " · today"}
+                  </div>
+                  <div className={cn("mt-0.5", scale === "week" ? "space-y-1" : "space-y-0.5")}>
+                    {itemsOf(cell).map((it) => (
+                      <CalendarChip key={it.id} item={it} columns={columns} wrap={scale === "week"} onOpen={() => onOpen(it.id)} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {undated.length > 0 && (
         <p className="mt-1 text-xs text-muted-foreground">
           No start date:{" "}
@@ -173,102 +259,219 @@ export function CalendarPane({ doc, onOpen }: PaneProps) {
   );
 }
 
-/* ── Gantt ──────────────────────────────────────────────────────────────── */
+/* ── Gantt and sequence: one outline on a scale ─────────────────────────── */
 
-const DAY_W = 26;
 const ROW_H = 30;
 const LABEL_W = 220;
-const HEAD_H = 40;
 
-export function GanttPane({ doc, onOpen }: PaneProps) {
-  const columns = columnsOf(doc);
-  const g = useMemo(() => ganttOf(doc), [doc]);
-  const today = new Date().toISOString().slice(0, 10);
-  if (!g.rows.length) return <Empty>No item has a start and an end date, nor children with them — nothing to draw.</Empty>;
-  const days = Array.from({ length: g.days }, (_, i) => addDays(g.first, i));
-  const width = LABEL_W + g.days * DAY_W;
-  const height = HEAD_H + g.rows.length * ROW_H;
-  const rowIndex = new Map(g.rows.map((r, i) => [r.item.id, i]));
-  const x = (day: number) => LABEL_W + day * DAY_W;
-  const y = (i: number) => HEAD_H + i * ROW_H + ROW_H / 2;
-  // An arrow from the end of every previous item to the start of the one after it.
-  const arrows = g.rows.flatMap((r, i) => r.item.previous.flatMap((p) => {
-    const pi = rowIndex.get(p);
-    if (pi === undefined) return [];
-    const pr = g.rows[pi];
-    const x1 = x(pr.to + 1), y1 = y(pi), x2 = x(r.from), y2 = y(i);
+/** A row on the scale: an item from column `from` to column `to`, both included — a thin bar over its rows when it spans them. */
+interface ScaleRow extends OutlineRow { item: ViewsItem; from: number; to: number; summary: boolean }
+
+/** A group's bar: the colour of no status, a shade darker — a group has none. */
+const GROUP_COLOR = "#64748b";
+
+interface OutlineChartProps<R extends ScaleRow> {
+  /** The items' rows, and the rows the view's `group` gathers them under. */
+  rows: (R | GroupRow)[];
+  /** The scale across: how many columns and how wide, how tall its head, what each column's head shows and how it is shaded. */
+  cols: number;
+  colW: number;
+  headH: number;
+  head: (col: number) => React.ReactNode;
+  shade?: (col: number) => string;
+  /** How far a bar stands in from its columns' edges — the room an arrow between two bars has. */
+  inset: number;
+  /** A row in words: its bar's title. */
+  tip: (r: R | GroupRow) => string;
+  columns: string[];
+  onOpen: (id: string) => void;
+  folded: ReadonlySet<string>;
+  onFolded: (keys: string[]) => void;
+}
+
+/** The gantt's and the sequence's one drawing: rows nested by `parent` on a scale across — days or steps. On the left
+ *  the outline, as a brief's tree: a parent's chevron is its own target and only folds its rows away and back, the
+ *  label opens the item. On the scale a bar per row, coloured by its column and saying its status — a thin bar over
+ *  its rows for one that spans them — and an arrow from the end of every `previous` item to the start of the one after
+ *  it, an end folded away drawn at the row it folds into. A group the view's `group` key makes is a row too: its value
+ *  and how many rows it gathers, a thin bar over them, and a label that folds it — there is no item to open. */
+function OutlineChart<R extends ScaleRow>({ rows, cols, colW, headH, head, shade, inset, tip, columns, onOpen, folded, onFolded }: OutlineChartProps<R>) {
+  const { shown, drawnAs } = useMemo(() => foldOutline(rows, folded), [rows, folded]);
+  const links = useMemo(() => linksOf(rows, drawnAs), [rows, drawnAs]);
+  const parents = useMemo(() => rows.filter((r, i) => (rows[i + 1]?.level ?? -1) > r.level).map((r) => r.key), [rows]);
+  const width = LABEL_W + cols * colW;
+  const height = headH + shown.length * ROW_H;
+  const index = new Map(shown.map((s, i) => [s.row.key, i]));
+  const x = (col: number) => LABEL_W + col * colW;
+  const y = (i: number) => headH + i * ROW_H + ROW_H / 2;
+  const fold = (key: string) => onFolded(folded.has(key) ? [...folded].filter((f) => f !== key) : [...folded, key]);
+  const arrows = links.flatMap(({ from, to }) => {
+    const pi = index.get(from), i = index.get(to);
+    if (pi === undefined || i === undefined) return [];
+    const x1 = x(shown[pi].row.to + 1) - inset + 1, y1 = y(pi), x2 = x(shown[i].row.from) + inset - 1, y2 = y(i);
     const mid = x2 > x1 + 8 ? x1 + (x2 - x1) / 2 : x1 + 6;
     const d = x2 > x1 + 8
       ? `M${x1},${y1} H${mid} V${y2} H${x2}`
       : `M${x1},${y1} H${mid} V${y2 > y1 ? y2 - ROW_H / 2 : y2 + ROW_H / 2} H${x2 - 6} V${y2} H${x2}`;
-    return [{ key: `${p}->${r.item.id}`, d }];
-  }));
+    return [{ key: `${from}->${to}`, d }];
+  });
   return (
     <div>
+      {parents.length > 0 && (
+        <div className="mb-1.5 flex items-center justify-end gap-1">
+          <button type="button" className={NAV} onClick={() => onFolded(parents)}>Collapse all</button>
+          <button type="button" className={NAV} onClick={() => onFolded([])}>Expand all</button>
+        </div>
+      )}
       <div className="overflow-x-auto rounded-lg border bg-background">
         <div className="relative" style={{ width, height }}>
-          {/* The day scale: the month named where it begins, then every day. */}
-          {days.map((d, i) => {
-            const first = d.endsWith("-01") || i === 0;
-            const weekend = [0, 6].includes(new Date(`${d}T00:00:00Z`).getUTCDay());
+          {Array.from({ length: cols }, (_, col) => (
+            <div key={col} className={cn("absolute top-0 border-l text-center", shade?.(col))} style={{ left: x(col), width: colW, height }}>
+              {head(col)}
+            </div>
+          ))}
+          {/* The rows: the outline on the left, a bar on the scale. */}
+          {shown.map(({ row: r, parent, folded: shut, hidden }, i) => {
+            const item = r.item;
+            // An item's row opens the item; a group's folds, having no item to open.
+            const act = () => (item ? onOpen(item.id) : fold(r.key));
+            const span = { left: x(r.from) + inset, width: (r.to - r.from + 1) * colW - 2 * inset };
+            const color = item ? colorOf(item, columns) : GROUP_COLOR;
             return (
-              <div key={d} className={cn("absolute top-0 border-l text-center", weekend ? "bg-muted/50" : "", d === today && "bg-amber-50")}
-                style={{ left: x(i), width: DAY_W, height }}>
-                {first && (
-                  <div className="absolute left-1 top-0 whitespace-nowrap text-[11px] font-medium text-muted-foreground">
-                    {new Date(`${d}T00:00:00Z`).toLocaleDateString("en-AU", { month: "short", year: "numeric", timeZone: "UTC" })}
-                  </div>
+              <div key={r.key} className="absolute left-0 border-t" style={{ top: headH + i * ROW_H, width, height: ROW_H }}>
+                <div className="sticky left-0 z-10 flex h-full items-center bg-background" style={{ width: LABEL_W, paddingLeft: 4 + r.level * 14 }}>
+                  {parents.length > 0 && (parent ? (
+                    <button type="button" aria-expanded={!shut} onClick={() => fold(r.key)}
+                      title={shut ? `Expand — ${hidden} row${hidden === 1 ? "" : "s"} inside` : "Collapse"}
+                      className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground">
+                      {shut ? <ChevronRight className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                    </button>
+                  ) : <span aria-hidden className="size-5 shrink-0" />)}
+                  <button type="button" onClick={act} title={item ? `${tip(r)}${docWords(item)}` : tip(r)}
+                    className={cn("flex h-full min-w-0 flex-1 items-center gap-1 px-1 text-left text-[13px] hover:bg-accent", r.summary && "font-medium")}>
+                    {item ? (
+                      <>
+                        <span className="min-w-0 truncate">{item.title}</span>
+                        <DocMark item={item} />
+                      </>
+                    ) : isGroupRow(r) && (
+                      <>
+                        <span className={cn("min-w-0 truncate", !r.group && "italic text-muted-foreground")}>{r.group || "—"}</span>
+                        <span className="shrink-0 font-normal text-muted-foreground">{r.items}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                {r.summary ? (
+                  // A row that spans its rows: a thin bar over them.
+                  <button type="button" onClick={act} title={tip(r)} className="absolute rounded-sm hover:opacity-80"
+                    style={{ ...span, top: ROW_H / 2 - 3, height: 6, background: color }} />
+                ) : (
+                  <button type="button" onClick={act} title={tip(r)} className="absolute rounded text-left text-[12px] text-white hover:opacity-80"
+                    style={{ ...span, top: 6, height: ROW_H - 12, background: color }}>
+                    <span className="block truncate px-1.5 leading-[18px]">{item?.status ?? ""}</span>
+                  </button>
                 )}
-                <div className="absolute inset-x-0 top-5 text-[11px] text-muted-foreground/70">{Number(d.slice(8, 10))}</div>
               </div>
             );
           })}
-          {/* The rows: a label on the left, a bar on the scale. */}
-          {g.rows.map((r, i) => (
-            <div key={r.item.id} className="absolute left-0 border-t" style={{ top: HEAD_H + i * ROW_H, width, height: ROW_H }}>
-              <button type="button" onClick={() => onOpen(r.item.id)}
-                title={`${r.item.title} · ${r.start} → ${r.end}${r.summary ? " (its children's span)" : ""}`}
-                className={cn("sticky left-0 z-10 h-full truncate bg-background px-2 text-left text-[13px] hover:bg-accent", r.summary && "font-medium")}
-                style={{ width: LABEL_W, paddingLeft: 8 + r.level * 14 }}>
-                {r.item.title}
-              </button>
-              {r.summary ? (
-                // A parent without dates of its own: a thin bar over its children's span.
-                <button type="button" onClick={() => onOpen(r.item.id)} title={`${r.item.title} · ${r.start} → ${r.end} (its children's span)`}
-                  className="absolute rounded-sm hover:opacity-80"
-                  style={{ left: x(r.from) + 1, width: (r.to - r.from + 1) * DAY_W - 2, top: ROW_H / 2 - 3, height: 6, background: colorOf(r.item, columns) }} />
-              ) : (
-                <button type="button" onClick={() => onOpen(r.item.id)} title={`${r.item.title} · ${r.start} → ${r.end}`}
-                  className="absolute rounded text-left text-[12px] text-white hover:opacity-80"
-                  style={{ left: x(r.from) + 1, width: (r.to - r.from + 1) * DAY_W - 2, top: 6, height: ROW_H - 12, background: colorOf(r.item, columns) }}>
-                  <span className="block truncate px-1.5 leading-[18px]">{r.item.status ?? ""}</span>
-                </button>
-              )}
-            </div>
-          ))}
           <svg className="pointer-events-none absolute inset-0" width={width} height={height}>
             <defs>
-              <marker id="views-gantt-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <marker id="views-outline-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                 <path d="M0,0 L6,3 L0,6 z" fill="currentColor" />
               </marker>
             </defs>
             {arrows.map((a) => (
-              <path key={a.key} d={a.d} fill="none" stroke="currentColor" strokeWidth={1.25} className="text-foreground/50" markerEnd="url(#views-gantt-arrow)" />
+              <path key={a.key} d={a.d} fill="none" stroke="currentColor" strokeWidth={1.25} className="text-foreground/50" markerEnd="url(#views-outline-arrow)" />
             ))}
           </svg>
         </div>
       </div>
-      {g.missing.length > 0 && (
-        <p className="mt-1 text-xs text-muted-foreground">
-          Missing a date:{" "}
-          {g.missing.map((it, i) => (
-            <React.Fragment key={it.id}>
-              {i > 0 && " · "}
-              <button type="button" className="underline decoration-dotted underline-offset-2 hover:text-foreground" onClick={() => onOpen(it.id)}>{it.title}</button>
-            </React.Fragment>
-          ))}
-        </p>
+    </div>
+  );
+}
+
+/** The parents a pane has folded: the host's, per view, when it keeps them; else the pane's own. */
+function useFolds({ folded, onFolded }: PaneProps): [ReadonlySet<string>, (ids: string[]) => void] {
+  const [own, setOwn] = useState<string[]>([]);
+  const ids = folded ?? own;
+  return [useMemo(() => new Set(ids), [ids]), onFolded ?? setOwn];
+}
+
+/** Items a pane cannot draw, listed under it by label — each opens the item. */
+function Apart({ what, items, onOpen }: { what: string; items: ViewsItem[]; onOpen: (id: string) => void }) {
+  if (!items.length) return null;
+  return (
+    <p className="mt-1 text-xs text-muted-foreground">
+      {what}{" "}
+      {items.map((it, i) => (
+        <React.Fragment key={it.id}>
+          {i > 0 && " · "}
+          <button type="button" className="underline decoration-dotted underline-offset-2 hover:text-foreground" onClick={() => onOpen(it.id)}>{it.title}</button>
+        </React.Fragment>
+      ))}
+    </p>
+  );
+}
+
+/* ── Gantt ──────────────────────────────────────────────────────────────── */
+
+const DAY_W = 26;
+
+export function GanttPane(props: PaneProps) {
+  const { doc, onOpen, group } = props;
+  const columns = columnsOf(doc);
+  const g = useMemo(() => ganttOf(doc), [doc]);
+  const rows = useMemo(() => groupOutline(g.rows, doc.items, group), [g.rows, doc.items, group]);
+  const [folded, onFolded] = useFolds(props);
+  const today = new Date().toISOString().slice(0, 10);
+  if (!g.rows.length) return <Empty>No item has a start and an end date, nor children with them — nothing to draw.</Empty>;
+  const days = Array.from({ length: g.days }, (_, i) => addDays(g.first, i));
+  return (
+    <div>
+      <OutlineChart rows={rows} cols={g.days} colW={DAY_W} headH={40} inset={1} columns={columns} onOpen={onOpen} folded={folded} onFolded={onFolded}
+        // The day scale: the month named where it begins, then every day.
+        head={(i) => (
+          <>
+            {(i === 0 || days[i].endsWith("-01")) && (
+              <div className="absolute left-1 top-0 whitespace-nowrap text-[11px] font-medium text-muted-foreground">
+                {new Date(`${days[i]}T00:00:00Z`).toLocaleDateString("en-AU", { month: "short", year: "numeric", timeZone: "UTC" })}
+              </div>
+            )}
+            <div className="absolute inset-x-0 top-5 text-[11px] text-muted-foreground/70">{Number(days[i].slice(8, 10))}</div>
+          </>
+        )}
+        shade={(i) => cn([0, 6].includes(new Date(`${days[i]}T00:00:00Z`).getUTCDay()) && "bg-muted/50", days[i] === today && "bg-amber-50")}
+        tip={(r) => (isGroupRow(r)
+          ? `${r.group || "—"} · ${days[r.from]} → ${days[r.to]} (its rows' span)`
+          : `${r.item.title} · ${r.start} → ${r.end}${r.summary ? " (its children's span)" : ""}`)} />
+      <Apart what="Missing a date:" items={g.missing} onOpen={onOpen} />
+    </div>
+  );
+}
+
+/* ── Sequence ───────────────────────────────────────────────────────────── */
+
+const STEP_W = 96;
+
+export function SequencePane(props: PaneProps) {
+  const { doc, onOpen, group } = props;
+  const columns = columnsOf(doc);
+  const s = useMemo(() => sequenceOf(doc), [doc]);
+  const rows = useMemo(() => groupOutline(s.rows, doc.items, group), [s.rows, doc.items, group]);
+  const [folded, onFolded] = useFolds(props);
+  if (!doc.items.length) return <Empty>No items yet.</Empty>;
+  return (
+    <div>
+      {s.rows.length > 0 && (
+        <OutlineChart rows={rows} cols={s.steps} colW={STEP_W} headH={26} inset={14} columns={columns} onOpen={onOpen} folded={folded} onFolded={onFolded}
+          // The step scale: what comes after what, counted from 1 — no dates, no durations.
+          head={(i) => <div className="absolute inset-x-0 top-1.5 text-[11px] text-muted-foreground/70">{i + 1}</div>}
+          tip={(r) => (isGroupRow(r)
+            ? `${r.group || "—"} · steps ${r.from + 1} → ${r.to + 1} (its rows' span)`
+            : r.summary ? `${r.item.title} · steps ${r.from + 1} → ${r.to + 1} (its children's span)` : `${r.item.title} · step ${r.from + 1}`)} />
       )}
+      <Apart what="In a loop — after each other or inside each other, so no step:" items={s.looped} onOpen={onOpen} />
     </div>
   );
 }
@@ -278,10 +481,11 @@ export function GanttPane({ doc, onOpen }: PaneProps) {
 function Node({ node, columns, onOpen }: { node: TreeNode; columns: string[]; onOpen: (id: string) => void }) {
   return (
     <li>
-      <button type="button" onClick={() => onOpen(node.item.id)}
+      <button type="button" onClick={() => onOpen(node.item.id)} title={`${node.item.title}${docWords(node.item)}`}
         className="flex items-center gap-1.5 rounded border bg-background px-2 py-1 text-left text-[13px] hover:bg-accent">
         <span className="size-2 shrink-0 rounded-full" style={{ background: colorOf(node.item, columns) }} />
         <span>{node.item.title}</span>
+        <DocMark item={node.item} />
         {node.item.status && <span className="text-muted-foreground">· {node.item.status}</span>}
         {node.item.start && <span className="font-mono text-[12px] text-muted-foreground">{node.item.start}</span>}
         {node.alsoAfter.length > 0 && (

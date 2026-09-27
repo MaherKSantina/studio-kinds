@@ -1,0 +1,13 @@
+{
+  "ok": false,
+  "problems": [
+    "view on-a-table: `group` is a kanban's, a gantt's or a sequence's — a table has no lanes or groups",
+    "view on-a-tree: `group` is a kanban's, a gantt's or a sequence's — a tree has no lanes or groups",
+    "view not-a-key: `group` is not an item key (got 7) — the key whose values are the lanes",
+    "view empty-key: `group` is not an item key (got \"\") — the key whose values are the lanes",
+    "view nobody-has-it: group `assignee` — no item carries that key, so the board would be one lane",
+    "view steps-by-nobody: group `assignee` — no item carries that key, so every row would sit in one group",
+    "view plan-by-a-list: `group` is not an item key (got [\"owner\"]) — the key whose values are the groups"
+  ],
+  "summary": "1 item · views: on-a-table (table), on-a-tree (tree), not-a-key (kanban, 1 column), empty-key (kanban, 1 column), nobody-has-it (kanban, 1 column, 1 lane), steps-by-nobody (sequence, 1 group), plan-by-a-list (gantt)"
+}

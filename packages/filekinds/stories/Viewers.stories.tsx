@@ -36,7 +36,7 @@ export const Script: StoryObj = {
   render: () => <View path="/Scripts/rebuild.script" content={SCRIPT} />,
 };
 export const Views: StoryObj = {
-  name: "Views (one list — table, kanban, calendar, gantt, tree, page)",
+  name: "Views (one list — table, kanban, calendar by day, week or month, gantt, sequence, tree, page; a document in an item's dialog)",
   render: () => <View path="/Plans/launch.views" content={VIEWS} />,
 };
 export const Page: StoryObj = {

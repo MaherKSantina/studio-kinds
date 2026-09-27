@@ -81,7 +81,9 @@ events:
           - title: Where the engine lives
             body: |
               `python/studio_kinds/kinds/kanban.py` — `parse`, `dependency_rows`, `problems`,
-              `content_problems`, `summary`; its header comment is what `studio-check --spec
+              `summary`, with a task's document read, judged and checked by `read_content`,
+              `content_problems` and `written_doc_problems` in `kinds/__init__.py`, as a brief's
+              section's and a views item's are; its header comment is what `studio-check --spec
               kanban` prints, and the shape is `kinds/kanban/v1.schema.json`. In a host that
               authors, the mutators are `kanbanEdit.ts` (`addTask`, `updateTask`, `removeTask`,
               `moveTask`, `addColumn`, `renameColumn`, `removeColumn`, `moveColumn`,

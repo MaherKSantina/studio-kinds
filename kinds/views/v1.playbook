@@ -1,6 +1,6 @@
 version: 2
 title: How a views document works
-description: One list of items in the file and the views over it — the views the file names, each over the items its filter keeps, or one of every kind the roles allow; a table, a kanban, a calendar, a gantt nested by parent, a dependency tree, and a page the view's own Nunjucks template renders; read only, nothing referenced, the open view kept for the session.
+description: One list of items in the file and the views over it — the views the file names, each over the items its filter keeps, or one of every kind the roles allow; a table, a kanban, a calendar by day, week or month, a gantt nested by parent, a sequence — the gantt's rows on steps of what comes after what, not days — a dependency tree, and a page the view's own Nunjucks template renders; an item may hold one document of another kind, drawn in its dialog; read only, nothing referenced, the open view kept for the session.
 events:
   - key: always
     label: Always
@@ -42,8 +42,11 @@ events:
                   kind: kanban
                   label: Open work
                   filter: [{field: status, op: not_equals, value: Done}]
+                  group: owner
                 - key: plan
                   kind: gantt
+                - key: steps
+                  kind: sequence
               items:
                 - id: plan
                   title: Plan the launch
@@ -62,7 +65,8 @@ events:
                   under: build
               ```
 
-              An item's keys are its own — anything beside the roles is shown as it is. A date is
+              An item's keys are its own — anything beside the roles is shown as it is, but
+              `content`, a document written into the item. A date is
               `YYYY-MM-DD`, bare or quoted. `previous` is one id or a list of ids, `parent` one id,
               every one an item of this file. `id` and `title` default to keys of those names; an
               item with no id is given `#N` so the rest still draws, and a second item with an id
@@ -75,6 +79,7 @@ events:
               | Kanban | `status` |
               | Calendar | `start` (`end` when there is one; a day otherwise) |
               | Gantt | `start`, `end`, and `previous` or `parent` |
+              | Sequence | `previous` or `parent` |
               | Tree | `previous` |
               | Page | nothing — but only a view the file names, with its `template`, is one |
 
@@ -83,16 +88,59 @@ events:
           - title: The file picks its views
             body: |
               `views` is a list, each `key` (its identity), `kind` (`table`, `kanban`, `calendar`,
-              `gantt`, `tree`, `page`), an optional `label` (the button's text; the kind's name when absent),
+              `gantt`, `sequence`, `tree`, `page`), an optional `label` (the button's text; the kind's name when absent),
               and the table rules every kind shares: `filter` — clauses over the items' own keys,
               `{field, op, value}` with the one vocabulary (`equals`, `not_equals`, `contains`,
               `not_contains`, `starts_with`, `ends_with`, `matches`, `gt`, `gte`, `lt`, `lte`,
               `between`, `in`, `not_in`, `is_empty`, `not_empty`, `is_true`, `is_false`; one value
               or a list), every one of which must hold — `sort` (`{field, dir}`, first key first) and
               `limit`. A filter hides items for that view only; an edge to a hidden item is dropped
-              for that view. Two views of one kind are two ways of looking — `open`, a kanban of
-              what is not Done; `mine`, a kanban of one owner's. Without `views`, one view of every
-              kind the roles allow is offered, the table first.
+              for that view. A KANBAN, a GANTT or a SEQUENCE view takes one key of its own, `group` —
+              the item key whose values lane the board, or gather the outline's rows (see *A grouped
+              kanban* and *A grouped gantt or sequence*). Two views of one kind are two ways of
+              looking — `open`, a kanban of what is not Done; `mine`, a kanban of one owner's.
+              Without `views`, one view of every kind the roles allow is offered, the table first.
+          - title: A grouped kanban
+            body: |
+              A kanban view may name a `group`: an item key whose values become the board's LANES —
+              rows of the board, the status columns running across each.
+
+              ```yaml
+              views:
+                - key: board
+                  kind: kanban
+                  group: owner
+              ```
+
+              The lanes are the values that key takes among the view's items, in the order they are
+              first seen, and a last lane, unlabelled, for the items carrying no value for it. They
+              are DERIVED from the items and never listed — a lane is a value that is there, so a
+              lane cannot go stale against the items the way a written list would. A `group` naming
+              a key no item carries is a problem, as is a `group` on any kind but a kanban, a gantt
+              or a sequence.
+
+              This is the one axis a `.views` kanban has that a `.kanban` board does not: a
+              `.kanban`'s rows are dependency depth, computed from `needs:`, and answer a different
+              question — what can be started — where lanes answer whose work it is.
+          - title: A grouped gantt or sequence
+            body: |
+              A gantt or a sequence view may name a `group` too: the rows at the top of its outline
+              gathered under a row of their own per value of that key — the same values, in the same
+              order, as a kanban's lanes, and a last row, "—", for the rows carrying none.
+
+              ```yaml
+              views:
+                - key: steps
+                  kind: sequence
+                  group: source
+              ```
+
+              A group's row shows its value and how many rows it gathers, and a thin bar over their
+              span; it collapses and expands as a parent does — its chevron, or its label, since a
+              group has no item to open — and an arrow to or from a row it hides is drawn to or from
+              it. Only the top rows are gathered: a part stays under its whole, whatever it carries.
+              Like lanes, the groups are DERIVED from the items and never listed, and nothing about
+              an item changes — not its step, not its dates.
           - title: A page view
             body: |
               A view the file names with `kind: page` and a `template` of its own — Nunjucks, as a
@@ -122,29 +170,70 @@ events:
 
               The template, the partials and the items are all in the file, so the page is as
               computable from the text as every other view.
+          - title: A document written in
+            body: |
+              An item that holds more than its line shows writes that document into itself — the
+              shape a brief's section and a kanban's task carry:
+
+              ```yaml
+              items:
+                - id: kickoff
+                  title: Kickoff
+                  start: 2026-10-05
+                  content:                   # one whole document, written into the item
+                    kind: brief              # any kind the Studio knows — md, brief, playbook, …
+                    doc:
+                      title: The kickoff
+                      sections:
+                        - {title: Agenda, body: Scope, owners, the date.}
+                - id: review
+                  title: Review
+                  start: 2026-10-12
+                  content: {kind: md, doc: "The notes from the review."}
+              ```
+
+              `kind` names the engine that renders `doc`; `doc` is the document exactly as a file of
+              that kind would hold it — its YAML, or its text for `md`. One document per item: an
+              item that needs two is two items. It is the one key not shown as it is: the item's
+              dialog draws it by its own kind, the table names its kind, and the kanban, the
+              calendar, the gantt, the sequence and the tree mark the item beside its label. The checker runs it
+              through its kind's engine, so a broken brief inside an item is a broken views document.
           - title: Parents and what comes before
             body: |
               Two different edges. `previous` is order — what has to be done before this — and it
-              is what the tree and the gantt's arrows draw. `parent` is composition — the item this
-              one is part of — and it is what the gantt nests by: a child sits indented under its
-              parent, and a parent with no dates of its own is drawn as a thin bar over its children's
-              span. An item can have both: a child that comes after its sibling.
+              is what the tree and the arrows of the gantt and the sequence draw. `parent` is
+              composition — the item this one is part of — and it is what the gantt and the sequence
+              nest by: a child sits indented under its parent, and a parent with no dates of its own
+              is drawn in the gantt as a thin bar over its children's span. An item can have both: a
+              child that comes after its sibling.
+
+              The sequence reads the two together, since it has no dates to say where a whole
+              stands: a whole spans its parts, so what a whole comes after holds for every part,
+              and what comes after a whole comes after all of its parts. That makes some edges
+              impossible — a part after its own whole, or after what comes after it, and a whole
+              after its own part — and the checker names them.
           - title: Why one file, read only
             body: |
-              The items, the roles and the views are in the file, so any view is computable from the
-              text alone: paste it, check it, render it with nothing else on disk. The views read the
+              The items, the roles, the views and the documents items hold are in the file, so any
+              view is computable from the text alone: paste it, check it, render it with nothing else
+              on disk. The views read the
               items and write nothing — the file is edited as text, and every view follows on the
               next read — and which view is open is the page's for the session, never saved.
           - title: Where the engine lives
             body: |
               `python/studio_kinds/kinds/views.py` — `parse`, `read_fields`, `view_offered`,
-              `available_views`, `rows_of_view`, `columns_of`, `layers`, `parent_cycle`, `problems`,
-              `summary`, with the clauses, the sort and the limit in `_rows.py` (`read_table_rules`,
-              `apply_table`); its header comment is what `studio-check --spec views` prints. The
-              shape is `kinds/views/v1.schema.json` and the field table `v1.fields.yaml`. The view is
-              `components/views/ViewsView.tsx` over `lib/viewsDoc.ts` — the table, the kanban, the
-              calendar on the month grid the journey and the `.calendar` kind share, the gantt and
-              the tree in `panes.tsx` — with `ItemDialog.tsx`; the rules are `tablePolicy.ts`. A page
+              `available_views`, `rows_of_view`, `columns_of`, `layers`, `parent_cycle`, `unplaced`,
+              `problems`, `summary`, with the clauses, the sort and the limit in `_rows.py` (`read_table_rules`,
+              `apply_table`), and an item's document read, judged and checked by `read_content`,
+              `content_problems` and `written_doc_problems` in `kinds/__init__.py`, as a brief's
+              section's and a kanban's task's are; its header comment is what `studio-check --spec
+              views` prints. The shape is `kinds/views/v1.schema.json` and the field table
+              `v1.fields.yaml`. The view is `components/views/ViewsView.tsx` over `lib/viewsDoc.ts` —
+              the table, the kanban, the calendar at its three scales on the month grid the journey
+              and the `.calendar` kind share (`shiftCalendar`, `sameSpan`, `spanTitle`), the gantt
+              (`ganttOf`) and the sequence (`sequenceOf`) drawn by one outline chart that folds
+              (`foldOutline`, `linksOf`), and the tree, in `panes.tsx` — with `ItemDialog.tsx`, which draws an item's document
+              through `components/WrittenDocumentView.tsx`; the rules are `tablePolicy.ts`. A page
               view's model is `pageOfView` in `viewsDoc.ts`, and it renders in
               `components/page/PageFrame.tsx`, the sandboxed frame a `.page` renders in; its template
               and partials are checked by `template_problems` in `python/studio_kinds/kinds/page.py`.
@@ -165,24 +254,27 @@ events:
             body: |
               The title, the description, the roles (defaults for `id` and `title`), the columns
               when the file has them, the views when it names them — a view without a key or a
-              kind, with a key already seen, a kind that is not one of the six, or a kind whose
+              kind, with a key already seen, a kind that is not one of the seven, or a kind whose
               roles are not named is left out, and a page view keeps its template (empty when
               absent) and its partials that are text — and every item: its id (a string, or a whole number
               as text), its label (the title key, else the id), its status, its start and end when
               they are dates, what it comes after and what it is part of — only ids that are items
-              here, the item itself excluded — and all of its fields as written.
+              here, the item itself excluded — its document when `content` is a mapping (its kind as
+              the Studio knows it: `.Brief` is `brief`), and all of its fields as written.
           - title: Derived
             body: |
               The kanban's columns: the file's, else every status found, first seen first. Each
               view's items: its filter, sort and limit over the items' own fields. The dependency
               depth of every item by longest chain of `previous` (Kahn's order; items in a cycle have
               none). The gantt's rows: nested by `parent`, a parent without dates spanning its
-              children, and the day range from the earliest start to the latest end. Nothing derived
-              is written down.
+              children, and the day range from the earliest start to the latest end. The sequence's
+              rows: nested by `parent`, each item's step one past the last of what it comes after and
+              no earlier than its parent's, a parent spanning its parts' steps, and the items no step
+              can hold. Nothing derived is written down.
           - title: What is drawn
             body: |
               The title and the description, and a row of view buttons — the file's views by their
-              labels, else Table, Kanban, Calendar, Gantt, Tree as the roles allow — the open one
+              labels, else Table, Kanban, Calendar, Gantt, Sequence, Tree as the roles allow — the open one
               filled, each titled with its kind and what its rules do ("2 filters · sorted by start
               asc"). The first opens. At the right of the row, `N items`, or `N of M items` when the
               view's filter hides some, and the rules in words. Under the buttons, the view — a page
@@ -195,30 +287,50 @@ events:
     detail: The pane shows the view's items that way; nothing is written; the choice lasts the session.
     content:
       key: views
-      label: The six kinds of view
+      label: The seven kinds of view
       kind: brief
       doc:
-        title: The six kinds of view
-        description: One pane, six ways to lay the same items out — each over the items the view keeps.
+        title: The seven kinds of view
+        description: One pane, seven ways to lay the same items out — each over the items the view keeps. The kanban, the calendar, the gantt, the sequence and the tree mark an item that holds a document beside its label.
         sections:
           - title: Table
             body: |
               Every key any item carries, first seen first, as columns — the id and the label first
               — and one row per item in the view's order. A cell shows text as it is, a date as
-              `YYYY-MM-DD`, a list joined by `, `, a mapping as JSON. A row opens the item.
+              `YYYY-MM-DD`, a list joined by `, `, a mapping as JSON, and an item's document as its
+              kind (`brief`, `md`). A row opens the item.
           - title: Kanban
             body: |
               The columns across, each with its count; under each, a card per item whose status
               matches it (case-insensitive), in the view's order; an item with no status, or a
               status no column spells, lands in the first column. A card shows the label and, when
               the roles allow, the dates and "⇠ N" for what it comes after. A card opens the item.
+              A view with a `group` draws one LANE per value of that key, each a row of the board
+              under its own heading with the count of what is in it, the columns running across
+              every lane alike; the items with no value for the key make a last, unlabelled lane.
           - title: Calendar
             body: |
-              A month grid, weeks Monday to Sunday, with ‹ and › to move a month, "Today" and
-              "First item" to jump; it opens on the month of the earliest start. A chip on every day
-              an item covers (start to end, or the start day alone), coloured by its column when the
-              file has a status, titled "<label> · <start> → <end>". Items with no start date are
-              listed under the grid. A chip opens the item.
+              A day, its week or its month — Day, Week and Month on the right of the header; the
+              scale and the day are the page's for the session, per view, like the view itself. It
+              opens on Month, at the month of the earliest start. ‹ and › move a day, a week or a
+              month (a month keeps the day, its last when the month is shorter); "Today" jumps to
+              today and "First item" to the earliest start. The header names the span: "October
+              2026", "5 – 11 October 2026", "Monday 5 October 2026".
+
+              - **Month** — a grid of weeks, Monday to Sunday, the days of the months either side
+                muted.
+              - **Week** — the seven days of the day's week, Monday to Sunday, tall enough for every
+                chip's whole label.
+              - **Day** — a line for every item that covers the day: its label, its status, its span
+                and which of its days this is ("day 2 of 5"), and the kind of the document it holds;
+                "Nothing on this day." when none does.
+
+              In the month and the week, a chip on every day an item covers (start to end, or the
+              start day alone), coloured by its column when the file has a status, titled "<label> ·
+              <start> → <end>"; a day's number opens that day. Every scale lays the items on the
+              same month grid the journey and the `.calendar` kind share, so an item covers the same
+              days at each. Items with no start date are listed under it. A chip, or a line, opens
+              the item.
           - title: Gantt
             body: |
               One row per item with dates — its own, or its children's for a parent without — nested
@@ -229,6 +341,31 @@ events:
               children's span. An arrow from the end of every `previous` item to the start of the one
               that comes after it. Items with no dates anywhere are listed under the chart. A bar
               opens the item.
+
+              The labels are an outline, as a brief's tree is: a parent's chevron is its own target
+              and only collapses its rows and expands them again, the label opens the item.
+              Collapsed, a parent keeps its bar, and an arrow to or from a row it hides is drawn to
+              or from the parent — the arrows between two of its own rows are not drawn. "Collapse
+              all" and "Expand all" sit over the chart when a row has rows under it. Which parents
+              are collapsed is the page's for the session, per view; everything opens expanded. A
+              view with a `group` gathers its top rows under a row per value, which collapses the
+              same way (see *A grouped gantt or sequence*).
+          - title: Sequence
+            body: |
+              The gantt's rows on a scale of STEPS, not days — what comes after what, whatever the
+              dates or how long anything takes. Every item takes one step and stands one step past
+              the last step of everything it comes after, and no earlier than its parent may start;
+              a parent spans its parts' steps, as a thin bar over them, so what a whole comes after
+              holds for every part, and what comes after a whole comes after all of them. The scale
+              across counts the steps from 1; an item that comes after nothing stands at step 1.
+
+              Rows nested by `parent`, a part indented under its whole; siblings in the view's order,
+              each below the siblings it comes after. The outline collapses and expands as
+              the gantt's does, and the arrows run from the end of every `previous` item to the start
+              of the one after it — always forward, since an item stands past what it comes after.
+              Items no step can hold — caught in a loop of `previous`, of `parent`, or a part and its
+              whole out of order — are listed under the chart. A bar opens the item. A view with a
+              `group` gathers its top rows under a row per value, as the gantt's does.
           - title: Tree
             body: |
               What comes first at the top: every item that names no previous is a root; under each,
@@ -248,7 +385,7 @@ events:
     trigger: chosen
     arity: many
     domain: Reading
-    detail: The item dialog — every field as written, and every edge as a jump.
+    detail: The item dialog — the document written into the item, every field as written, and every edge as a jump.
     content:
       key: dialog
       label: What opens
@@ -257,9 +394,12 @@ events:
         The label, then a line of facts: the status as a chip, the dates as `start → end`, "after"
         with one chip per previous item, "followed by" with one per item that comes after, "part of"
         with the parent, "made of" with the children — a click JUMPS the dialog to that item, whether
-        or not the open view shows it. Then every field of the item, as written, in a two-column list
-        — the id with a copy button. The dialog stays on its id across a re-read and closes if the id
-        is gone.
+        or not the open view shows it. Then, when the item holds a document, that document, drawn by
+        its own kind's viewer from the text in this file — a brief's sections beside their tree,
+        markdown rendered, a board or a book in a box of its own; nothing is read from disk, so it
+        draws at once and carries no annotations, and the dialog widens for it. Then every other
+        field of the item, as written, in a two-column list — the id with a copy button. The dialog
+        stays on its id across a re-read and closes if the id is gone.
   - key: changed-on-disk
     label: The file changes on disk
     trigger: imposed
@@ -296,30 +436,40 @@ events:
                  is not one of the seven, a role mapped to something that is not a key name;
                  `columns` that is not a list, an entry that is not text, or columns without a
                  `status` role; `views` that is not a list, a view that is not a mapping, without a
-                 `key` or a `kind`, a key twice, a kind that is not one of the six, a kind whose
+                 `key` or a `kind`, a key twice, a kind that is not one of the seven, a kind whose
                  roles are not named ("view open: a kanban needs a `status` role under `fields`"),
                  a page view with no `template`, one not text or blank, `partials` that are not a
                  mapping or a partial that is not text, a template naming a partial the view does
                  not hold ("view report: template: `include "row"` names no partial of this view
                  — write it under `partials`"), a `template` or `partials` on a view that is not a
-                 page, and its rules' own problems — a clause with no field or no op, an unknown op, a
+                 page, a `group` on a view that is not a kanban, a gantt or a sequence, one that is
+                 not an item key, or one no item carries, and its rules' own problems — a clause with no field or no op, an unknown op, a
                  sort direction that is not asc or desc, a limit that is not positive; no `items`
                  (`items: []` is an empty list and passes); an item that is not a mapping or has no
                  id; an id used twice; a label that is not text; a status that is not text, or not a
                  column when columns are given; a start or end that is not a date; an end before its
                  start; a `previous` that is not an id or a list of ids, an empty entry, the item
                  itself, or an id no item has; a `parent` that is not an id, the item itself, or an
-                 id no item has; a cycle of `previous`; a cycle of `parent`. Each is one line,
-                 naming the view or the item.
-              3. The summary line: `ok <name>  Views  12 items · table, kanban (3 columns), calendar,
-                 gantt, tree` when the roles decide, or `12 items · views: open (kanban, 3 columns)
+                 id no item has; a cycle of `previous`; a cycle of `parent`; when neither, a part and
+                 its whole out of order — a part after its own whole or after what comes after it, a
+                 whole after its own part, named with every item they leave without a step ("part and
+                 whole out of order: build → api — …"); and what an item's
+                 `content` cannot be — not a mapping, no `kind` or no `doc`, an `md` document that is
+                 not a string, `by`, `docs` or `file` on it. Each is one line, naming the view or the
+                 item.
+              3. Every item's document through its own kind's engine, its problems prefixed with the
+                 item and the kind ("item kickoff (brief): section Agenda: …"); a kind the Studio does
+                 not know is one line.
+              4. The summary line: `ok <name>  Views  12 items · table, kanban (3 columns), calendar,
+                 gantt, sequence, tree` when the roles decide, or `12 items · views: open (kanban, 3 columns)
                  4, plan (gantt)` when the file names its views — a count after a view that hides
-                 some — so a misspelled role or a filter that hides everything is visible at once.
+                 some, and `12 items, 2 documents` when items hold documents — so a misspelled role
+                 or a filter that hides everything is visible at once.
           - title: Not checked
             body: |
               Whether an item's dates overlap its previous item's — the gantt shows it. Whether every
               item has a status, a start, a previous or a parent — an item without lands in the first
-              column, under the grid, at a root, or at the top. Whether a filter names a key any item
+              column, under the grid, at a root, at the first step, or at the top. Whether a filter names a key any item
               carries — a clause over nothing hides everything, and the summary's count says so. The
               checker sees the file alone, which is all there is.
   - key: authored
@@ -338,21 +488,30 @@ events:
             label: Start from the template
             detail: |
               `studio-check --template views > new.views` — five items with every role named and
-              five views, one of each kind, the kanban filtered to what is not Done; replace them.
+              six views, one of each kind but the page, the kanban filtered to what is not Done; replace them.
           - key: items
             label: Write the items with ids
             after: [template]
             detail: |
               One mapping per item, the id key first, then whatever the item is — a name, a
               status, dates, an owner, a note. Keep ids stable: `previous` and `parent` point at them.
+          - key: content
+            label: Write in what an item has to open
+            after: [items]
+            detail: |
+              An item that holds more than its line shows — a meeting's agenda, a review's notes —
+              takes `content: {kind, doc}`: `kind` any kind the Studio knows, `doc` that kind's
+              YAML, a block string for `md`. Its dialog draws it, and the checker runs it through
+              that kind's engine. One document per item: an item that needs two is two items.
           - key: roles
             label: Say which keys play which role
             after: [items]
             detail: |
               Under `fields`, only the roles the items really carry: `status` for a kanban, `start`
-              (and `end`) for a calendar, `previous` for a tree, the dates with `previous` or
-              `parent` for a gantt, `parent` to nest items in the gantt. A role not named is a view
-              that cannot be offered — the right answer for items that have no dates.
+              (and `end`) for a calendar, `previous` for a tree, `previous` or `parent` for a
+              sequence, the dates with `previous` or `parent` for a gantt, `parent` to nest items in
+              the gantt and the sequence. A role not named is a view that cannot be offered — the
+              right answer for items that have no dates, which the sequence lays out all the same.
           - key: views
             label: Pick the views
             after: [roles]
@@ -371,9 +530,10 @@ events:
               values found are the columns, first seen first.
           - key: check
             label: Check it
-            after: [columns]
+            after: [columns, content]
             detail: |
               `studio-check new.views` — an id used twice, a `previous` or `parent` to no item, a date
               that is not one, a status that is no column, a view whose roles are missing, a clause
-              with an op outside the vocabulary, a cycle: each is a line naming the view or the item,
-              and the summary names the views the file offers with what each hides.
+              with an op outside the vocabulary, a cycle, anything wrong in an item's document: each
+              is a line naming the view or the item, and the summary names the views the file offers
+              with what each hides.

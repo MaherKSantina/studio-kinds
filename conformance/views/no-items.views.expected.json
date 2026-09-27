@@ -3,5 +3,5 @@
   "problems": [
     "no `items` — the list itself; `items: []` is an empty one"
   ],
-  "summary": "0 items · table, tree"
+  "summary": "0 items · table, sequence, tree"
 }

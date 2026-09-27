@@ -17,5 +17,5 @@
     "item loose: after `missing` — no item has that id",
     "cycle: cyc1 → cyc2 — items that come after each other cannot be ordered"
   ],
-  "summary": "6 items · table, kanban (2 columns), calendar, gantt, tree"
+  "summary": "6 items · table, kanban (2 columns), calendar, gantt, sequence, tree"
 }

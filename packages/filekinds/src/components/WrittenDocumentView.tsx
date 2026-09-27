@@ -16,6 +16,8 @@ import { docText, writtenPath, type WrittenDocument } from "../lib/writtenDocume
 
 /** Kinds that read top to bottom and take their natural height. Every other kind is a surface. */
 const FLOWING = new Set(["md", "markdown", "mdx", "brief", "guide"]);
+/** Markdown written in is prose among prose: it keeps none of the padding a markdown pane has of its own. */
+const MARKDOWN = new Set(["md", "markdown", "mdx"]);
 
 /** The height a surface gets: room for a walk's rail and pane, or a board's columns. */
 export const SURFACE_HEIGHT = 480;
@@ -36,7 +38,7 @@ export default function WrittenDocumentView({ content, agentId, onDrill, onOpenP
   const flowing = FLOWING.has(content.kind);
   return (
     <Box sx={flowing
-      ? { minWidth: 0 }
+      ? { minWidth: 0, ...(MARKDOWN.has(content.kind) ? { "& .md-body": { px: 0, py: 1 } } : {}) }
       : { height: SURFACE_HEIGHT, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden",
           border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
       <kind.Renderer content={text} height={flowing ? "auto" : "100%"} agentId={agentId} path={path}

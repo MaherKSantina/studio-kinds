@@ -50,7 +50,7 @@
  */
 import yaml from "js-yaml";
 import type { FeatureNode } from "./featureTree";
-import { writtenKind, type WrittenDocument } from "./writtenDocument";
+import { readWritten, writtenKind, type WrittenDocument } from "./writtenDocument";
 
 /** A parsed `.brief`. `sections` is the tree, in the explorer's own node shape. */
 export interface BriefDoc {
@@ -75,11 +75,6 @@ const asStr = (v: unknown): string => (typeof v === "string" ? v : "");
 
 export const emptyBrief = (): BriefDoc => ({ title: "", description: "", sections: [] });
 
-/** A section's written document: kept when it is a mapping — its kind normalised, its doc as
- *  parsed, whatever shape; the kind's own engine judges it. Anything else is not content. */
-const coerceContent = (raw: unknown): WrittenDocument | null =>
-  isObj(raw) ? { kind: writtenKind(raw.kind) ?? "", doc: raw.doc } : null;
-
 function coerceNode(raw: unknown): FeatureNode | null {
   if (!isObj(raw)) return null;
   // `title` is the authored spelling, `name` the in-memory one — accept either so a
@@ -92,7 +87,7 @@ function coerceNode(raw: unknown): FeatureNode | null {
   if (description) node.description = description;
   const body = asStr(raw.body) || asStr(raw.prose);
   if (body) node.prose = body;
-  const content = coerceContent(raw.content);
+  const content = readWritten(raw.content);
   if (content) node.content = content;
   // `__change` is what the diff engine stamps when contributions are applied; `change` is
   // the authored spelling. Reading both is what makes a contributed section arrive already

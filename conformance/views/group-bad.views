@@ -1,0 +1,37 @@
+title: Badly grouped
+fields:
+  id: id
+  title: title
+  status: status
+  start: start
+  end: end
+  previous: after
+views:
+  - key: on-a-table
+    kind: table
+    group: owner
+  - key: on-a-tree
+    kind: tree
+    group: owner
+  - key: not-a-key
+    kind: kanban
+    group: 7
+  - key: empty-key
+    kind: kanban
+    group: ""
+  - key: nobody-has-it
+    kind: kanban
+    group: assignee
+  - key: steps-by-nobody
+    kind: sequence
+    group: assignee
+  - key: plan-by-a-list
+    kind: gantt
+    group: [owner]
+items:
+  - id: plan
+    title: Plan it
+    status: Done
+    start: 2026-10-01
+    end: 2026-10-02
+    owner: Ana

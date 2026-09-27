@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "problems": [
+    "item not-a-mapping: `content` is not a mapping — write `kind` and `doc`",
+    "item no-kind: `content` has no `kind` — say which kind renders it (brief, md, playbook, …)",
+    "item no-doc: `content` has no `doc` — the document itself, as a file of that kind would hold it",
+    "item varies: `content` has `by` — an item holds one document written in; a views document has no answers to vary by and names no file",
+    "item varies: `content` has `docs` — an item holds one document written in; a views document has no answers to vary by and names no file",
+    "item varies: `content` has `file` — an item holds one document written in; a views document has no answers to vary by and names no file",
+    "item md-not-string: an `md` document is its text — write it as a block string",
+    "item unknown-kind (widget): not a kind the Studio knows — `--kinds` lists them",
+    "item broken-inside (brief): section S: `content` has no `doc` — the document itself, as a file of that kind would hold it"
+  ],
+  "summary": "7 items, 5 documents · table, calendar"
+}

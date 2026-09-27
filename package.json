@@ -2,7 +2,7 @@
   "name": "studio-kinds",
   "private": true,
   "version": "0.1.0",
-  "description": "The Studio — one editor for every document kind: the crosscut kit, the file-kind layer, the web Studio, the desktop app, the VS Code extension. The checker is the Python package in python/ (studio-check).",
+  "description": "The Studio — one editor for every document kind: the crosscut kit, the file-kind layer, the web Studio, the desktop app, the VS Code extension, and the paste-and-preview page at studio-kinds.pages.dev. The checker is the Python package in python/ (studio-check).",
   "license": "MIT",
   "scripts": {
     "test": "pnpm -r --if-present test",
@@ -13,6 +13,9 @@
     "vscode:renderer": "pnpm --filter studio-frontend build:vscode",
     "vscode:vsix": "pnpm --filter studio-frontend build:vscode && pnpm --filter studio-vscode package",
     "skill:export": "python scripts/export_skill.py",
+    "page:dev": "pnpm --filter studio-page dev",
+    "page:build": "pnpm --filter studio-page build",
+    "page:deploy": "pnpm --filter studio-page deploy",
     "desktop:dist": "pnpm --filter studio-frontend build:desktop && pnpm --filter studio-desktop dist",
     "release:build": "pnpm vscode:vsix && pnpm desktop:dist",
     "kinds:check": "python scripts/kind_books.py --check",

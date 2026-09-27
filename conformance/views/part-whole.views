@@ -1,0 +1,13 @@
+title: Parts and wholes out of order
+fields:
+  previous: after
+  parent: under
+items:
+  - {id: build}
+  - {id: api, under: build, after: build}
+  - {id: launch, after: press}
+  - {id: press, under: launch}
+  - {id: site}
+  - {id: copy, under: site, after: review}
+  - {id: review, after: site}
+  - {id: fine}

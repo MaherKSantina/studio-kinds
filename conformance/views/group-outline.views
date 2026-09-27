@@ -1,0 +1,27 @@
+title: Grouped steps
+fields:
+  status: status
+  start: start
+  end: end
+  previous: after
+  parent: under
+columns: [To do, Doing, Done]
+views:
+  - key: steps
+    kind: sequence
+    group: team
+  - key: plan
+    kind: gantt
+    group: team
+  - key: open
+    kind: sequence
+    label: Open steps
+    group: team
+    filter: [{field: status, op: not_equals, value: Done}]
+items:
+  - {id: design, title: Design it, status: Done, start: 2026-10-01, end: 2026-10-02, team: Product}
+  - {id: build, title: Build it, status: Doing, after: design, team: Engineering}
+  - {id: api, title: The API, status: Doing, start: 2026-10-03, end: 2026-10-06, under: build, team: Backend}
+  - {id: ui, title: The UI, status: To do, start: 2026-10-05, end: 2026-10-08, under: build, after: api}
+  - {id: launch, title: Launch it, status: To do, start: 2026-10-09, end: 2026-10-09, after: build, team: Product}
+  - {id: party, title: Celebrate, status: To do, after: launch}

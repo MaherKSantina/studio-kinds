@@ -1,0 +1,11 @@
+title: Steps without order
+fields:
+  status: stage
+views:
+  - key: steps
+    kind: sequence
+  - key: board
+    kind: kanban
+items:
+  - {id: a, title: A, stage: To do}
+  - {id: b, title: B, stage: Done, after: a}

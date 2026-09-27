@@ -1,0 +1,22 @@
+title: Launch steps
+fields:
+  id: key
+  title: name
+  status: stage
+  previous: after
+  parent: under
+columns: [To do, Doing, Done]
+views:
+  - key: steps
+    kind: sequence
+  - key: open
+    kind: sequence
+    label: Open steps
+    filter: [{field: stage, op: not_equals, value: Done}]
+items:
+  - {key: design, name: Design it, stage: Done}
+  - {key: build, name: Build it, stage: Doing, after: design}
+  - {key: api, name: The API, stage: Doing, under: build}
+  - {key: ui, name: The UI, stage: To do, under: build, after: api}
+  - {key: review, name: Review it, stage: To do, after: [api, ui]}
+  - {key: ship, name: Ship it, stage: To do, after: build}

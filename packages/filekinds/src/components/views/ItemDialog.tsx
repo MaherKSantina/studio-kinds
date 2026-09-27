@@ -1,13 +1,16 @@
 /**
  * The item dialog every view of a `.views` document opens: the label, the
  * status, the dates, what it comes after and what comes after it, what it
- * is part of and what is part of it — every edge a JUMP — then every field
- * as written. Read only.
+ * is part of and what is part of it — every edge a JUMP — then the document
+ * written into the item, drawn by its own kind, and every other field as
+ * written. Read only.
  */
 import React from "react";
 import { Check, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "crosscut";
-import { cellText, childrenOf, columnIndexOf, columnsOf, followersOf, type ViewsDoc, type ViewsItem } from "../../lib/viewsDoc";
+import type { ViewerProps } from "../../lib/filePreviews";
+import { cellText, childrenOf, columnIndexOf, columnsOf, followersOf, listedFieldsOf, type ViewsDoc, type ViewsItem } from "../../lib/viewsDoc";
+import WrittenDocumentView from "../WrittenDocumentView";
 
 /** One colour per column, by index — the same in every view. */
 export const COLUMN_COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444", "#14b8a6", "#f97316", "#64748b"];
@@ -35,8 +38,11 @@ function CopyId({ id }: { id: string }) {
   );
 }
 
-export function ItemDialog({ doc, itemId, onSelect, onClose }: {
-  doc: ViewsDoc; itemId: string | null; onSelect: (id: string) => void; onClose: () => void;
+/** What a document written into an item may ask of the view's host — nothing is drilled out of a dialog. */
+export type ItemHost = Pick<ViewerProps, "agentId" | "onOpenPath">;
+
+export function ItemDialog({ doc, itemId, onSelect, onClose, host }: {
+  doc: ViewsDoc; itemId: string | null; onSelect: (id: string) => void; onClose: () => void; host?: ItemHost;
 }) {
   const item = doc.items.find((it) => it.id === itemId) ?? null;
   const columns = columnsOf(doc);
@@ -46,12 +52,13 @@ export function ItemDialog({ doc, itemId, onSelect, onClose }: {
   const children = item ? childrenOf(doc.items, item.id) : [];
   return (
     <Dialog open={item !== null} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="flex max-h-[90dvh] flex-col" style={{ maxWidth: "min(720px, 96vw)" }}>
+      {/* A document written in gets the room a brief's tree and its section need side by side. */}
+      <DialogContent className="flex max-h-[90dvh] flex-col" style={{ maxWidth: item?.content ? "min(880px, 96vw)" : "min(720px, 96vw)" }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <span className="min-w-0 truncate">{item?.title ?? ""}</span>
           </DialogTitle>
-          <DialogDescription className="sr-only">The item, what it comes after, and every field as written</DialogDescription>
+          <DialogDescription className="sr-only">The item, what it comes after, the document written into it, and every field as written</DialogDescription>
         </DialogHeader>
         {item && (
           <>
@@ -89,22 +96,30 @@ export function ItemDialog({ doc, itemId, onSelect, onClose }: {
                 </span>
               )}
             </div>
-            <div className="min-h-0 overflow-y-auto rounded border">
-              <table className="w-full text-[13px]">
-                <tbody>
-                  {Object.entries(item.fields).map(([k, v]) => (
-                    <tr key={k} className="border-b align-top last:border-b-0">
-                      <td className="w-[1%] whitespace-nowrap bg-muted/40 px-2 py-1 font-mono text-muted-foreground">{k}</td>
-                      <td className="px-2 py-1">
-                        <span className="flex items-start gap-1">
-                          <span className="min-w-0 break-words whitespace-pre-wrap">{cellText(v)}</span>
-                          {k === doc.fields.id && <CopyId id={item.id} />}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="min-h-0 space-y-3 overflow-y-auto">
+              {/* The document written into the item, drawn by its own kind from the text in this file. */}
+              {item.content && (
+                <div key={item.id} className="min-w-0">
+                  <WrittenDocumentView content={item.content} agentId={host?.agentId} onOpenPath={host?.onOpenPath} />
+                </div>
+              )}
+              <div className="rounded border">
+                <table className="w-full text-[13px]">
+                  <tbody>
+                    {listedFieldsOf(item).map(([k, v]) => (
+                      <tr key={k} className="border-b align-top last:border-b-0">
+                        <td className="w-[1%] whitespace-nowrap bg-muted/40 px-2 py-1 font-mono text-muted-foreground">{k}</td>
+                        <td className="px-2 py-1">
+                          <span className="flex items-start gap-1">
+                            <span className="min-w-0 break-words whitespace-pre-wrap">{cellText(v)}</span>
+                            {k === doc.fields.id && <CopyId id={item.id} />}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}

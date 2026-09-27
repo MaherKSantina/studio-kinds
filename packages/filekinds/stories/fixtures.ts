@@ -598,9 +598,11 @@ code: |
   print("rebuilding", os.environ["INDEX_DIR"])
 `;
 
-/** One list with every role named, so the five role views have something to show, and a page view of what is open. */
+/** One list with every role named, so the six role views have something to show, and a page view of what is
+ *  open, and a kanban laned by owner; two items hold a document written in — a brief and a note — that
+ *  their dialog draws. `ship` carries no owner, so the grouped board shows the last, unlabelled lane. */
 export const VIEWS = `title: Launch
-description: The work to the launch, seen five ways.
+description: The work to the launch, seen six ways.
 fields:
   id: key
   title: name
@@ -613,8 +615,10 @@ columns: [To do, Doing, Done]
 views:
   - {key: all, kind: table}
   - {key: open, kind: kanban, label: Open work, filter: [{field: stage, op: not_equals, value: Done}]}
+  - {key: byowner, kind: kanban, label: By owner, group: owner}
   - {key: month, kind: calendar}
   - {key: plan, kind: gantt}
+  - {key: steps, kind: sequence, group: owner}
   - {key: chain, kind: tree}
   - key: report
     kind: page
@@ -625,11 +629,38 @@ views:
       <h1>{{ title }}: {{ view.label }} <small>{{ items | length }} open</small></h1>
       <ul>{% for item in items %}<li><b>{{ item[fields.title] }}</b> — {{ item.stage }}</li>{% endfor %}</ul>
 items:
-  - {key: plan, name: Plan the launch, stage: Done, from: 2026-10-01, to: 2026-10-03, owner: Maher}
-  - {key: build, name: Build it, stage: Doing, after: plan}
-  - {key: api, name: The API, stage: Doing, from: 2026-10-04, to: 2026-10-07, under: build}
-  - {key: ui, name: The UI, stage: To do, from: 2026-10-07, to: 2026-10-10, under: build, after: api}
-  - {key: test, name: Test it, stage: To do, from: 2026-10-08, to: 2026-10-12, after: [build]}
+  - key: plan
+    name: Plan the launch
+    stage: Done
+    from: 2026-10-01
+    to: 2026-10-03
+    owner: Maher
+    content:
+      kind: brief
+      doc:
+        title: The plan
+        sections:
+          - title: Scope
+            body: What ships on the day, and what waits for the next release.
+          - title: Owners
+            body: One name per part — the API, the UI, the tests.
+  - {key: build, name: Build it, stage: Doing, after: plan, owner: Maher}
+  - {key: api, name: The API, stage: Doing, from: 2026-10-04, to: 2026-10-07, under: build, owner: Sam}
+  - key: ui
+    name: The UI
+    stage: To do
+    from: 2026-10-07
+    to: 2026-10-10
+    under: build
+    after: api
+    owner: Sam
+    content:
+      kind: md
+      doc: |
+        ## Screens
+        - **Sign in** — email first
+        - **Home** — the week at a glance
+  - {key: test, name: Test it, stage: To do, from: 2026-10-08, to: 2026-10-12, after: [build], owner: Ana}
   - {key: ship, name: Ship, stage: To do, from: 2026-10-13, to: 2026-10-13, after: [build, test]}
 `;
 

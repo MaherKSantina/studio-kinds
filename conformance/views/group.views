@@ -1,0 +1,33 @@
+title: Grouped board
+fields:
+  id: id
+  title: title
+  status: status
+columns: [To do, Doing, Done]
+views:
+  - key: board
+    kind: kanban
+    group: owner
+  - key: open
+    kind: kanban
+    label: Open work
+    filter: [{field: status, op: not_equals, value: Done}]
+    group: owner
+  - key: plain
+    kind: kanban
+items:
+  - id: plan
+    title: Plan it
+    status: Done
+    owner: Ana
+  - id: build
+    title: Build it
+    status: Doing
+    owner: Bo
+  - id: ship
+    title: Ship it
+    status: To do
+    owner: Ana
+  - id: loose
+    title: Nobody's yet
+    status: To do

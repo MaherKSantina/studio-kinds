@@ -2,40 +2,46 @@
  * A `.views` open — one list of items and a row of view buttons: the file's
  * own `views`, else one of every kind its roles allow (see viewsDoc.ts).
  * The first opens; a view shows the items its filter keeps; the open view
- * is the page's for the session; an item clicked in any view opens the item
- * dialog. A page view is the view's items through its own Nunjucks template,
- * in the sandboxed frame a `.page` renders in, filling the pane. Nothing here
- * writes the file.
+ * — a calendar view's scale and day, the parents a gantt or a sequence has
+ * folded — is the page's for the session; an
+ * item clicked in any view opens the item dialog, which draws the document
+ * written into the item. A page view is the view's items through its own
+ * Nunjucks template, in the sandboxed frame a `.page` renders in, filling the
+ * pane. Nothing here writes the file.
  */
 import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChartGantt, Kanban, LayoutTemplate, ListTree, Table2 } from "lucide-react";
+import { CalendarDays, ChartGantt, Kanban, LayoutTemplate, ListTree, Table2, Workflow } from "lucide-react";
 import { cn } from "crosscut";
 import { ViewerProps } from "../../lib/filePreviews";
 import { rulesSummary } from "../../lib/tablePolicy";
-import { availableViews, docOfView, pageOfView, parseViews, type ViewName, type ViewSpec, type ViewsDoc } from "../../lib/viewsDoc";
+import { availableViews, docOfView, pageOfView, parseViews, type ViewName, type ViewSpec } from "../../lib/viewsDoc";
 import { ItemDialog } from "./ItemDialog";
-import { CalendarPane, GanttPane, KanbanPane, TablePane, TreePane } from "./panes";
+import { CalendarPane, GanttPane, KanbanPane, SequencePane, TablePane, TreePane, type CalendarState, type PaneProps } from "./panes";
 
 /** The frame a page view renders in, with Nunjucks in it — loaded when a page view first opens. */
 const PageFrame = lazy(() => import("../page/PageFrame").then((m) => ({ default: m.PageFrame })));
 
 const ICONS: Record<ViewName, React.ComponentType<{ className?: string }>> = {
-  table: Table2, kanban: Kanban, calendar: CalendarDays, gantt: ChartGantt, tree: ListTree, page: LayoutTemplate,
+  table: Table2, kanban: Kanban, calendar: CalendarDays, gantt: ChartGantt, sequence: Workflow, tree: ListTree, page: LayoutTemplate,
 };
 /** The views that draw the items themselves; a page's template draws its own. */
-const PANES: Record<Exclude<ViewName, "page">, React.ComponentType<{ doc: ViewsDoc; onOpen: (id: string) => void }>> = {
-  table: TablePane, kanban: KanbanPane, calendar: CalendarPane, gantt: GanttPane, tree: TreePane,
+const PANES: Record<Exclude<ViewName, "page">, React.ComponentType<PaneProps>> = {
+  table: TablePane, kanban: KanbanPane, calendar: CalendarPane, gantt: GanttPane, sequence: SequencePane, tree: TreePane,
 };
 
 /** What a view's rules do, in a line: "2 filters · sorted by from asc · first 10". */
 const rulesLine = (v: ViewSpec): string =>
   rulesSummary({ role: "table", title: "", where: v.where, sort: v.sort, hide: [], problems: [], ...(v.limit ? { limit: v.limit } : {}) });
 
-export default function ViewsView({ content, height = "100%" }: ViewerProps) {
+export default function ViewsView({ content, height = "100%", agentId, onOpenPath }: ViewerProps) {
   const doc = useMemo(() => parseViews(content), [content]);
   const offered = useMemo(() => availableViews(doc), [doc]);
   const [key, setKey] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  // Each calendar view's scale and day, and each gantt's or sequence's folded parents, by the view's key — kept while
+  // the page is, across view switches.
+  const [calendars, setCalendars] = useState<Record<string, CalendarState>>({});
+  const [folds, setFolds] = useState<Record<string, string[]>>({});
   // A re-read that no longer offers the open view falls back to the first; an open item stays while its id survives.
   useEffect(() => { if (key && !offered.some((v) => v.key === key)) setKey(null); }, [offered, key]);
   useEffect(() => { if (open && !doc.items.some((it) => it.id === open)) setOpen(null); }, [doc, open]);
@@ -74,9 +80,11 @@ export default function ViewsView({ content, height = "100%" }: ViewerProps) {
       <div className={cn("mt-3", page && "min-h-0 flex-1")}>
         {page && view
           ? <Suspense fallback={<p className="text-xs text-muted-foreground">Loading the page…</p>}><PageFrame page={page} title={view.label} height="100%" /></Suspense>
-          : <Pane doc={seen} onOpen={setOpen} />}
+          : <Pane doc={seen} onOpen={setOpen} group={view?.group} calendar={view ? calendars[view.key] : undefined}
+              onCalendar={(s) => { if (view) setCalendars((c) => ({ ...c, [view.key]: s })); }}
+              folded={view ? folds[view.key] : undefined} onFolded={(ids) => { if (view) setFolds((f) => ({ ...f, [view.key]: ids })); }} />}
       </div>
-      <ItemDialog doc={doc} itemId={open} onSelect={setOpen} onClose={() => setOpen(null)} />
+      <ItemDialog doc={doc} itemId={open} onSelect={setOpen} onClose={() => setOpen(null)} host={{ agentId, onOpenPath }} />
     </div>
   );
 }

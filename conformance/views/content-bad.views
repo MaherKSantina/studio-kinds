@@ -1,0 +1,26 @@
+title: Broken documents
+fields:
+  start: start
+items:
+  - id: not-a-mapping
+    title: Not a mapping
+    content: "a string"
+  - id: no-kind
+    title: No kind
+    content: {doc: hi}
+  - id: no-doc
+    title: No doc
+    content: {kind: md}
+  - id: varies
+    title: Varies
+    content: {kind: md, doc: hi, by: [d], docs: {d=a: x}, file: beside.md}
+  - id: md-not-string
+    title: Md not string
+    content: {kind: md, doc: {a: 1}}
+  - id: unknown-kind
+    title: Unknown kind
+    content: {kind: widget, doc: {}}
+  - id: broken-inside
+    title: Broken inside
+    start: 2026-10-05
+    content: {kind: brief, doc: {title: b, sections: [{title: S, content: {kind: md}}]}}

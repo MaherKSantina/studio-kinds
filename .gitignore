@@ -14,6 +14,7 @@ apps/vscode/media/
 apps/vscode/*.vsix
 .data/
 release/
+.wrangler/
 claude/memory.brief
 __pycache__/
 .pytest_cache/

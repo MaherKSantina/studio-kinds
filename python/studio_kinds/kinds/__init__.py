@@ -9,14 +9,17 @@ without a check.
 
 A check takes the document's TEXT and nothing else: every kind is one self-contained file, so no
 engine has a folder to read, and a document written inside another is checked the same way as one
-that is a file of its own.
+that is a file of its own. A brief's section, a kanban's task and a views item hold one such
+document as `content: {kind, doc}`: `read_content` takes it leniently, `content_problems` names what
+its shape cannot be, and `written_doc_problems` runs it through its own kind's engine.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Any, Callable
 
 from .. import _yaml
+from .._js import defined, get, is_obj
 
 
 @dataclass
@@ -109,3 +112,45 @@ def check_written(kind: str, doc: object) -> tuple[bool, CheckResult]:
     if not k.check:
         return True, CheckResult()
     return True, k.check(doc_text(doc))
+
+
+def read_content(raw: Any) -> dict | None:
+    """A `content: {kind, doc}` as the lenient read takes it — `{"kind": str, "doc": Any}`, the kind
+    `""` when none is named — or `None` when it is not a mapping."""
+    if not is_obj(raw):
+        return None
+    return {"kind": written_kind(raw.get("kind")) or "", "doc": raw.get("doc")}
+
+
+def content_problems(holder: dict, one: str, whole: str, kinds: str) -> list[str]:
+    """What the `content` of `holder` cannot be, read as written: `one` names the holder (`a task`),
+    `whole` the document around it (`a board`), `kinds` the kinds a `content` without one is pointed to."""
+    if not defined(get(holder, "content")):
+        return []
+    c = holder["content"]
+    if not is_obj(c):
+        return ["`content` is not a mapping — write `kind` and `doc`"]
+    out: list[str] = []
+    kind = written_kind(c.get("kind"))
+    if not kind:
+        out.append(f"`content` has no `kind` — say which kind renders it ({kinds}, …)")
+    if not defined(get(c, "doc")):
+        out.append("`content` has no `doc` — the document itself, as a file of that kind would hold it")
+    for k in ("by", "docs", "file"):
+        if defined(get(c, k)):
+            out.append(f"`content` has `{k}` — {one} holds one document written in; {whole} has no answers to vary by and names no file")
+    if kind == "md" and defined(get(c, "doc")) and not isinstance(c["doc"], str):
+        out.append("an `md` document is its text — write it as a block string")
+    return out
+
+
+def written_doc_problems(name: str, content: dict | None) -> list[str]:
+    """A written document through its own kind's engine, each problem under `<name> (<kind>): `;
+    nothing when there is none or it names no kind — `content_problems` says that."""
+    if not content or not content["kind"]:
+        return []
+    kind = content["kind"]
+    known, r = check_written(kind, content["doc"])
+    if not known:
+        return [f"{name} ({kind}): not a kind the Studio knows — `--kinds` lists them"]
+    return [f"{name} ({kind}): {p}" for p in r.problems]

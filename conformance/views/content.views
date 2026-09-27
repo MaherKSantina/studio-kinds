@@ -1,0 +1,30 @@
+title: Launch with documents
+fields:
+  start: start
+  end: end
+views:
+  - key: month
+    kind: calendar
+  - key: all
+    kind: table
+items:
+  - id: kickoff
+    title: Kickoff
+    start: 2026-10-05
+    content:
+      kind: brief
+      doc:
+        title: The kickoff
+        sections:
+          - title: Agenda
+            body: Scope, owners, the date.
+          - title: Who
+            body: Everyone on the launch.
+  - id: review
+    title: Review
+    start: 2026-10-12
+    end: 2026-10-13
+    content: {kind: md, doc: "The notes from the review, in the item."}
+  - id: ship
+    title: Ship
+    start: 2026-10-20
