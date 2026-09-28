@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "problems": [
+    "rules[1] (Sent) is never reached — every combination it matches is decided by an earlier rule",
+    "rules[2] (Impossible) matches no combination"
+  ],
+  "summary": "3 dimensions · 4 combinations · 3 rules"
+}

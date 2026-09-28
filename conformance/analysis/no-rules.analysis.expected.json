@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "no `rules` — what follows from each combination, first match wins"
+  ],
+  "summary": "1 dimension · 2 combinations · 0 rules · 2 unmatched"
+}

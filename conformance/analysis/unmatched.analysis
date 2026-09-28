@@ -1,0 +1,11 @@
+title: Two rules
+dimensions:
+  party: [buyer, seller]
+  offer: [none, sent]
+rules:
+  - label: Respond
+    when: {party: seller, offer: sent}
+    then: {type: button}
+  - label: Sent
+    when: {party: buyer, offer: sent}
+    then: {type: ribbon}

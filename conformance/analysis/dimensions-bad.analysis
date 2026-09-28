@@ -1,0 +1,4 @@
+title: Bad inputs
+dimensions: [party, offer]
+rules: {label: x}
+outcome: type

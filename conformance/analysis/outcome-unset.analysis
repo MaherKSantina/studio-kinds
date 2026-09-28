@@ -1,0 +1,11 @@
+title: Wrong outcome
+dimensions:
+  party: [buyer, seller]
+rules:
+  - label: Buyer
+    when: {party: buyer}
+    then: {kind: a}
+  - label: Seller
+    when: {party: seller}
+    then: {kind: b}
+outcome: type

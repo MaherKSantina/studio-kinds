@@ -1,0 +1,26 @@
+{
+  "ok": false,
+  "problems": [
+    "no `title` — the analysis's heading",
+    "dimensions.empty is not a non-empty list of values (got [])",
+    "dimensions.mixed holds a value that is not text, a number or a boolean (got [\"b\"])",
+    "dimensions.mixed holds a value that is not text, a number or a boolean (got {\"c\":1})",
+    "dimensions.mixed repeats the value \"a\"",
+    "dimensions.text is not a non-empty list of values (got \"not a list\")",
+    "rules[0] is not a mapping — `label`, `when` and `then` (got \"not a rule\")",
+    "rules[1].label is not text (got 3)",
+    "rules[1].when.ghost is not a declared dimension",
+    "rules[1].when.empty value \"a\" is not in dimension empty",
+    "rules[1].when.mixed value \"c\" is not in dimension mixed",
+    "rules[1].when.mixed value 2 is not in dimension mixed",
+    "rules[2].when is not a mapping of dimension → value (got [\"a\"])",
+    "rules[3] (Nothing decided) has no `then` — nothing it decides",
+    "rules[4].when.ok value \"c\" is not in dimension ok",
+    "rules[4].when.mixed is an empty list — nothing would match",
+    "rules[4].then is not a mapping of output key → value (got 3)",
+    "rules[5].then.list is not text, a number or a boolean (got [1])",
+    "rules[5].then.map is not text, a number or a boolean (got {\"a\":1})",
+    "`outcome` is not text — the key of `then` that names the result (got 4)"
+  ],
+  "summary": "3 dimensions · 0 combinations · 6 rules"
+}

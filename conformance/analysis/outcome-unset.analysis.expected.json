@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "`outcome` \"type\" is a key no rule's `then` sets"
+  ],
+  "summary": "1 dimension · 2 combinations · 2 rules"
+}

@@ -1,0 +1,31 @@
+kind: analysis
+version: 1
+fields:
+  - field: title
+    type: string
+    required: true
+    description: The heading.
+  - field: description
+    type: string
+    description: One line under the title.
+  - field: dimensions
+    type: mapping of name → list of value
+    required: true
+    description: The inputs — each the non-empty list of values it can take, in order; text, a number or a boolean, none repeated. The rail lists them; the tree nests over them in the order they are dragged into.
+  - field: rules
+    type: list of rule
+    required: true
+    description: In precedence order — the FIRST rule whose `when` holds for a combination decides it. A rule every combination of which an earlier rule already takes is never reached, and the checker says so.
+  - field: rules[].label
+    type: string
+    description: What the rule decides, in words — the leaf's text. `Rule N` when absent.
+  - field: rules[].when
+    type: mapping of dimension → condition
+    description: "Every key must hold; absent or `{}` is always. A condition on a dimension: a bare value equals; `[a, b]` one of; `\"*\"` any; `\"!x\"` not equal, on the value's text. A key that is not a declared dimension, or a value not in it, is a problem."
+  - field: rules[].then
+    type: mapping of output key → value
+    required: true
+    description: What follows when the rule decides — each output key's value, text, a number or a boolean. An output a rule does not set is `—`, and so is every output of a combination no rule decides. The output keys are the `outcome` first, then every key any rule sets, first seen first.
+  - field: outcome
+    type: output key
+    description: The key of `then` that names the result — a leaf is coloured by its value, and the Outputs panel marks it. `type` when absent; a key no rule sets is a problem.

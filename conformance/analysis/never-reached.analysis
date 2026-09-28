@@ -1,0 +1,15 @@
+title: Shadowed
+dimensions:
+  party: [buyer, seller]
+  offer: [none, sent]
+  flag: [true]
+rules:
+  - label: Everything
+    then: {type: all}
+  - label: Sent
+    when: {party: buyer, offer: sent}
+    then: {type: ribbon}
+  - label: Impossible
+    when: {flag: "!true"}
+    then: {type: never}
+outcome: type

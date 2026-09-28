@@ -24,7 +24,7 @@ if (-not $Remove -and -not (Test-Path (Join-Path $desktop "renderer\desktop.html
 
 # Every text kind the Studio authors (binary kinds - pdf, xlsx - are viewed only and stay with their own apps).
 $exts = @("frame", "flow", "playbook", "plan", "guide", "brief", "points", "policy", "project", "list", "kanban",
-          "calendar", "definition", "memory", "schema", "workup", "program", "tablediff", "pulse", "moves", "jsonl", "middleware", "collection", "clip", "song")
+          "calendar", "definition", "memory", "schema", "workup", "program", "tablediff", "pulse", "moves", "jsonl", "middleware", "collection", "clip", "song", "analysis")
 
 foreach ($ext in $exts) {
   $progId  = "Studio.$ext"

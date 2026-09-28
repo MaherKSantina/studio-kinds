@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "problems": [
+    "`dimensions` is not a mapping — a name to the list of its values (got [\"party\",\"offer\"])",
+    "`rules` is not a list (got {\"label\":\"x\"})"
+  ],
+  "summary": "0 dimensions · 0 combinations · 0 rules"
+}

@@ -1,7 +1,7 @@
 # studio-kinds
 
 The Studio's document kinds — `.brief`, `.playbook`, `.kanban`, `.calendar`, `.policy`, `.flow`,
-`.jsonl`, `.pipeline`, `.collection`, `.clip`, `.song`, `.md` — checked from Python:
+`.jsonl`, `.pipeline`, `.collection`, `.clip`, `.song`, `.finance`, `.script`, `.views`, `.page`, `.analysis`, `.md` — checked from Python:
 the `studio-check` command, the `check` function, and every kind's JSON Schema, book, field table,
 spec and template as package data. Every kind is ONE self-contained file — a document of another
 kind is written in, never named as a path — so a check reads the text and nothing beside it. Nothing

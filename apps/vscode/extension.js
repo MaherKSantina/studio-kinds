@@ -41,7 +41,7 @@ function activate(context) {
 
 /** The kinds the Studio editor takes — the custom editor's selector, as a set. */
 const STUDIO_EXTS = new Set(["frame", "flow", "playbook", "plan", "guide", "brief", "points", "policy", "project", "list", "kanban",
-  "calendar", "definition", "memory", "schema", "workup", "program", "tablediff", "pulse", "moves", "script", "views"]);
+  "calendar", "definition", "memory", "schema", "workup", "program", "tablediff", "pulse", "moves", "script", "views", "analysis"]);
 
 /** "Open" from inside a surface: a Studio document in its own Studio tab, any other file in its
  *  default editor, a FOLDER (a journey's pool, a memory's card) revealed in the Explorer. */

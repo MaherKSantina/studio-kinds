@@ -1,0 +1,19 @@
+title: "untitled"
+description: "Which result follows from each combination of the inputs; the first rule that holds decides."
+dimensions:
+  party: [buyer, seller]
+  offer: [none, sent, accepted]
+rules:
+  - label: Pay now
+    when: {party: buyer, offer: accepted}
+    then: {type: button, title: Pay now}
+  - label: Waiting
+    when: {party: buyer, offer: sent}
+    then: {type: ribbon, title: Waiting for the seller}
+  - label: Respond
+    when: {party: seller, offer: sent}
+    then: {type: ribbon, title: Respond to the offer}
+  - label: Paid
+    when: {party: seller, offer: accepted}
+    then: {type: ribbon, title: The buyer has paid}
+outcome: type

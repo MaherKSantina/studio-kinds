@@ -35,6 +35,7 @@ book, then run `node scripts/book-to-markdown.mjs` from the repository root.
 
 | kind | what it is |
 |---|---|
+| [`.analysis`](analysis/README.md) | A decision over closed inputs — the inputs and their values, the rules in precedence order that say what follows from each combination, and the output key that names the result; opened as a tree nested over the inputs in the order they are dragged into, narrowed by locking input values and pinning output values; read only, the order, the locks, the pins and the folds kept for the session. |
 | [`.brief`](brief/README.md) | A titled tree of sections, each with a one-line description, a markdown body and, where it holds one, a document of another kind written in — what the parser keeps, what a click shows, where a brief turns up inside other kinds, and what the checker judges. |
 | [`.calendar`](calendar/README.md) | Dated work on a month grid — the tasks, their edges and durations, and the day everything must be done by; every date drawn is derived from those, on every open, and none is written down. |
 | [`.clip`](clip/README.md) | The notes of one MIDI clip as a document — pitches, beats, velocities and drum lanes; a piano roll on open, a Standard MIDI File on export, and what a song does with it. |

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { previewForPath } from "../src/lib/filePreviews";
-import { BRIEF, BRIEF_WRITTEN, GUIDE, PAGE, PLAN, PLAYBOOK, SCRIPT, VIEWS, useFixtureFs } from "./fixtures";
+import { ANALYSIS, BRIEF, BRIEF_WRITTEN, GUIDE, PAGE, PLAN, PLAYBOOK, SCRIPT, VIEWS, useFixtureFs } from "./fixtures";
 
 useFixtureFs();
 
@@ -46,4 +46,8 @@ export const Page: StoryObj = {
 export const PageFailed: StoryObj = {
   name: "Page (the engine's message in place of the page)",
   render: () => <View path="/Pages/broken.page" content={'template: "{% for p in people %}{{ p }}{% endfo %}"'} />,
+};
+export const Analysis: StoryObj = {
+  name: "Analysis (every combination as a tree over the inputs; drag the rail, lock inputs, pin outputs)",
+  render: () => <View path="/Decisions/banner.analysis" content={ANALYSIS} />,
 };

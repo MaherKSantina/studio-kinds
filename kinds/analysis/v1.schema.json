@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MaherKSantina/studio-kinds/master/kinds/analysis/v1.schema.json",
+  "title": "analysis",
+  "description": "A decision over closed inputs. `dimensions` name the inputs and every value each can take; `rules`, in precedence order, say what follows from a combination — `when` over the inputs, `then` the outputs; the first rule whose `when` holds decides — and `outcome` names the output key that is the result. Opened, every combination is drawn as a tree nested over the inputs in the order they are dragged into; locking input values and pinning output values narrow it. Read only: the order, the locks, the pins and the folds are the session's.",
+  "type": "object",
+  "required": [
+    "title",
+    "dimensions",
+    "rules"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The heading."
+    },
+    "description": {
+      "type": "string",
+      "description": "One line under the title."
+    },
+    "dimensions": {
+      "type": "object",
+      "description": "The inputs: name → the non-empty list of values it can take, in order. A value is text, a number or a boolean, and none repeats.",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": {
+          "$ref": "#/$defs/scalar"
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "description": "In precedence order: the FIRST rule whose `when` holds for a combination decides it. A rule every combination of which an earlier rule already takes is never reached.",
+      "items": {
+        "type": "object",
+        "required": [
+          "then"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "What the rule decides, in words — the leaf's text. `Rule N` when absent."
+          },
+          "when": {
+            "type": "object",
+            "description": "Dimension → condition, every key of which must hold; absent or empty is always. A bare value equals; a list is one of; `\"*\"` is any; `\"!x\"` is not equal, on the value's text.",
+            "x-studio-ref": "each key names a dimension under `dimensions`; each value is one of its values, a list of them, `*`, or `!` before one of them",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/scalar"
+                },
+                {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/$defs/scalar"
+                  }
+                }
+              ]
+            }
+          },
+          "then": {
+            "type": "object",
+            "description": "Output key → value: what follows when the rule decides. An output a rule does not set is `—`.",
+            "additionalProperties": {
+              "$ref": "#/$defs/scalar"
+            }
+          }
+        }
+      }
+    },
+    "outcome": {
+      "type": "string",
+      "description": "The output key that names the result — a leaf is coloured by its value. `type` when absent; a key some rule's `then` sets.",
+      "x-studio-ref": "a key of some rule's `then`"
+    }
+  },
+  "$defs": {
+    "scalar": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    }
+  }
+}

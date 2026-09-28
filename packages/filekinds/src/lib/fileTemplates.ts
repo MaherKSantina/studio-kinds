@@ -41,6 +41,7 @@ export const TEMPLATE_KINDS: ReadonlyArray<{ ext: string; what: string }> = [
   { ext: "script", what: "a script to press play on — the code, its interpreter (powershell, pwsh, bash, sh, python, node, cmd) and the environment variables the run gets, in one file" },
   { ext: "views", what: "one list of items seen several ways — a table always, and a kanban, a calendar, a gantt, a sequence of steps and a dependency tree as the roles under `fields` allow (status, start, end, previous, parent)" },
   { ext: "page", what: "an HTML page made from its own data — a Nunjucks template, the model it renders and the partials it names, rendered on open" },
+  { ext: "analysis", what: "a decision over closed inputs — `dimensions` with their values, `rules` in precedence order (`when` over the inputs, `then` the outputs; first match wins) and the `outcome` key; every combination drawn as a tree nested over the inputs in the order you drag them into" },
 ];
 
 export const fileExtensionOf = (path: string): string => {
@@ -426,6 +427,28 @@ template: |
   </ul>
 `;
 
+/** The checker's template (untitled.analysis): two inputs and four rules that decide a banner. */
+const analysisText = (stem: string) => `title: ${JSON.stringify(stem)}
+description: "Which result follows from each combination of the inputs; the first rule that holds decides."
+dimensions:
+  party: [buyer, seller]
+  offer: [none, sent, accepted]
+rules:
+  - label: Pay now
+    when: {party: buyer, offer: accepted}
+    then: {type: button, title: Pay now}
+  - label: Waiting
+    when: {party: buyer, offer: sent}
+    then: {type: ribbon, title: Waiting for the seller}
+  - label: Respond
+    when: {party: seller, offer: sent}
+    then: {type: ribbon, title: Respond to the offer}
+  - label: Paid
+    when: {party: seller, offer: accepted}
+    then: {type: ribbon, title: The buyer has paid}
+outcome: type
+`;
+
 export function fileTemplate(path: string, title?: string, content?: string): string {
   const name = path.slice(path.lastIndexOf("/") + 1);
   const dot = name.lastIndexOf(".");
@@ -464,6 +487,7 @@ export function fileTemplate(path: string, title?: string, content?: string): st
     case "script": return scriptText(stem);
     case "views": return viewsText(stem);
     case "page": return pageText(stem);
+    case "analysis": return analysisText(stem);
     default: return body;
   }
 }

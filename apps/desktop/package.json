@@ -185,6 +185,11 @@
         "ext": "page",
         "name": "Studio page",
         "role": "Editor"
+      },
+      {
+        "ext": "analysis",
+        "name": "Studio analysis",
+        "role": "Editor"
       }
     ],
     "artifactName": "Studio-Setup-${version}.exe"

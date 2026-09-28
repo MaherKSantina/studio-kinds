@@ -1,0 +1,22 @@
+dimensions:
+  ok: [a, b]
+  empty: []
+  mixed: [a, [b], {c: 1}, a, 1, "1"]
+  text: not a list
+rules:
+  - not a rule
+  - label: 3
+    when: {ok: a, ghost: x, empty: a, mixed: [c, 2]}
+    then: {type: x}
+  - label: Bad when
+    when: [a]
+    then: {type: y}
+  - label: Nothing decided
+    when: {ok: b}
+  - label: Bad then
+    when: {ok: "!c", mixed: []}
+    then: 3
+  - label: Bad output
+    when: {ok: "*"}
+    then: {type: z, list: [1], map: {a: 1}}
+outcome: 4

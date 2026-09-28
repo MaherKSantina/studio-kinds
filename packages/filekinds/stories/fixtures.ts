@@ -690,6 +690,46 @@ template: |
   {% endblock %}
 `;
 
+export const ANALYSIS = `title: Message list banner
+description: What a thread shows above its messages — by who is looking, whether an offer is open and where the order stands.
+dimensions:
+  party: [buyer, seller]
+  offer: [none, sent, accepted, declined]
+  order: [none, created, paid]
+  payout: [none, kycNeeded, failed, paid]
+rules:
+  - label: Set up your payout account
+    when: {party: seller, order: paid, payout: kycNeeded}
+    then: {type: ribbon, style: warning, title: Funds received — set up your payout account}
+  - label: Payout failed
+    when: {party: seller, order: paid, payout: failed}
+    then: {type: ribbon, style: negative, title: Your payout failed}
+  - label: Paid out
+    when: {party: seller, order: paid, payout: paid}
+    then: {type: ribbon, style: positive, title: You have been paid}
+  - label: Pay the seller
+    when: {party: buyer, order: created}
+    then: {type: button, style: primary, title: Pay now}
+  - label: Waiting for payment
+    when: {party: seller, order: created}
+    then: {type: ribbon, style: neutral, title: Waiting for the buyer to pay}
+  - label: Order paid
+    when: {order: paid}
+    then: {type: ribbon, style: positive, title: Paid}
+  - label: Respond to the offer
+    when: {party: seller, offer: sent}
+    then: {type: button, style: primary, title: Respond}
+  - label: Offer sent
+    when: {party: buyer, offer: sent}
+    then: {type: ribbon, style: neutral, title: Offer sent — waiting for the seller}
+  - label: Offer declined
+    when: {offer: declined}
+    then: {type: ribbon, style: negative, title: Offer declined}
+  - label: Nothing to show
+    then: {type: none}
+outcome: type
+`;
+
 export const PROJECT = `name: Fixture venture
 description: One container over the fixture files.
 items:

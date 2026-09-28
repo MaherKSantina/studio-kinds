@@ -11,6 +11,9 @@ export type { ViewsDoc, ViewsItem, ViewName, ViewSpec } from "./lib/viewsDoc";
 // The page kind — its parser, the frame's document and the code the frame renders with.
 export { parsePage, pageSummary, pageFrame, pageError, RENDER_PAGE } from "./lib/pageDoc";
 export type { PageDoc, PageRender } from "./lib/pageDoc";
+// The analysis kind — its engine, pure: the parse, every combination decided, the tree.
+export { parseAnalysis, compileAnalysis, buildTree as buildAnalysisTree, buildKeptTree as buildKeptAnalysisTree, matchTarget as matchAnalysisTarget, analysisSummary } from "./lib/analysisDoc";
+export type { AnalysisDoc, AnalysisRule, Compiled as AnalysisCompiled, Row as AnalysisRow, TreeNode as AnalysisTreeNode } from "./lib/analysisDoc";
 export * from "./lib/filePreviews";
 export * from "./openWith";
 

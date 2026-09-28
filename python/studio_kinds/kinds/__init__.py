@@ -1,9 +1,9 @@
 """The kinds, by extension: a label, and the check — the engine that reads a document of the kind
 and names every problem.
 
-Sixteen are the AUTHORING kinds, each with a check, a spec, a book, a field table and a template:
+Seventeen are the AUTHORING kinds, each with a check, a spec, a book, a field table and a template:
 brief, playbook, kanban, calendar, policy, flow, jsonl, pipeline, collection, clip, song, finance,
-script, views, page and md (nothing to validate). The rest are the Studio's own — written by its editors, read by its views —
+script, views, page, analysis and md (nothing to validate). The rest are the Studio's own — written by its editors, read by its views —
 and are known here by name only: a document of one written inside a brief or a playbook is accepted
 without a check.
 
@@ -49,7 +49,7 @@ def _lazy(module: str, name: str = "check") -> Check:
 
 AUTHORING: tuple[str, ...] = (
     "brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "pipeline", "collection",
-    "clip", "song", "finance", "script", "views", "page", "md",
+    "clip", "song", "finance", "script", "views", "page", "analysis", "md",
 )
 
 KINDS: dict[str, Kind] = {
@@ -82,6 +82,7 @@ KINDS: dict[str, Kind] = {
     "script": Kind("script", "Script", _lazy("script")),
     "views": Kind("views", "Views", _lazy("views")),
     "page": Kind("page", "Page", _lazy("page")),
+    "analysis": Kind("analysis", "Analysis", _lazy("analysis")),
     "md": Kind("md", "Markdown", None),
 }
 

@@ -9,7 +9,7 @@ import { fileTemplate, kindForPath } from "filekinds";
 /** The kinds of "Which kind for what", in its order; `.md` for anything else. */
 const GUIDE_KINDS = [
   "brief", "playbook", "kanban", "calendar", "policy", "flow", "jsonl", "pipeline", "collection",
-  "clip", "song", "finance", "script", "views", "page", "md",
+  "clip", "song", "finance", "script", "views", "page", "analysis", "md",
 ];
 
 const EXAMPLES = import.meta.glob("../../../examples/*", { query: "?raw", import: "default", eager: true }) as Record<string, string>;

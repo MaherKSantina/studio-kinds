@@ -126,6 +126,7 @@ const SongR = lazyViewer("song", lazy(() => import("../components/music/SongView
 const ScriptR = lazyViewer("script", lazy(() => import("../components/script/ScriptView")));
 const ViewsR = lazyViewer("views", lazy(() => import("../components/views/ViewsView")));
 const PageR = lazyViewer("page", lazy(() => import("../components/page/PageView")));
+const AnalysisR = lazyViewer("analysis", lazy(() => import("../components/analysis/AnalysisView")));
 
 // Authoring surfaces — loaded only when the Studio mounts them.
 const FrameE = lazyEditor("frame", lazy(() => import("../components/frame/FrameEditor")));
@@ -259,6 +260,11 @@ export const FILE_KINDS: FileKindDef[] = [
   // A PAGE made from its own data: a Nunjucks template, its model and its
   // partials, rendered inside the sandboxed frame an `.html` file opens in.
   { key: "page", label: "Page", extensions: ["page"], studioPath: STUDIO, Renderer: PageR },
+  // A DECISION over closed inputs: dimensions with their values, rules in
+  // precedence order (first match wins) and the outcome key. Every combination
+  // drawn as a tree nested over the inputs in the order they are dragged into;
+  // locks and pins narrow it. Read only — the order, locks and pins are the session's.
+  { key: "analysis", label: "Analysis", extensions: ["analysis"], studioPath: STUDIO, Renderer: AnalysisR },
 ];
 
 export const extensionOfPath = (path: string): string => {

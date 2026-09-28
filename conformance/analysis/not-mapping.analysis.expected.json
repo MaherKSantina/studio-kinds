@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "problems": [
+    "not a mapping — an analysis is `dimensions`, `rules` and the `outcome` key"
+  ],
+  "summary": "0 dimensions · 0 combinations · 0 rules"
+}
