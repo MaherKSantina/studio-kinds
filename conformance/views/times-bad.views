@@ -1,0 +1,21 @@
+title: Times the calendar cannot place
+fields:
+  start: from
+  end: to
+items:
+  - id: late
+    from: 2026-10-05 25:00
+  - id: zoned
+    from: 2026-10-05T09:00:00+10:00
+    to: 2026-10-05T11:00:00+10:00
+  - id: stray
+    from: 2026-10-05T09:00+10:00
+  - id: backwards
+    from: 2026-10-05 10:00
+    to: 2026-10-05 09:30
+  - id: overnight
+    from: 2026-10-06
+    to: 2026-10-05 23:00
+  - id: whole-day
+    from: 2026-10-05 10:00
+    to: 2026-10-05

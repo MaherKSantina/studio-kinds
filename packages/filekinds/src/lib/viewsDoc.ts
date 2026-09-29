@@ -19,8 +19,8 @@
  *     id: id                  # what identifies an item (default `id`)
  *     title: title            # what an item is labelled by (default `title`)
  *     status: status          # → Kanban
- *     start: start            # a date, YYYY-MM-DD → Calendar; with end + previous/parent, Gantt
- *     end: end
+ *     start: start            # a day, YYYY-MM-DD, or a time, YYYY-MM-DD HH:MM → Calendar; with end + previous/parent, Gantt
+ *     end: end                # a day or a time, as start
  *     previous: after         # the id(s) of what comes before → Tree, Sequence
  *     parent: under           # the id of the item this one is part of → nested in the Gantt and the Sequence
  *   columns: [To do, Doing, Done]    # the statuses in order; absent = the values found
@@ -34,12 +34,20 @@
  *        content: {kind: md, doc: "Scope, owners and the date."}}   # a document written in
  *     - {id: build, title: Build it, status: Doing, start: 2026-10-04, end: 2026-10-10, after: plan}
  *     - {id: api, title: The API, status: Doing, start: 2026-10-04, end: 2026-10-07, under: build}
+ *     - id: demo                                        # a time: the week and the day place it by the clock
+ *       title: Demo the API
+ *       start: 2026-10-07 14:00
+ *       end: 2026-10-07 15:30
  *
  * Every key an item carries is shown as it is but `content`: an item that
  * holds more than its line shows writes that document into itself —
  * `content: {kind, doc}`, the shape a brief's section carries — and its dialog
- * draws it by its own kind (writtenDocument.ts). The calendar shows a day,
- * its week or its month, the scale the page's for the session like the view;
+ * draws it by its own kind (writtenDocument.ts). A start or an end is a day,
+ * or a time on it on a 24-hour clock in no zone — the time the calendar
+ * shows: an item with a time at either end is timed (a start with none the
+ * start of its day, an end with none the end of its day, no end a moment),
+ * one of days alone all-day. The calendar shows a day, its week or its month
+ * — the week and the day by the clock — the scale the page's for the session like the view;
  * the gantt and the sequence fold a parent's rows away and back, the folds
  * the page's for the session too. A view's `group` names an item key whose
  * values gather its items: a kanban's lanes, and a gantt's or a sequence's
@@ -84,6 +92,9 @@ export interface ViewsItem {
   /** ISO dates, when the role is named and the value is a date. */
   start?: string;
   end?: string;
+  /** The time on the start's day and on the end's, `HH:MM`, when the value carries one — the item is timed. */
+  startTime?: string;
+  endTime?: string;
   /** Ids of the items this one comes after — only ids that are items here, the item itself excluded. */
   previous: string[];
   /** The id of the item this one is part of — only when it is an item here and not itself. */
@@ -135,6 +146,35 @@ const idText = (v: unknown): string =>
 export const asIsoDate = (v: unknown): string =>
   v instanceof Date ? v.toISOString().slice(0, 10)
   : typeof v === "string" && !Number.isNaN(Date.parse(v)) ? v.slice(0, 10) : "";
+
+/** A day and a time on it: `YYYY-MM-DD HH:MM`, a `T` or a space between, seconds allowed and not read. */
+const CLOCK = /^\d{4}-\d{2}-\d{2}[T ](\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/;
+
+/** The time of day a start or an end carries, `HH:MM` — "" for a day alone. A bare timestamp js-yaml hands over as a
+ *  Date keeps its clock in UTC, and at midnight is its day alone, as a bare date reads the same; a text's is the time
+ *  written after its day, on a 24-hour clock. The checker reads it the same (views.py `as_time`). */
+export function asClock(v: unknown): string {
+  if (v instanceof Date) {
+    if (Number.isNaN(v.getTime())) return "";
+    const iso = v.toISOString();
+    return iso.endsWith("T00:00:00.000Z") ? "" : iso.slice(11, 16);
+  }
+  const m = typeof v === "string" ? CLOCK.exec(v) : null;
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59 || Number(m[3] ?? 0) > 59) return "";
+  return `${m[1].padStart(2, "0")}:${m[2]}`;
+}
+
+/** A start or an end in words: its day, and its time when it has one — `2026-10-05 09:30`. */
+export const whenText = (day: string, time?: string): string => (time ? `${day} ${time}` : day);
+
+/** An item's span in words: `2026-10-01 → 2026-10-03`, `2026-10-05 09:00 → 10:30` (an end on the start's day names its
+ *  time alone), `2026-10-05 09:00` for a moment, the day alone for one day; "" with no start. */
+export function spanText(item: ViewsItem): string {
+  if (!item.start) return "";
+  const from = whenText(item.start, item.startTime);
+  if (!item.end || (item.end === item.start && !item.endTime)) return from;
+  return `${from} → ${item.end === item.start ? item.endTime : whenText(item.end, item.endTime)}`;
+}
 
 export const emptyViews = (): ViewsDoc => ({ title: "", fields: { id: "id", title: "title" }, columns: null, views: null, items: [] });
 
@@ -206,6 +246,8 @@ export function parseViews(text: string): ViewsDoc {
     const status = fields.status ? asStr(it[fields.status]) : "";
     const start = fields.start ? asIsoDate(it[fields.start]) : "";
     const end = fields.end ? asIsoDate(it[fields.end]) : "";
+    const startTime = start ? asClock(it[fields.start!]) : "";
+    const endTime = end ? asClock(it[fields.end!]) : "";
     const parent = fields.parent ? idText(it[fields.parent]) : "";
     const content = readWritten(it[CONTENT_KEY]);
     items.push({
@@ -214,6 +256,8 @@ export function parseViews(text: string): ViewsDoc {
       ...(status ? { status } : {}),
       ...(start ? { start } : {}),
       ...(end ? { end } : {}),
+      ...(startTime ? { startTime } : {}),
+      ...(endTime ? { endTime } : {}),
       previous: fields.previous ? idsOf(it[fields.previous]).filter((p) => p !== id) : [],
       ...(parent && parent !== id ? { parent } : {}),
       ...(content ? { content } : {}),
@@ -240,11 +284,17 @@ export function availableViews(doc: ViewsDoc): ViewSpec[] {
   return VIEW_ORDER.filter((k) => viewOffered(k, doc.fields)).map((k) => ({ key: k, kind: k, label: VIEW_LABEL[k], where: [], sort: [] }));
 }
 
-/** The items a view shows — its filter, sort and limit applied over the items' own fields. */
+/** An item's keys as a view's rules read them — as the table shows them, a date as its day and its time when it has
+ *  one — so a bare day and a time written as text sort together. */
+const asShown = (fields: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v instanceof Date ? cellText(v) : v]));
+
+/** The items a view shows — its filter, sort and limit applied over the items' own fields, as the table shows them. */
 export function rowsOfView(doc: ViewsDoc, view: ViewSpec): ViewsItem[] {
   if (!view.where.length && !view.sort.length && !view.limit) return doc.items;
-  const byRow = new Map(doc.items.map((it) => [it.fields, it]));
-  const out = applyTablePolicy({ role: "table", title: "", where: view.where, sort: view.sort, hide: [], problems: [], ...(view.limit ? { limit: view.limit } : {}) }, doc.items.map((it) => it.fields));
+  const rows = doc.items.map((it) => asShown(it.fields));
+  const byRow = new Map(rows.map((r, i) => [r, doc.items[i]]));
+  const out = applyTablePolicy({ role: "table", title: "", where: view.where, sort: view.sort, hide: [], problems: [], ...(view.limit ? { limit: view.limit } : {}) }, rows);
   return out.rows.map((r) => byRow.get(r)!).filter(Boolean);
 }
 
@@ -387,11 +437,12 @@ export function tableColumnsOf(doc: ViewsDoc): string[] {
   return out;
 }
 
-/** A value as the text a cell shows: text as it is, a date as its day, a list joined, a mapping as JSON. */
+/** A value as the text a cell shows: text as it is, a date as its day and its time when it has one, a list joined, a
+ *  mapping as JSON. */
 export function cellText(v: unknown): string {
   if (v === null || v === undefined) return "";
   if (typeof v === "string") return v;
-  if (v instanceof Date) return asIsoDate(v);
+  if (v instanceof Date) return whenText(asIsoDate(v), asClock(v));
   if (Array.isArray(v)) return v.map(cellText).join(", ");
   if (typeof v === "object") return JSON.stringify(v);
   return String(v);
@@ -449,6 +500,41 @@ export function spanTitle(scale: CalendarScale, iso: string): string {
   const [ty, tm, td] = to.split("-").map(Number);
   const head = fy !== ty ? `${fd} ${MONTHS[fm - 1]} ${fy}` : fm !== tm ? `${fd} ${MONTHS[fm - 1]}` : `${fd}`;
   return `${head} – ${td} ${MONTHS[tm - 1]} ${ty}`;
+}
+
+/** A day of this machine's calendar, `YYYY-MM-DD` — today when no date is given: what "Today" and the shading of today mean. */
+export const localDay = (d: Date = new Date()): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** Whether an item has a time at either end — the week and the day place it by the clock. */
+export const isTimed = (item: ViewsItem): boolean => !!(item.startTime || item.endTime);
+
+/** An item as the calendar places it. `start` and `end` are the file's own clock, in no zone: a day, `YYYY-MM-DD`, for
+ *  an item all day, the end the day after its last as a calendar counts; a time, `YYYY-MM-DDTHH:MM:00`, for one timed.
+ *  No `end`: one day, or a moment. */
+export interface CalendarEntry { id: string; title: string; allDay: boolean; start: string; end?: string }
+
+/** Where the calendar places an item with a start: all day across its days when it has no time, else timed from its
+ *  start — the start of its day when it has no time — to its end — the end of its day when it has none — and a
+ *  moment when it has no end, or one not after its start. A timed item that lasts a day or more goes all day across
+ *  the days it touches, as a diary lays out a stay or a trip. */
+export function calendarEntryOf(item: ViewsItem): CalendarEntry | null {
+  if (!item.start) return null;
+  const { id, title } = item;
+  const allDay = (last: string): CalendarEntry => ({ id, title, allDay: true, start: item.start!, ...(last > item.start! ? { end: addDays(last, 1) } : {}) });
+  if (!isTimed(item)) return allDay(item.end && item.end > item.start ? item.end : item.start);
+  const start = `${item.start}T${item.startTime ?? "00:00"}:00`;
+  const end = !item.end ? "" : item.endTime ? `${item.end}T${item.endTime}:00` : `${addDays(item.end, 1)}T00:00:00`;
+  if (end > start && Date.parse(`${end}Z`) - Date.parse(`${start}Z`) >= DAY) {
+    return allDay(end.endsWith("T00:00:00") ? addDays(end.slice(0, 10), -1) : end.slice(0, 10));
+  }
+  return { id, title, allDay: false, start, ...(end > start ? { end } : {}) };
+}
+
+/** The hour the calendar's hours open at: the one before the earliest time an item starts at — 08:00 when none has one. */
+export function firstHourOf(items: ViewsItem[]): string {
+  const first = items.map((it) => it.startTime).filter((t): t is string => !!t).sort()[0];
+  return `${String(first ? Math.max(0, Number(first.slice(0, 2)) - 1) : 8).padStart(2, "0")}:00`;
 }
 
 export interface GanttRow {

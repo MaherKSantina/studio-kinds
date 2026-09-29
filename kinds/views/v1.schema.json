@@ -35,11 +35,11 @@
         },
         "start": {
           "type": "string",
-          "description": "The key that is the start date, `YYYY-MM-DD` — allows the Calendar view; with `end` and `previous` or `parent`, the Gantt."
+          "description": "The key that is the start: a day, `YYYY-MM-DD`, or a time on it, `YYYY-MM-DD HH:MM` — a 24-hour clock in no zone, the time the calendar shows. Allows the Calendar view, whose week and day place an item with a time by the clock; with `end` and `previous` or `parent`, the Gantt."
         },
         "end": {
           "type": "string",
-          "description": "The key that is the end date, `YYYY-MM-DD`."
+          "description": "The key that is the end: a day or a time on it, as the start. An end with no time is the end of its day."
         },
         "previous": {
           "type": "string",
@@ -171,7 +171,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "description": "One item — its fields as they are. The key playing `id` is required and unique; the keys playing `start` and `end` are dates; the key playing `previous` is an id or a list of ids, the key playing `parent` one id, of items in this file; `content` is a document written in.",
+        "description": "One item — its fields as they are. The key playing `id` is required and unique; the keys playing `start` and `end` are days, or times on them; the key playing `previous` is an id or a list of ids, the key playing `parent` one id, of items in this file; `content` is a document written in.",
         "properties": {
           "content": {
             "$ref": "#/$defs/writtenDocument",
@@ -286,8 +286,8 @@
     "id": "identity — what `previous` and `parent` refer to",
     "title": "the label",
     "status": "a column of the Kanban; matched case-insensitively against `columns`",
-    "start": "a date; a value that is not one is a problem",
-    "end": "a date; before `start` is a problem",
+    "start": "a day, or a time on it; a value that is not one, a time the calendar cannot read, or a bare timestamp written in a zone is a problem",
+    "end": "a day, or a time on it, as `start`; before `start` is a problem",
     "previous": "ids of items in this file; the item itself, an unknown id or a cycle is a problem, and so is a part after its own whole or after what comes after it, or a whole after its own part",
     "parent": "one id of an item in this file; the item itself, an unknown id or a cycle is a problem"
   }

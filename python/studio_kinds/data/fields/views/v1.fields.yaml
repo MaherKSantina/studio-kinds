@@ -22,10 +22,10 @@ fields:
     description: The key that is a kanban column — allows the Kanban view. Matched against `columns` case-insensitively when columns are given.
   - field: fields.start
     type: item key
-    description: The key that is the start date (`YYYY-MM-DD`, bare or quoted) — allows the Calendar view; with `end` and `previous` or `parent`, the Gantt.
+    description: The key that is the start — a day, `YYYY-MM-DD`, or a time on it, `YYYY-MM-DD HH:MM` (a `T` or a space between, a 24-hour clock, no zone — the time the calendar shows), bare or quoted. Allows the Calendar view, whose week and day place an item with a time by the clock and an item of days alone in the all-day row; with `end` and `previous` or `parent`, the Gantt, which reads the days. A time the calendar cannot read, or a bare timestamp written in a zone, is a problem.
   - field: fields.end
     type: item key
-    description: The key that is the end date. An end before its start is a problem.
+    description: The key that is the end — a day or a time on it, as the start. An end with no time is the end of its day, a start with none the start of its day; a start with a time and no end is a moment. An end before its start is a problem.
   - field: fields.previous
     type: item key
     description: The key naming what comes before — one id or a list of ids of items in this file — allows the Tree view and the Sequence; with the dates, the Gantt. The item itself, an id no item has, or a cycle is a problem, and so is a part after its own whole or after what comes after it, or a whole after its own part.

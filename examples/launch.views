@@ -22,6 +22,8 @@ views:
     kind: gantt
   - key: steps
     kind: sequence
+  - key: calendar
+    kind: calendar
   - key: all
     kind: table
   - key: status
@@ -66,7 +68,22 @@ items:
             body: What ships on the day, and what waits for the next release.
           - title: Owners
             body: One name per part — the API, the UI, the tests.
+  - key: kickoff
+    name: Kick-off
+    stage: Done
+    from: 2026-10-01 09:30
+    to: 2026-10-01 10:30
+    under: plan
+    owner: Maher
   - {key: build, name: Build it, stage: Doing, from: 2026-10-04, to: 2026-10-10, after: plan, owner: Maher}
   - {key: api, name: The API, stage: Doing, from: 2026-10-04, to: 2026-10-07, under: build, owner: Sam}
+  - key: review
+    name: Review the API
+    stage: To do
+    from: 2026-10-07 14:00
+    to: 2026-10-07 15:30
+    under: build
+    after: api
+    owner: Sam
   - {key: ui, name: The UI, stage: To do, from: 2026-10-07, to: 2026-10-10, under: build, after: api, owner: Sam}
   - {key: ship, name: Ship, stage: To do, from: 2026-10-11, to: 2026-10-11, after: build}

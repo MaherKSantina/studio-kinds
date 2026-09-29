@@ -9,7 +9,7 @@ PyYAML's safe loader with its scalar resolution replaced by js-yaml's:
 - integers are decimal with leading zeros allowed (`010` is ten), or `0b`, `0o`, `0x`; no `_` separators;
 - floats need a digit or a dot, `.inf` and `.nan` are floats;
 - a bare `2026-09-09` is a date (js-yaml gives a Date; here a `datetime.date`), a bare
-  `2026-09-09T10:00:00Z` a datetime;
+  `2026-09-09T10:00:00Z` a datetime — the instant js-yaml builds, in the zone it was written in;
 - a duplicated mapping key is an ERROR, as it is in js-yaml, not a silent override;
 - `<<` merge keys work.
 
@@ -127,7 +127,12 @@ def _construct_timestamp(loader: yaml.SafeLoader, node: yaml.Node) -> _dt.date |
         hours=int(m.group("hour")), minutes=int(m.group("minute")), seconds=int(m.group("second")), microseconds=micro)
     if m.group("tz") and m.group("tz") != "Z":
         delta = _dt.timedelta(hours=int(m.group("tz_hour")), minutes=int(m.group("tz_minute") or 0))
-        when = when - delta if m.group("tz_sign") == "+" else when + delta
+        offset = delta if m.group("tz_sign") == "+" else -delta
+        # The clock as written, in the zone written — the instant js-yaml builds, and the zone kept for a check
+        # that names it. An offset no zone can have is taken off the clock instead, as js-yaml does.
+        if abs(offset) < _dt.timedelta(hours=24):
+            return when.replace(tzinfo=_dt.timezone(offset))
+        when = when - offset
     return when
 
 

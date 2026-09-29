@@ -2,15 +2,16 @@
 import { describe, expect, it } from "vitest";
 import nunjucks from "nunjucks";
 import {
-  availableViews, cellText, columnIndexOf, columnsOf, cyclicOf, docOfView, foldOutline, ganttOf, groupOutline, isGroupRow, itemCellText, layersOf,
-  linksOf, listedFieldsOf, mondayOf, pageOfView, lanesOf, parentCyclic, parseViews, rowsOfView, sameSpan, sequenceOf, shiftCalendar, spanTitle,
-  tableColumnsOf, treeOf, viewsSummary,
+  asClock, availableViews, calendarEntryOf, cellText, columnIndexOf, columnsOf, cyclicOf, docOfView, firstHourOf, foldOutline, ganttOf, groupOutline,
+  isGroupRow, isTimed, itemCellText, layersOf, linksOf, listedFieldsOf, localDay, mondayOf, pageOfView, lanesOf, parentCyclic, parseViews,
+  rowsOfView, sameSpan, sequenceOf, shiftCalendar, spanText, spanTitle, tableColumnsOf, treeOf, viewsSummary,
 } from "./viewsDoc";
 import { RENDER_PAGE } from "./pageDoc";
 import PAGE_VIEW from "../../../../conformance/views/page-view.views?raw";
 import CONTENT from "../../../../conformance/views/content.views?raw";
 import GROUPED from "../../../../conformance/views/group.views?raw";
 import GROUPED_OUTLINE from "../../../../conformance/views/group-outline.views?raw";
+import TIMES from "../../../../conformance/views/times.views?raw";
 
 const TEXT = `
 title: Launch
@@ -422,6 +423,108 @@ describe("the calendar", () => {
     expect(spanTitle("week", "2026-10-01")).toBe("28 September – 4 October 2026");
     expect(spanTitle("week", "2026-12-31")).toBe("28 December 2026 – 3 January 2027");
     expect(spanTitle("month", "2026-10-31")).toBe("October 2026");
+  });
+  it("means this machine's day by today, whatever the zone", () => {
+    expect(localDay(new Date(2026, 9, 5, 0, 30))).toBe("2026-10-05");
+    expect(localDay(new Date(2026, 9, 5, 23, 30))).toBe("2026-10-05");
+  });
+});
+
+describe("times", () => {
+  it("reads a time after the day, a T or a space between, on a 24-hour clock — seconds not read, a bare timestamp's in UTC", () => {
+    expect(asClock("2026-10-05 09:00")).toBe("09:00");
+    expect(asClock("2026-10-05T13:30")).toBe("13:30");
+    expect(asClock("2026-10-09 8:45")).toBe("08:45");
+    expect(asClock("2026-10-05 09:00:59.5")).toBe("09:00");
+    expect(asClock(new Date("2026-10-06T09:00:00Z"))).toBe("09:00");
+  });
+  it("reads no time from a day alone — nor from a bare timestamp at midnight, which reads as a bare date does", () => {
+    expect(asClock("2026-10-05")).toBe("");
+    expect(asClock(new Date("2026-10-05T00:00:00Z"))).toBe("");
+    expect(asClock(new Date(Number.NaN))).toBe("");
+  });
+  it("reads no time the calendar cannot place: past the clock, in a zone, or anything after it", () => {
+    for (const v of ["2026-10-05 25:00", "2026-10-05 09:60", "2026-10-05T09:00+10:00", "2026-10-05T09:00Z", "2026-10-05 9:30am", "5 Oct 2026 09:00", 930]) {
+      expect(asClock(v), String(v)).toBe("");
+    }
+  });
+  it("parses the start and the end of every item as a day and, when it has one, a time", () => {
+    const d = parseViews(TIMES);
+    expect(d.items.map((it) => [it.id, it.start, it.startTime, it.end, it.endTime])).toEqual([
+      ["standup", "2026-10-05", "09:00", "2026-10-05", "09:15"],
+      ["review", "2026-10-05", "13:30", "2026-10-05", "15:00"],
+      ["workshop", "2026-10-06", "09:00", "2026-10-06", "12:30"],
+      ["offsite", "2026-10-07", "10:00", "2026-10-08", undefined],
+      ["call", "2026-10-09", "08:45", undefined, undefined],
+      ["launch", "2026-10-09", undefined, undefined, undefined],
+    ]);
+    expect(d.items.map(isTimed)).toEqual([true, true, true, true, true, false]);
+    expect(viewsSummary(d)).toBe("6 items · views: week (calendar), all (table), next (table) 3");
+  });
+  it("sorts days and times together as the table shows them — a bare day before the times on it", () => {
+    const d = parseViews(TIMES);
+    const view = (key: string) => d.views!.find((v) => v.key === key)!;
+    expect(rowsOfView(d, view("next")).map((it) => it.id)).toEqual(["standup", "review", "workshop"]);
+    const all = parseViews(TIMES.replace("limit: 3", "limit: 6"));
+    expect(rowsOfView(all, all.views!.find((v) => v.key === "next")!).map((it) => it.id)).toEqual(["standup", "review", "workshop", "offsite", "launch", "call"]);
+  });
+  it("says an item's span in words — an end on the start's day by its time alone", () => {
+    const [standup, , workshop, offsite, call, launch] = parseViews(TIMES).items;
+    expect([standup, workshop, offsite, call, launch].map(spanText)).toEqual([
+      "2026-10-05 09:00 → 09:15", "2026-10-06 09:00 → 12:30", "2026-10-07 10:00 → 2026-10-08", "2026-10-09 08:45", "2026-10-09",
+    ]);
+    expect(spanText(parseViews(TEXT).items[0])).toBe("2026-10-01 → 2026-10-03");
+    expect(spanText(parseViews(TEXT).items[3])).toBe("2026-10-13");
+  });
+  it("shows a bare timestamp's time in a cell, a bare date as its day", () => {
+    expect(cellText(new Date("2026-10-06T09:00:00Z"))).toBe("2026-10-06 09:00");
+    expect(cellText(new Date("2026-10-06T00:00:00Z"))).toBe("2026-10-06");
+  });
+});
+
+describe("where the calendar places an item", () => {
+  const entries = (text: string) => parseViews(text).items.map(calendarEntryOf);
+  it("lays an item of days alone all day across them, the end the day after its last; one day has no end", () => {
+    expect(entries(TEXT).slice(0, 4)).toEqual([
+      { id: "plan", title: "Plan the launch", allDay: true, start: "2026-10-01", end: "2026-10-04" },
+      { id: "build", title: "Build it", allDay: true, start: "2026-10-04", end: "2026-10-11" },
+      { id: "test", title: "Test it", allDay: true, start: "2026-10-08", end: "2026-10-13" },
+      { id: "7", title: "Ship", allDay: true, start: "2026-10-13" },
+    ]);
+    expect(entries(TEXT)[4]).toBeNull();
+  });
+  it("lays an item with a time from its start to its end by the clock, no end a moment — and one lasting a day or more all day", () => {
+    expect(entries(TIMES)).toEqual([
+      { id: "standup", title: "Stand-up", allDay: false, start: "2026-10-05T09:00:00", end: "2026-10-05T09:15:00" },
+      { id: "review", title: "Design review", allDay: false, start: "2026-10-05T13:30:00", end: "2026-10-05T15:00:00" },
+      { id: "workshop", title: "Workshop", allDay: false, start: "2026-10-06T09:00:00", end: "2026-10-06T12:30:00" },
+      { id: "offsite", title: "Offsite", allDay: true, start: "2026-10-07", end: "2026-10-09" },
+      { id: "call", title: "A call", allDay: false, start: "2026-10-09T08:45:00" },
+      { id: "launch", title: "Launch day", allDay: true, start: "2026-10-09" },
+    ]);
+  });
+  it("starts an item with a time only at its end at the start of its day, ends one with none at the end of its day, and drops an end not after the start", () => {
+    const d = parseViews(`title: x
+fields: {start: from, end: to}
+items:
+  - {id: a, from: 2026-10-05, to: '2026-10-05 17:00'}
+  - {id: b, from: '2026-10-05 10:00', to: '2026-10-05 09:30'}
+  - {id: c, from: '2026-10-05 22:00', to: '2026-10-06 02:00'}
+  - {id: d, from: '2026-10-05 10:00', to: 2026-10-05}
+  - {id: e, from: '2026-10-05 00:00', to: '2026-10-06 00:00'}
+`);
+    expect(d.items.map(calendarEntryOf)).toEqual([
+      { id: "a", title: "a", allDay: false, start: "2026-10-05T00:00:00", end: "2026-10-05T17:00:00" },
+      { id: "b", title: "b", allDay: false, start: "2026-10-05T10:00:00" },
+      { id: "c", title: "c", allDay: false, start: "2026-10-05T22:00:00", end: "2026-10-06T02:00:00" },
+      { id: "d", title: "d", allDay: false, start: "2026-10-05T10:00:00", end: "2026-10-06T00:00:00" },
+      { id: "e", title: "e", allDay: true, start: "2026-10-05" },
+    ]);
+  });
+  it("opens the hours an hour before the earliest time an item starts at, else at 08:00", () => {
+    expect(firstHourOf(parseViews(TIMES).items)).toBe("07:00");
+    expect(firstHourOf(parseViews(TEXT).items)).toBe("08:00");
+    expect(firstHourOf(parseViews("title: x\nfields: {start: s}\nitems:\n  - {id: a, s: '2026-10-05 00:30'}\n").items)).toBe("00:00");
   });
 });
 

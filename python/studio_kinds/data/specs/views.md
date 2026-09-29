@@ -27,8 +27,8 @@ Authoring shape (YAML, lenient — a half-written file still renders):
     id: id               # what identifies an item (default `id`)
     title: title         # what an item is labelled by (default `title`)
     status: status       # a kanban column                     → Kanban
-    start: start         # a date, YYYY-MM-DD                  → Calendar; with `end` and `previous` or `parent`, Gantt
-    end: end             # a date
+    start: start         # a day, YYYY-MM-DD, or a time, YYYY-MM-DD HH:MM → Calendar; with `end` and `previous` or `parent`, Gantt
+    end: end             # a day or a time, as `start`
     previous: after      # the id(s) of what comes before      → Tree, Sequence; with the dates, Gantt
     parent: under        # the id of the item this one is part of → Sequence; nested under it there and in the gantt
   columns: [To do, Doing, Done]   # the statuses in order; absent = the values found, first seen first
@@ -72,14 +72,28 @@ Authoring shape (YAML, lenient — a half-written file still renders):
       start: 2026-10-04
       end: 2026-10-07
       under: build         # a child of `build`
+    - id: demo
+      title: Demo the API
+      status: To do
+      start: 2026-10-07 14:00   # a time: the week and the day place it by the clock
+      end: 2026-10-07 15:30
+      after: build-api
 
-A date is `YYYY-MM-DD`, bare or quoted. `previous` is one id or a list of
-ids, `parent` one id, every one an item of this file. A view's `filter` is
+A start or an end is a day, `YYYY-MM-DD`, or a time on it, `YYYY-MM-DD
+HH:MM` — a `T` or a space between, a 24-hour clock, no zone: the time the
+calendar shows; bare or quoted. An item with a time at either end is timed —
+a start with no time is the start of its day, an end with none the end of
+its day, a start with a time and no end a moment — and the calendar's week
+and day place it by the clock; an item with days alone is all-day. The
+gantt reads the days. `previous` is one id or a list of ids, `parent` one
+id, every one an item of this file. A view's `filter` is
 clauses over the items' own keys (`equals`, `not_equals`, `contains`,
 `not_contains`, `starts_with`, `ends_with`, `matches`, `gt`, `gte`, `lt`,
 `lte`, `between`, `in`, `not_in`, `is_empty`, `not_empty`, `is_true`,
 `is_false` — one value or a list); `sort` is `{field, dir}`, first key first;
-`limit` caps the rows. A KANBAN view may also name a `group`: an item key
+`limit` caps the rows. The rules read the keys as the table shows them — a
+date as its day, with its time when it has one — so a day and the times on
+it sort together, the day first. A KANBAN view may also name a `group`: an item key
 whose values become the board's LANES — rows of the board, the status
 columns running across each, in the order the values are first seen among
 that view's items, and a last lane for the items carrying no value for that
@@ -113,7 +127,9 @@ partial it does not hold, a `template` or `partials` on a view that is not a
 page, a `group` on a view that is not a kanban, a gantt or a sequence, one
 that is not an item key name, or one no item carries, a clause without a field or with an op outside the vocabulary, `items` that is not a list, an item that is not a mapping or has
 no id, an id used twice, a status that is not a column when columns are
-given, a start or end that is not a date, an end before its start, a
+given, a start or end that is not a date, a time after its day the
+calendar cannot read, a bare timestamp written in a zone — read in UTC, so
+the calendar would show another time — an end before its start, a
 `previous` that is not an id or a list of ids, a `parent` that is not an id,
 one naming no item or the item itself, items caught in a cycle, a part and
 its whole out of order — a part after its own whole or after what comes

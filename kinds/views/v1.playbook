@@ -63,11 +63,21 @@ events:
                   start: 2026-10-04
                   end: 2026-10-07
                   under: build
+                - id: demo
+                  title: Demo the API
+                  status: To do
+                  start: 2026-10-07 14:00
+                  end: 2026-10-07 15:30
+                  after: api
               ```
 
               An item's keys are its own — anything beside the roles is shown as it is, but
-              `content`, a document written into the item. A date is
-              `YYYY-MM-DD`, bare or quoted. `previous` is one id or a list of ids, `parent` one id,
+              `content`, a document written into the item. A start or an end is a day,
+              `YYYY-MM-DD`, or a time on it, `YYYY-MM-DD HH:MM` — a `T` or a space between, a
+              24-hour clock and no zone: the time the calendar shows; bare or quoted. An item with a
+              time at either end is timed — a start with no time is the start of its day, an end with
+              none the end of its day, and a start with a time and no end is a moment — and an item
+              of days alone is all-day. `previous` is one id or a list of ids, `parent` one id,
               every one an item of this file. `id` and `title` default to keys of those names; an
               item with no id is given `#N` so the rest still draws, and a second item with an id
               already seen is dropped.
@@ -77,7 +87,7 @@ events:
               |---|---|
               | Table | nothing — always allowed |
               | Kanban | `status` |
-              | Calendar | `start` (`end` when there is one; a day otherwise) |
+              | Calendar | `start` (`end` when there is one; without, the start's day, or its moment when it has a time) |
               | Gantt | `start`, `end`, and `previous` or `parent` |
               | Sequence | `previous` or `parent` |
               | Tree | `previous` |
@@ -94,7 +104,9 @@ events:
               `not_contains`, `starts_with`, `ends_with`, `matches`, `gt`, `gte`, `lt`, `lte`,
               `between`, `in`, `not_in`, `is_empty`, `not_empty`, `is_true`, `is_false`; one value
               or a list), every one of which must hold — `sort` (`{field, dir}`, first key first) and
-              `limit`. A filter hides items for that view only; an edge to a hidden item is dropped
+              `limit`. The rules read an item's keys as the table shows them — a date as its day,
+              with its time when it has one — so a day and the times on it sort together, the day
+              first. A filter hides items for that view only; an edge to a hidden item is dropped
               for that view. A KANBAN, a GANTT or a SEQUENCE view takes one key of its own, `group` —
               the item key whose values lane the board, or gather the outline's rows (see *A grouped
               kanban* and *A grouped gantt or sequence*). Two views of one kind are two ways of
@@ -229,10 +241,13 @@ events:
               section's and a kanban's task's are; its header comment is what `studio-check --spec
               views` prints. The shape is `kinds/views/v1.schema.json` and the field table
               `v1.fields.yaml`. The view is `components/views/ViewsView.tsx` over `lib/viewsDoc.ts` —
-              the table, the kanban, the calendar at its three scales on the month grid the journey
-              and the `.calendar` kind share (`shiftCalendar`, `sameSpan`, `spanTitle`), the gantt
-              (`ganttOf`) and the sequence (`sequenceOf`) drawn by one outline chart that folds
-              (`foldOutline`, `linksOf`), and the tree, in `panes.tsx` — with `ItemDialog.tsx`, which draws an item's document
+              the table, the kanban, the gantt (`ganttOf`) and the sequence (`sequenceOf`) drawn by
+              one outline chart that folds (`foldOutline`, `linksOf`), and the tree, in `panes.tsx`;
+              the calendar in `CalendarPane.tsx`, loaded when a calendar first opens — FullCalendar's
+              time grid for the week and the day and its day grid for the month, themed on the
+              Studio's tokens by `components/calendar/EventCalendarViews.tsx` (FullCalendar's own
+              shadcn theme), over the entries `calendarEntryOf` makes of the items and moved by
+              `shiftCalendar`, `sameSpan` and `spanTitle` — with `ItemDialog.tsx`, which draws an item's document
               through `components/WrittenDocumentView.tsx`; the rules are `tablePolicy.ts`. A page
               view's model is `pageOfView` in `viewsDoc.ts`, and it renders in
               `components/page/PageFrame.tsx`, the sandboxed frame a `.page` renders in; its template
@@ -258,7 +273,7 @@ events:
               roles are not named is left out, and a page view keeps its template (empty when
               absent) and its partials that are text — and every item: its id (a string, or a whole number
               as text), its label (the title key, else the id), its status, its start and end when
-              they are dates, what it comes after and what it is part of — only ids that are items
+              they are days, each with the time on it when there is one, what it comes after and what it is part of — only ids that are items
               here, the item itself excluded — its document when `content` is a mapping (its kind as
               the Studio knows it: `.Brief` is `brief`), and all of its fields as written.
           - title: Derived
@@ -278,7 +293,7 @@ events:
               filled, each titled with its kind and what its rules do ("2 filters · sorted by start
               asc"). The first opens. At the right of the row, `N items`, or `N of M items` when the
               view's filter hides some, and the rules in words. Under the buttons, the view — a page
-              view filling what is left of the pane.
+              view and a calendar filling what is left of the pane.
   - key: view-clicked
     label: A view button is clicked
     trigger: chosen
@@ -297,7 +312,7 @@ events:
             body: |
               Every key any item carries, first seen first, as columns — the id and the label first
               — and one row per item in the view's order. A cell shows text as it is, a date as
-              `YYYY-MM-DD`, a list joined by `, `, a mapping as JSON, and an item's document as its
+              `YYYY-MM-DD` — `YYYY-MM-DD HH:MM` when it has a time — a list joined by `, `, a mapping as JSON, and an item's document as its
               kind (`brief`, `md`). A row opens the item.
           - title: Kanban
             body: |
@@ -312,25 +327,31 @@ events:
             body: |
               A day, its week or its month — Day, Week and Month on the right of the header; the
               scale and the day are the page's for the session, per view, like the view itself. It
-              opens on Month, at the month of the earliest start. ‹ and › move a day, a week or a
-              month (a month keeps the day, its last when the month is shorter); "Today" jumps to
-              today and "First item" to the earliest start. The header names the span: "October
-              2026", "5 – 11 October 2026", "Monday 5 October 2026".
+              opens at the earliest start: on Week when an item has a time, on Month otherwise. ‹
+              and › move a day, a week or a month (a month keeps the day, its last when the month is
+              shorter); "Today" jumps to today and "First item" to the earliest start. The header
+              names the span: "October 2026", "5 – 11 October 2026", "Monday 5 October 2026". The
+              calendar fills what is left of the pane.
 
+              - **Week** — the seven days of the day's week across, Monday to Sunday, and the hours
+                of the day down the side, as a diary is. An item with a time is a block from its
+                start to its end, placed by the clock — items at the same hours side by side — and
+                a moment is half an hour tall; an item of days alone sits in the all-day row above
+                the hours, one bar across the days it covers, and so does an item with a time that
+                lasts a day or more — a stay, a trip — its start time before its label. A line
+                marks the time now on today. The hours scroll inside the calendar, opening an hour
+                before the earliest time in the file (08:00 when none has one).
+              - **Day** — the same, for one day.
               - **Month** — a grid of weeks, Monday to Sunday, the days of the months either side
-                muted.
-              - **Week** — the seven days of the day's week, Monday to Sunday, tall enough for every
-                chip's whole label.
-              - **Day** — a line for every item that covers the day: its label, its status, its span
-                and which of its days this is ("day 2 of 5"), and the kind of the document it holds;
-                "Nothing on this day." when none does.
+                muted: an item of days alone a bar across the days it covers, an item with a time a
+                line on its day with the time before the label. A day with more than fits shows
+                "+N more", which lists that day's items.
 
-              In the month and the week, a chip on every day an item covers (start to end, or the
-              start day alone), coloured by its column when the file has a status, titled "<label> ·
-              <start> → <end>"; a day's number opens that day. Every scale lays the items on the
-              same month grid the journey and the `.calendar` kind share, so an item covers the same
-              days at each. Items with no start date are listed under it. A chip, or a line, opens
-              the item.
+              Every block, bar and line is coloured by its column when the file has a status,
+              carries the mark of a document the item holds, and is titled "<label> · <start> →
+              <end>"; a day's heading or number opens that day. Times read as the file writes them,
+              on a 24-hour clock, whatever the zone of the machine. Items with no start date are
+              listed under the calendar. A block, a bar or a line opens the item.
           - title: Gantt
             body: |
               One row per item with dates — its own, or its children's for a parent without — nested
@@ -391,7 +412,7 @@ events:
       label: What opens
       kind: md
       doc: |
-        The label, then a line of facts: the status as a chip, the dates as `start → end`, "after"
+        The label, then a line of facts: the status as a chip, the dates as `start → end` with their times, "after"
         with one chip per previous item, "followed by" with one per item that comes after, "part of"
         with the parent, "made of" with the children — a click JUMPS the dialog to that item, whether
         or not the open view shows it. Then, when the item holds a document, that document, drawn by
@@ -447,8 +468,11 @@ events:
                  sort direction that is not asc or desc, a limit that is not positive; no `items`
                  (`items: []` is an empty list and passes); an item that is not a mapping or has no
                  id; an id used twice; a label that is not text; a status that is not text, or not a
-                 column when columns are given; a start or end that is not a date; an end before its
-                 start; a `previous` that is not an id or a list of ids, an empty entry, the item
+                 column when columns are given; a start or end that is not a date; a time after its
+                 day the calendar cannot read ("item late: `from` has a time the calendar cannot
+                 read — …"); a bare timestamp written in a zone, which the calendar reads in UTC
+                 and so shows at another time; an end before its start, a day's end being its
+                 whole day; a `previous` that is not an id or a list of ids, an empty entry, the item
                  itself, or an id no item has; a `parent` that is not an id, the item itself, or an
                  id no item has; a cycle of `previous`; a cycle of `parent`; when neither, a part and
                  its whole out of order — a part after its own whole or after what comes after it, a
@@ -467,7 +491,8 @@ events:
                  or a filter that hides everything is visible at once.
           - title: Not checked
             body: |
-              Whether an item's dates overlap its previous item's — the gantt shows it. Whether every
+              Whether an item's dates overlap its previous item's — the gantt shows it — or two
+              items' times overlap — the week lays them side by side. Whether every
               item has a status, a start, a previous or a parent — an item without lands in the first
               column, under the grid, at a root, at the first step, or at the top. Whether a filter names a key any item
               carries — a clause over nothing hides everything, and the summary's count says so. The
@@ -508,7 +533,8 @@ events:
             after: [items]
             detail: |
               Under `fields`, only the roles the items really carry: `status` for a kanban, `start`
-              (and `end`) for a calendar, `previous` for a tree, `previous` or `parent` for a
+              (and `end`) for a calendar — a day, or `YYYY-MM-DD HH:MM` where the time matters, which
+              the week and the day place by the clock — `previous` for a tree, `previous` or `parent` for a
               sequence, the dates with `previous` or `parent` for a gantt, `parent` to nest items in
               the gantt and the sequence. A role not named is a view that cannot be offered — the
               right answer for items that have no dates, which the sequence lays out all the same.

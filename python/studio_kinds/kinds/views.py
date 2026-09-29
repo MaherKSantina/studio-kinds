@@ -15,8 +15,8 @@ is kept for the session only.
       id: id               # what identifies an item (default `id`)
       title: title         # what an item is labelled by (default `title`)
       status: status       # a kanban column                     → Kanban
-      start: start         # a date, YYYY-MM-DD                  → Calendar; with `end` and `previous` or `parent`, Gantt
-      end: end             # a date
+      start: start         # a day, YYYY-MM-DD, or a time, YYYY-MM-DD HH:MM → Calendar; with `end` and `previous` or `parent`, Gantt
+      end: end             # a day or a time, as `start`
       previous: after      # the id(s) of what comes before      → Tree, Sequence; with the dates, Gantt
       parent: under        # the id of the item this one is part of → Sequence; nested under it there and in the gantt
     columns: [To do, Doing, Done]   # the statuses in order; absent = the values found, first seen first
@@ -60,11 +60,22 @@ is kept for the session only.
         start: 2026-10-04
         end: 2026-10-07
         under: build         # a child of `build`
+      - id: demo
+        title: Demo the API
+        status: To do
+        start: 2026-10-07 14:00   # a time: the week and the day place it by the clock
+        end: 2026-10-07 15:30
+        after: build-api
 
-A date is `YYYY-MM-DD`, bare or quoted. `previous` is one id or a list of ids, `parent` one id, every one
-an item of this file. A view's `filter` is clauses over the items' own keys (`equals`, `not_equals`,
+A start or an end is a day, `YYYY-MM-DD`, or a time on it, `YYYY-MM-DD HH:MM` — a `T` or a space
+between, a 24-hour clock, no zone: the time the calendar shows; bare or quoted. An item with a time at
+either end is timed — a start with no time is the start of its day, an end with none the end of its
+day, a start with a time and no end a moment — and the calendar's week and day place it by the clock;
+an item with days alone is all-day. The gantt reads the days. `previous` is one id or a list of ids,
+`parent` one id, every one an item of this file. A view's `filter` is clauses over the items' own keys (`equals`, `not_equals`,
 `contains`, `gt`, `between`, `in`, `is_empty`, … — one value or a list); `sort` is `{field, dir}`, first
-key first; `limit` caps the rows. A KANBAN view may also name a `group`: an item key whose values
+key first; `limit` caps the rows. The rules read the keys as the table shows them — a date as its day,
+with its time when it has one — so a day and the times on it sort together, the day first. A KANBAN view may also name a `group`: an item key whose values
 become the board's LANES — rows of the board, the status columns running across each, in the order
 the values are first seen among that view's items, and a last lane for the items carrying no value
 for that key. Lanes are derived from the items, never listed: a lane is a value that is there. A
@@ -92,7 +103,9 @@ name a partial it does not hold, a `template` or `partials` on a view that is no
 view that is not a kanban, a gantt or a sequence, one that is not an item key name, or one no item carries, a clause
 without a field or with an op outside the vocabulary, `items` that is not a list, an item that is not a mapping or has
 no id, an id used twice, a status that is not a column when columns are given, a start or end that is
-not a date, an end before its start, a `previous` that is not an id or a list of ids, a `parent` that is
+not a date, a time after its day the calendar cannot read, a bare timestamp written in a zone — read in
+UTC, so the calendar would show another time — an end before its start, a `previous` that is not an id
+or a list of ids, a `parent` that is
 not an id, one naming no item or the item itself, items caught in a cycle, a part and its whole out of
 order — a part after its own whole or after what comes after it, a whole after its own part, which no
 step can hold — and what an item's `content`
@@ -102,6 +115,8 @@ item is a broken views document.
 """
 from __future__ import annotations
 
+import datetime as _dt
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -127,6 +142,31 @@ view only a file names, with its template."""
 
 DEFAULT_FIELDS: dict[str, str] = {"id": "id", "title": "title"}
 
+_CLOCK = re.compile(r"^\d{4}-\d{2}-\d{2}[T ](\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$")
+"""A day and a time on it: `YYYY-MM-DD HH:MM`, a `T` or a space between, seconds allowed and not read."""
+
+_CLOCK_LIKE = re.compile(r"^\d{4}-\d{2}-\d{2}[T ]\d{1,2}:\d{2}")
+"""Text that writes a time after its day — one the calendar reads, or not."""
+
+
+def as_time(v: Any) -> str:
+    """The time of day a start or an end carries, `HH:MM` — "" for a day alone. A bare timestamp's clock is read in
+    UTC, the way js-yaml hands it over, and at midnight it is its day alone, since a bare date reads the same; a
+    text's is the time written after its day, on a 24-hour clock."""
+    if isinstance(v, _dt.datetime):
+        u = v.astimezone(_dt.timezone.utc) if v.tzinfo else v
+        return "" if (u.hour, u.minute, u.second, u.microsecond) == (0, 0, 0, 0) else f"{u.hour:02d}:{u.minute:02d}"
+    if isinstance(v, str):
+        m = _CLOCK.match(v)
+        if m and int(m.group(1)) < 24 and int(m.group(2)) < 60 and int(m.group(3) or 0) < 60:
+            return f"{int(m.group(1)):02d}:{m.group(2)}"
+    return ""
+
+
+def when_text(day: str, time: str) -> str:
+    """A start or an end in words: its day, and its time when it has one."""
+    return f"{day} {time}" if time else day
+
 
 @dataclass
 class Item:
@@ -140,6 +180,9 @@ class Item:
     parent: str | None = None
     content: dict | None = None
     """`{"kind": str, "doc": Any}` when the item holds a written document."""
+    start_time: str | None = None
+    end_time: str | None = None
+    """The time on the start's and the end's day, `HH:MM`, when there is one — the item is timed."""
 
 
 @dataclass
@@ -262,10 +305,13 @@ def parse(text: str) -> Views:
         status = as_str(it.get(fields["status"])) if "status" in fields else ""
         start = as_date(it.get(fields["start"])) if "start" in fields else ""
         end = as_date(it.get(fields["end"])) if "end" in fields else ""
+        start_time = as_time(it.get(fields["start"])) if start else ""
+        end_time = as_time(it.get(fields["end"])) if end else ""
         previous = [p for p in _ids(it.get(fields["previous"])) if p != id_] if "previous" in fields else []
         parent = _id_text(it.get(fields["parent"])) if "parent" in fields else ""
         items.append(Item(id_, title, dict(it), status or None, start or None, end or None, previous,
-                          parent if parent and parent != id_ else None, read_content(it.get("content"))))
+                          parent if parent and parent != id_ else None, read_content(it.get("content")),
+                          start_time or None, end_time or None))
     for it in items:
         it.previous = [p for p in it.previous if p in seen]
         if it.parent and it.parent not in seen:
@@ -323,10 +369,18 @@ def available_views(doc: Views) -> list[View]:
     return [View(k, k, k.capitalize()) for k in ROLE_VIEWS if view_offered(k, doc.fields)]
 
 
+def _as_shown(fields: dict[str, Any]) -> dict[str, Any]:
+    """An item's keys as a view's rules read them — as the table shows them, a date as its day and its time when it
+    has one — so a bare day and a time written as text sort together."""
+    return {k: when_text(_yaml.iso_date(v), as_time(v)) if _yaml.is_date(v) else v for k, v in fields.items()}
+
+
 def rows_of_view(doc: Views, view: View) -> list[Item]:
-    """The items a view shows — its filter, sort and limit applied over the items' own fields."""
-    by_row = {id(it.fields): it for it in doc.items}
-    kept = apply_table(TableRules(view.rules.where, view.rules.sort, None, [], view.rules.limit), [it.fields for it in doc.items]).rows
+    """The items a view shows — its filter, sort and limit applied over the items' own fields, as the table shows
+    them."""
+    rows = [_as_shown(it.fields) for it in doc.items]
+    by_row = {id(r): it for r, it in zip(rows, doc.items)}
+    kept = apply_table(TableRules(view.rules.where, view.rules.sort, None, [], view.rules.limit), rows).rows
     return [by_row[id(r)] for r in kept]
 
 
@@ -509,19 +563,31 @@ def problems(text: str) -> list[str]:
                 out.append(f"{name}: `{fields['status']}` is not text (got {json_of(s)})")
             elif columns and s.lower() not in columns:
                 out.append(f"{name}: status `{s}` is not a column — it would land in the first column; columns are {', '.join(doc.columns or [])}")
-        start = end = ""
+        # A start with no time is the start of its day and an end with none the end of its day, so a day and a
+        # time on it compare as the moments they stand for.
+        start = end = None
         for role in ("start", "end"):
             if role in fields and defined(get(it, fields[role])):
                 v = it[fields[role]]
                 d = as_date(v)
                 if not d:
-                    out.append(f"{name}: `{fields[role]}` is not a date — write `YYYY-MM-DD` (got {json_of(v)})")
-                elif role == "start":
-                    start = d
+                    out.append(f"{name}: `{fields[role]}` is not a date — write `YYYY-MM-DD`, or `YYYY-MM-DD HH:MM` for a "
+                               f"time (got {json_of(v)})")
+                    continue
+                t = as_time(v)
+                if isinstance(v, str) and not t and _CLOCK_LIKE.match(v):
+                    out.append(f"{name}: `{fields[role]}` has a time the calendar cannot read — write `YYYY-MM-DD HH:MM`, "
+                               f"on a 24-hour clock and in no zone (got {json_of(v)})")
+                elif isinstance(v, _dt.datetime) and v.utcoffset():
+                    out.append(f"{name}: `{fields[role]}` {v.isoformat()} is written in a zone — the calendar reads it in "
+                               f"UTC, as {when_text(d, t)}; write the time it shows, `{v.strftime('%Y-%m-%d %H:%M')}`")
+                when = (d, t or ("00:00" if role == "start" else "24:00"), when_text(d, t))
+                if role == "start":
+                    start = when
                 else:
-                    end = d
-        if start and end and end < start:
-            out.append(f"{name}: `{fields['end']}` {end} is before `{fields['start']}` {start}")
+                    end = when
+        if start and end and end[:2] < start[:2]:
+            out.append(f"{name}: `{fields['end']}` {end[2]} is before `{fields['start']}` {start[2]}")
         if "previous" in fields and defined(get(it, fields["previous"])):
             p = it[fields["previous"]]
             if not (isinstance(p, (str, int)) or (is_list(p) and all(isinstance(x, (str, int)) for x in p))) or isinstance(p, bool):

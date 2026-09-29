@@ -661,6 +661,20 @@ items:
         - **Sign in** — email first
         - **Home** — the week at a glance
   - {key: test, name: Test it, stage: To do, from: 2026-10-08, to: 2026-10-12, after: [build], owner: Ana}
+  - key: review
+    name: Review the API
+    stage: To do
+    from: 2026-10-07 14:00
+    to: 2026-10-07 15:30
+    under: build
+    after: api
+    owner: Ana
+  - key: standup
+    name: Stand-up
+    stage: Done
+    from: 2026-10-07 09:00
+    to: 2026-10-07 09:15
+    owner: Sam
   - {key: ship, name: Ship, stage: To do, from: 2026-10-13, to: 2026-10-13, after: [build, test]}
 `;
 

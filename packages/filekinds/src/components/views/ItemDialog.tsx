@@ -9,7 +9,7 @@ import React from "react";
 import { Check, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "crosscut";
 import type { ViewerProps } from "../../lib/filePreviews";
-import { cellText, childrenOf, columnIndexOf, columnsOf, followersOf, listedFieldsOf, type ViewsDoc, type ViewsItem } from "../../lib/viewsDoc";
+import { cellText, childrenOf, columnIndexOf, columnsOf, followersOf, listedFieldsOf, spanText, whenText, type ViewsDoc, type ViewsItem } from "../../lib/viewsDoc";
 import WrittenDocumentView from "../WrittenDocumentView";
 
 /** One colour per column, by index — the same in every view. */
@@ -69,7 +69,7 @@ export function ItemDialog({ doc, itemId, onSelect, onClose, host }: {
                 </span>
               )}
               {(item.start || item.end) && (
-                <span className="font-mono text-muted-foreground">{item.start ?? "?"} → {item.end ?? item.start}</span>
+                <span className="font-mono text-muted-foreground">{item.start ? spanText(item) : `? → ${whenText(item.end!, item.endTime)}`}</span>
               )}
               {previous.length > 0 && (
                 <span className="flex items-center gap-1.5">

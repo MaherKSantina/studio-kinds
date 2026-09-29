@@ -23,6 +23,7 @@
     "@dagrejs/dagre": "^3.1.1",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
+    "@fullcalendar/react": "^7.1.0",
     "@mui/icons-material": "^6.1.6",
     "@mui/material": "^6.1.6",
     "@xyflow/react": "^12.11.6",
@@ -35,6 +36,7 @@
     "react-markdown": "^10.1.0",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
+    "temporal-polyfill": "^1.0.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

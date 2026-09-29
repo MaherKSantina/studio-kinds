@@ -1,20 +1,19 @@
 /**
- * The six panes of a `.views` document — the same items laid out as a
- * table, a kanban, a calendar (a day, a week or a month), a gantt (nested by
- * `parent`, on days), a sequence (nested by `parent`, on steps of `previous`)
- * and a dependency tree (by `previous`). Every pane reads the document as its
- * view sees it (viewsDoc.ts) and calls `onOpen(id)` for an item; none writes
- * anything. An item that holds a document written in carries a mark wherever
- * its label is drawn.
+ * The panes of a `.views` document — the same items laid out as a table, a
+ * kanban, a gantt (nested by `parent`, on days), a sequence (nested by
+ * `parent`, on steps of `previous`) and a dependency tree (by `previous`);
+ * the calendar (a day, a week or a month) is CalendarPane.tsx, loaded when
+ * one first opens. Every pane reads the document as its view sees it
+ * (viewsDoc.ts) and calls `onOpen(id)` for an item; none writes anything. An
+ * item that holds a document written in carries a mark wherever its label is
+ * drawn.
  */
 import React, { useMemo, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { cn } from "crosscut";
-import { monthGrid, type CalTask, type CalWeekCell } from "../../lib/journeyStages";
 import {
-  CALENDAR_SCALES, addDays, columnIndexOf, columnsOf, daysBetween, foldOutline, ganttOf, groupOutline, isGroupRow, itemCellText, lanesOf,
-  linksOf, sameSpan, sequenceOf, shiftCalendar, spanTitle, tableColumnsOf, treeOf, type CalendarScale, type GroupRow, type OutlineRow,
-  type TreeNode, type ViewsDoc, type ViewsItem,
+  addDays, columnIndexOf, columnsOf, foldOutline, ganttOf, groupOutline, isGroupRow, itemCellText, lanesOf, linksOf, localDay, sequenceOf,
+  spanText, tableColumnsOf, treeOf, type CalendarScale, type GroupRow, type OutlineRow, type TreeNode, type ViewsDoc, type ViewsItem,
 } from "../../lib/viewsDoc";
 import { colorOf } from "./ItemDialog";
 
@@ -35,14 +34,14 @@ export interface PaneProps {
 }
 
 /** The small buttons over a pane: the calendar's moves, the outline's folds. */
-const NAV = "rounded border px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground";
+export const NAV = "rounded border px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground";
 
 /** The mark of an item holding a document written in — its dialog draws it. */
-function DocMark({ item }: { item: ViewsItem }) {
+export function DocMark({ item }: { item: ViewsItem }) {
   return item.content ? <FileText aria-hidden className="size-3 shrink-0 opacity-80" /> : null;
 }
 /** The words a title attribute adds for an item's document: " · holds a brief". */
-const docWords = (item: ViewsItem): string => (item.content ? ` · holds a ${item.content.kind || "document"}` : "");
+export const docWords = (item: ViewsItem): string => (item.content ? ` · holds a ${item.content.kind || "document"}` : "");
 
 /* ── Table ──────────────────────────────────────────────────────────────── */
 
@@ -81,7 +80,7 @@ function Card({ item, columns, onOpen }: { item: ViewsItem; columns: string[]; o
       <span className="flex items-start gap-1.5 font-medium leading-snug"><span className="min-w-0 flex-1">{item.title}</span><DocMark item={item} /></span>
       {(item.start || item.previous.length > 0) && (
         <span className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground">
-          {item.start && <span className="font-mono">{item.start}{item.end && item.end !== item.start ? ` → ${item.end}` : ""}</span>}
+          {item.start && <span className="font-mono">{spanText(item)}</span>}
           {item.previous.length > 0 && <span title={`after ${item.previous.join(", ")}`}>⇠ {item.previous.length}</span>}
         </span>
       )}
@@ -131,130 +130,6 @@ export function KanbanPane({ doc, onOpen, group }: PaneProps) {
         ))}
         {!doc.items.length && <p className="mt-2 px-1 text-xs text-muted-foreground">No items yet.</p>}
       </div>
-    </div>
-  );
-}
-
-/* ── Calendar ───────────────────────────────────────────────────────────── */
-
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const SCALE_LABEL: Record<CalendarScale, string> = { day: "Day", week: "Week", month: "Month" };
-/** An item's last day on the calendar: its end, or its start alone when it has none (or one before it). */
-const lastDayOf = (it: ViewsItem): string => (it.end && it.end >= it.start! ? it.end : it.start!);
-
-/** One item on the calendar: its label on its column's colour, and the mark of a document written in. */
-function CalendarChip({ item, columns, wrap, onOpen }: { item: ViewsItem; columns: string[]; wrap?: boolean; onOpen: () => void }) {
-  return (
-    <button type="button" title={`${item.title} · ${item.start} → ${lastDayOf(item)}${docWords(item)}`} onClick={onOpen}
-      className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left text-[13px] text-white hover:opacity-80"
-      style={{ background: colorOf(item, columns) }}>
-      <span className={cn("min-w-0 flex-1", wrap ? "break-words" : "truncate")}>{item.title}</span>
-      <DocMark item={item} />
-    </button>
-  );
-}
-
-/** A day: a line for every item that covers it — its label, its status, its span and which of its days this
- *  is, and the kind of the document it holds. */
-function DayList({ items, day, columns, onOpen }: { items: ViewsItem[]; day: string; columns: string[]; onOpen: (id: string) => void }) {
-  if (!items.length) return <p className="mb-2 mt-1.5 rounded-lg border px-3 py-4 text-xs text-muted-foreground">Nothing on this day.</p>;
-  return (
-    <div className="mb-2 mt-1.5 rounded-lg border">
-      {items.map((it) => {
-        const days = daysBetween(it.start!, lastDayOf(it)) + 1;
-        const span = days > 1 ? `${it.start} → ${lastDayOf(it)} · day ${daysBetween(it.start!, day) + 1} of ${days}` : it.start;
-        return (
-          <button key={it.id} type="button" onClick={() => onOpen(it.id)} title={`${it.title}${docWords(it)}`}
-            className="flex w-full items-start gap-2.5 border-b px-3 py-2 text-left last:border-b-0 hover:bg-accent">
-            <span className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ background: colorOf(it, columns) }} />
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5 text-sm font-medium">{it.title}<DocMark item={it} /></span>
-              <span className="mt-0.5 block text-[12px] text-muted-foreground">{[it.status, span, it.content?.kind].filter(Boolean).join(" · ")}</span>
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-export function CalendarPane({ doc, onOpen, calendar, onCalendar }: PaneProps) {
-  const columns = columnsOf(doc);
-  const dated = useMemo(() => doc.items.filter((it) => it.start), [doc.items]);
-  const undated = useMemo(() => doc.items.filter((it) => !it.start), [doc.items]);
-  const today = new Date().toISOString().slice(0, 10);
-  const first = dated.length ? dated.map((it) => it.start!).sort()[0] : today;
-  // Until a scale or a day is picked, the month of the earliest start.
-  const [own, setOwn] = useState<CalendarState | null>(null);
-  const { scale, day }: CalendarState = calendar ?? own ?? { scale: "month", day: first };
-  const set = (next: Partial<CalendarState>) => (onCalendar ?? setOwn)({ scale, day, ...next });
-  const tasks: CalTask[] = useMemo(() => dated.map((it) => ({ label: it.title, start: it.start!, end: lastDayOf(it), group: it.id })), [dated]);
-  // Every scale reads the month grid the journey and the `.calendar` kind share: a week is the grid's row
-  // holding the day, a day that row's cell — so an item covers the same days at every scale.
-  const grid = useMemo(() => monthGrid(tasks, day), [tasks, day]);
-  const week = grid.weeks.find((w) => w.some((c) => c.iso === day)) ?? grid.weeks[0];
-  const byId = useMemo(() => new Map(doc.items.map((it) => [it.id, it])), [doc.items]);
-  const itemsOf = (cell: CalWeekCell): ViewsItem[] => cell.tasks.map((t) => byId.get(t.group)).filter((it): it is ViewsItem => !!it);
-  const dayLink = (cell: CalWeekCell, label: React.ReactNode) => (
-    <button type="button" title="Open this day" className="hover:text-foreground hover:underline" onClick={() => set({ scale: "day", day: cell.iso })}>{label}</button>
-  );
-  return (
-    <div>
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-medium">{spanTitle(scale, day)}</h3>
-        <button type="button" className={NAV} title={`The ${scale} before`} onClick={() => set({ day: shiftCalendar(day, scale, -1) })}><ChevronLeft className="size-3" /></button>
-        <button type="button" className={NAV} title={`The ${scale} after`} onClick={() => set({ day: shiftCalendar(day, scale, 1) })}><ChevronRight className="size-3" /></button>
-        <button type="button" className={NAV} onClick={() => set({ day: today })}>Today</button>
-        {!sameSpan(scale, first, today) && <button type="button" className={NAV} onClick={() => set({ day: first })}>First item</button>}
-        <div role="group" aria-label="Show a day, a week or a month" className="ml-auto flex rounded-md border p-0.5">
-          {CALENDAR_SCALES.map((s) => (
-            <button key={s} type="button" aria-pressed={s === scale} onClick={() => set({ scale: s })}
-              className={cn("rounded px-2 py-0.5 text-xs font-medium",
-                s === scale ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
-              {SCALE_LABEL[s]}
-            </button>
-          ))}
-        </div>
-      </div>
-      {scale === "day" ? (
-        <DayList items={itemsOf(week.find((c) => c.iso === day) ?? week[0])} day={day} columns={columns} onOpen={onOpen} />
-      ) : (
-        <div className="mt-1.5 overflow-x-auto pb-2">
-          <div className="min-w-[720px]">
-            <div className="grid grid-cols-7 gap-1">
-              {scale === "month" && WEEKDAYS.map((d) => (
-                <div key={d} className="px-1.5 text-[13px] font-medium uppercase tracking-wide text-muted-foreground">{d}</div>
-              ))}
-              {(scale === "month" ? grid.weeks.flat() : week).map((cell, i) => (
-                <div key={cell.iso}
-                  className={cn("rounded border p-1", scale === "week" ? "min-h-48 bg-background" : cn("min-h-16", cell.inMonth ? "bg-background" : "bg-muted/40"),
-                    cell.iso === today && "border-foreground/40")}>
-                  <div className={cn("text-[13px]", scale === "week" || cell.inMonth ? "text-muted-foreground" : "text-muted-foreground/50")}>
-                    {dayLink(cell, scale === "week" ? <><span className="font-medium uppercase tracking-wide">{WEEKDAYS[i]}</span> {cell.day}</> : cell.day)}
-                    {cell.iso === today && " · today"}
-                  </div>
-                  <div className={cn("mt-0.5", scale === "week" ? "space-y-1" : "space-y-0.5")}>
-                    {itemsOf(cell).map((it) => (
-                      <CalendarChip key={it.id} item={it} columns={columns} wrap={scale === "week"} onOpen={() => onOpen(it.id)} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-      {undated.length > 0 && (
-        <p className="mt-1 text-xs text-muted-foreground">
-          No start date:{" "}
-          {undated.map((it, i) => (
-            <React.Fragment key={it.id}>
-              {i > 0 && " · "}
-              <button type="button" className="underline decoration-dotted underline-offset-2 hover:text-foreground" onClick={() => onOpen(it.id)}>{it.title}</button>
-            </React.Fragment>
-          ))}
-        </p>
-      )}
     </div>
   );
 }
@@ -399,7 +274,7 @@ function useFolds({ folded, onFolded }: PaneProps): [ReadonlySet<string>, (ids: 
 }
 
 /** Items a pane cannot draw, listed under it by label — each opens the item. */
-function Apart({ what, items, onOpen }: { what: string; items: ViewsItem[]; onOpen: (id: string) => void }) {
+export function Apart({ what, items, onOpen }: { what: string; items: ViewsItem[]; onOpen: (id: string) => void }) {
   if (!items.length) return null;
   return (
     <p className="mt-1 text-xs text-muted-foreground">
@@ -424,7 +299,7 @@ export function GanttPane(props: PaneProps) {
   const g = useMemo(() => ganttOf(doc), [doc]);
   const rows = useMemo(() => groupOutline(g.rows, doc.items, group), [g.rows, doc.items, group]);
   const [folded, onFolded] = useFolds(props);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDay();
   if (!g.rows.length) return <Empty>No item has a start and an end date, nor children with them — nothing to draw.</Empty>;
   const days = Array.from({ length: g.days }, (_, i) => addDays(g.first, i));
   return (

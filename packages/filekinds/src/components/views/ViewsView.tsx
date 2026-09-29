@@ -7,7 +7,8 @@
  * item clicked in any view opens the item dialog, which draws the document
  * written into the item. A page view is the view's items through its own
  * Nunjucks template, in the sandboxed frame a `.page` renders in, filling the
- * pane. Nothing here writes the file.
+ * pane; a calendar fills it too, its hours scrolling inside it. Nothing here
+ * writes the file.
  */
 import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChartGantt, Kanban, LayoutTemplate, ListTree, Table2, Workflow } from "lucide-react";
@@ -16,10 +17,12 @@ import { ViewerProps } from "../../lib/filePreviews";
 import { rulesSummary } from "../../lib/tablePolicy";
 import { availableViews, docOfView, pageOfView, parseViews, type ViewName, type ViewSpec } from "../../lib/viewsDoc";
 import { ItemDialog } from "./ItemDialog";
-import { CalendarPane, GanttPane, KanbanPane, SequencePane, TablePane, TreePane, type CalendarState, type PaneProps } from "./panes";
+import { GanttPane, KanbanPane, SequencePane, TablePane, TreePane, type CalendarState, type PaneProps } from "./panes";
 
 /** The frame a page view renders in, with Nunjucks in it — loaded when a page view first opens. */
 const PageFrame = lazy(() => import("../page/PageFrame").then((m) => ({ default: m.PageFrame })));
+/** The calendar, with FullCalendar in it — loaded when a calendar view first opens. */
+const CalendarPane = lazy(() => import("./CalendarPane"));
 
 const ICONS: Record<ViewName, React.ComponentType<{ className?: string }>> = {
   table: Table2, kanban: Kanban, calendar: CalendarDays, gantt: ChartGantt, sequence: Workflow, tree: ListTree, page: LayoutTemplate,
@@ -49,11 +52,12 @@ export default function ViewsView({ content, height = "100%", agentId, onOpenPat
   const seen = useMemo(() => (view ? docOfView(doc, view) : doc), [doc, view]);
   const page = useMemo(() => (view?.kind === "page" ? pageOfView(doc, view) : null), [doc, view]);
   const Pane = view && view.kind !== "page" ? PANES[view.kind] : TablePane;
+  // A page and a calendar fill what is left under the buttons; every other view scrolls with the header.
+  const fills = !!page || view?.kind === "calendar";
   const rules = view ? rulesLine(view) : "";
 
   return (
-    // A page fills what is left under the buttons; every other view scrolls with the header.
-    <div style={{ height }} className={cn("min-h-0 bg-background p-3 text-foreground", page ? "flex flex-col" : "overflow-y-auto")}>
+    <div style={{ height }} className={cn("min-h-0 overflow-y-auto bg-background p-3 text-foreground", fills && "flex flex-col")}>
       <div className="min-w-0">
         {doc.title && <h2 className="text-base font-semibold">{doc.title}</h2>}
         {doc.description && <p className="mt-0.5 max-w-[70ch] text-xs text-muted-foreground">{doc.description}</p>}
@@ -77,12 +81,14 @@ export default function ViewsView({ content, height = "100%", agentId, onOpenPat
           {rules && <span> · {rules}</span>}
         </span>
       </div>
-      <div className={cn("mt-3", page && "min-h-0 flex-1")}>
+      <div className={cn("mt-3", fills && "min-h-0 flex-1")}>
         {page && view
           ? <Suspense fallback={<p className="text-xs text-muted-foreground">Loading the page…</p>}><PageFrame page={page} title={view.label} height="100%" /></Suspense>
-          : <Pane doc={seen} onOpen={setOpen} group={view?.group} calendar={view ? calendars[view.key] : undefined}
-              onCalendar={(s) => { if (view) setCalendars((c) => ({ ...c, [view.key]: s })); }}
-              folded={view ? folds[view.key] : undefined} onFolded={(ids) => { if (view) setFolds((f) => ({ ...f, [view.key]: ids })); }} />}
+          : <Suspense fallback={<p className="text-xs text-muted-foreground">Loading the calendar…</p>}>
+              <Pane doc={seen} onOpen={setOpen} group={view?.group} calendar={view ? calendars[view.key] : undefined}
+                onCalendar={(s) => { if (view) setCalendars((c) => ({ ...c, [view.key]: s })); }}
+                folded={view ? folds[view.key] : undefined} onFolded={(ids) => { if (view) setFolds((f) => ({ ...f, [view.key]: ids })); }} />
+            </Suspense>}
       </div>
       <ItemDialog doc={doc} itemId={open} onSelect={setOpen} onClose={() => setOpen(null)} host={{ agentId, onOpenPath }} />
     </div>
